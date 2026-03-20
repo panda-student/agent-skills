@@ -1,12 +1,14 @@
 # 任务型 Skill 七步设计清单
 
 ## 第一步：动作定义
-确定命令功能，命名简洁直观（commit、review、deploy 等）
+确定命令功能，命名简洁直观（make-app、run-app、check-code 等）
 
-### 命名规范
-- 使用动词开头：create、deploy、run、execute
-- 简洁明了：commit、review、test
-- 避免缩写：create-component（不是 cc）
+### 命名规范（动词+最简词）
+- 使用动词+最简词：make-app、run-app、check-code、fix-bug
+- 简洁明了：make、run、check、fix、test
+- 避免缩写：make-app（不是 ma）
+- 记忆口诀：动词=执行
+- 简化原则：使用最简单的单词，避免复杂词汇
 
 ## 第二步：触发控制
 设置 `disable-model-invocation: true`，仅允许用户手动触发

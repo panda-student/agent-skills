@@ -20,7 +20,7 @@
 - **触发方式**：语义自动触发
 - **适用场景**：规范、知识、风格、约定
 - **特点**：无执行步骤，提供参考信息
-- **示例**：api-convention、code-style、git-workflow
+- **示例**：api-rule、style-guide、git-flow
 
 ### 设计要点
 - 不需要 `disable-model-invocation` 配置
@@ -46,7 +46,7 @@ allowed-tools:
 - **触发方式**：斜杠命令 `/xxx` 手动触发
 - **适用场景**：执行操作、部署、脚本、流程
 - **特点**：包含具体执行步骤和操作指令
-- **示例**：deploy-service、run-tests、create-component
+- **示例**：run-app、check-code、make-app
 
 ### 设计要点
 - **必须设置** `disable-model-invocation: true`
@@ -176,18 +176,22 @@ user-invocable: true
 - 避免缩写和数字
 
 ## 参考型命名
-- 名词短语：`api-convention`、`code-style`、`git-workflow`
-- 强调知识领域：`architecture-guide`、`security-standard`
+- 名词+最简词：`api-rule`、`style-guide`、`git-flow`
+- 强调知识领域：`arch-guide`、`security-rule`
+- 记忆口诀：名词=知识
+- 简化原则：使用最简单的单词（rule、guide、flow）
 
 ## 任务型命名
-- 动词开头：`create-component`、`deploy-service`、`run-tests`
-- 强调执行动作：`execute-build`、`perform-review`
+- 动词+最简词：`make-app`、`run-app`、`check-code`
+- 强调执行动作：`build-app`、`fix-bug`、`test-all`
+- 记忆口诀：动词=执行
+- 简化原则：使用最简单的单词（make、run、check、fix、test）
 
 ## 命名示例
 | 类型 | ✅ 正确 | ❌ 错误 |
 |------|---------|---------|
-| 参考 | `api-convention` | `APIConvention`, `api_convention` |
-| 任务 | `create-component` | `CreateComponent`, `create_component` |
+| 参考 | `api-rule`、`style-guide` | `APIConvention`, `api_convention`, `api-convention`(复杂词) |
+| 任务 | `make-app`、`run-app` | `CreateComponent`, `create_component`, `create-component`(复杂词) |
 
 ---
 

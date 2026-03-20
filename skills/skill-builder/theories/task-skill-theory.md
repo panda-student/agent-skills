@@ -1,10 +1,17 @@
 # 任务型 Skills 核心理论
 
 ## 1. Skill 类型划分
-- **参考型 Skill**：模型自动触发，用于知识/规范补充
-- **任务型 Skill**：必须设置 `disable-model-invocation: true`，**仅用户手动触发**，不允许模型主动执行
+- **参考型 Skill**：模型自动触发，用于知识/规范补充，使用名词+最简词命名
+- **任务型 Skill**：必须设置 `disable-model-invocation: true`，**仅用户手动触发**，不允许模型主动执行，使用动词+最简词命名
 
-## 2. Commands 与 Skills 关系
+## 2. 命名规范（动词+最简词）
+- **词性组合**：动词+最简词，强调执行动作
+- **示例**：`make-app`（创建应用）、`run-app`（运行应用）、`check-code`（检查代码）
+- **记忆口诀**：动词=执行
+- **命名模式**：`[动作]-[对象]`，如 `build-app`、`fix-bug`、`test-all`
+- **简化原则**：使用最简单的单词（make、run、check、fix、test），避免复杂词汇
+
+## 3. Commands 与 Skills 关系
 - 斜杠命令已整合为 Skills 子集
 - 存放路径：`.claude/commands/`（兼容）、`.claude/skills/`（推荐，功能更完整）
 - 同名优先级：Skill > Command

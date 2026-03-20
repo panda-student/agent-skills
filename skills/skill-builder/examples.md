@@ -7,7 +7,7 @@
 ### 目录结构
 ```
 .claude/skills/
-└── api-convention/
+└── api-rule/
     ├── SKILL.md
     └── reference.md
 ```
@@ -15,7 +15,7 @@
 ### SKILL.md
 ```markdown
 ---
-name: api-convention
+name: api-rule
 description: 定义项目 RESTful API 设计规范，包含URL命名、响应格式、状态码与鉴权规则，在编写/审查接口、设计新API、确定请求响应格式时自动使用
 allowed-tools:
   - Read
@@ -39,6 +39,7 @@ allowed-tools:
 - ✅ 只读权限，无副作用操作
 - ✅ 提供知识、规范、标准
 - ✅ 无需 disable-model-invocation
+- ✅ 名词+最简词命名：api-rule
 
 ---
 
@@ -47,7 +48,7 @@ allowed-tools:
 ### SKILL.md
 ```markdown
 ---
-name: code-style
+name: style-guide
 description: 定义项目代码风格规范，包含命名约定、格式化规则、注释标准，在编写代码、代码审查、格式化代码时自动使用
 allowed-tools:
   - Read
@@ -69,18 +70,18 @@ allowed-tools:
 ### 关键特征
 - ✅ 知识导向，自动触发
 - ✅ 只读权限
-- ✅ 名词短语命名：code-style
+- ✅ 名词+最简词命名：style-guide
 
 ---
 
 # 任务型 Skill 示例
 
-## 示例 1：创建组件
+## 示例 1：创建应用
 
 ### 目录结构
 ```
 .claude/skills/
-└── create-component/
+└── make-app/
     ├── SKILL.md
     ├── reference.md
     └── templates/
@@ -90,8 +91,8 @@ allowed-tools:
 ### SKILL.md
 ```markdown
 ---
-name: create-component
-description: 创建符合项目规范的 React 组件，通过斜杠命令触发，用于快速生成标准化组件代码
+name: make-app
+description: 创建符合项目规范的应用，通过斜杠命令触发，用于快速生成标准化应用代码
 user-invocable: true
 disable-model-invocation: true
 allowed-tools:
@@ -100,16 +101,16 @@ allowed-tools:
   - AskUserQuestion
 ---
 
-你是 React 组件创建专家。当用户使用 `/create-component` 命令时，引导用户创建符合项目规范的组件。
+你是应用创建专家。当用户使用 `/make-app` 命令时，引导用户创建符合项目规范的应用。
 
 ## 执行流程
-1. 询问组件名称和类型
-2. 确认组件功能需求
-3. 生成组件代码文件
+1. 询问应用名称和类型
+2. 确认应用功能需求
+3. 生成应用代码文件
 4. 创建对应的样式文件
 5. 生成测试文件（可选）
 
-## 组件规范
+## 应用规范
 - 使用函数式组件和 Hooks
 - 遵循单一职责原则
 - 组件文件不超过 300 行
@@ -122,18 +123,18 @@ allowed-tools:
 - ✅ 手动触发，必须使用斜杠命令
 - ✅ **必须** disable-model-invocation: true
 - ✅ 读写权限，包含文件修改操作
-- ✅ 动词开头命名：create-component
+- ✅ 动词+最简词命名：make-app
 - ✅ 包含执行步骤和流程
 
 ---
 
-## 示例 2：部署服务
+## 示例 2：部署应用
 
 ### SKILL.md
 ```markdown
 ---
-name: deploy-service
-description: 部署服务到生产环境，通过斜杠命令触发，用于自动化部署流程
+name: run-app
+description: 部署应用到生产环境，通过斜杠命令触发，用于自动化部署流程
 user-invocable: true
 disable-model-invocation: true
 allowed-tools:
@@ -144,7 +145,7 @@ allowed-tools:
   - Bash(kubectl apply)
 ---
 
-你是服务部署专家。当用户使用 `/deploy-service` 命令时，执行标准化的部署流程。
+你是应用部署专家。当用户使用 `/run-app` 命令时，执行标准化的部署流程。
 
 ## 部署流程
 1. 构建项目：`npm run build`
@@ -166,16 +167,17 @@ allowed-tools:
 - ✅ **必须** disable-model-invocation: true
 - ✅ 精确权限控制，不使用 Bash(*)
 - ✅ 包含副作用操作（部署）
+- ✅ 动词+最简词命名：run-app
 - ✅ 使用动态上下文注入
 
 ---
 
-## 示例 3：代码审查
+## 示例 3：检查代码
 
 ### SKILL.md
 ```markdown
 ---
-name: code-review
+name: check-code
 description: 执行代码质量审查并提供改进建议，通过斜杠命令触发，用于提升代码质量
 user-invocable: true
 disable-model-invocation: true
@@ -185,7 +187,7 @@ allowed-tools:
   - Glob
 ---
 
-你是专业的代码审查专家。当用户使用 `/code-review` 命令时，对指定代码进行全面审查。
+你是专业的代码审查专家。当用户使用 `/check-code` 命令时，对指定代码进行全面审查。
 
 ## 审查维度
 1. **代码质量**：可读性、可维护性、复杂度
@@ -208,7 +210,57 @@ allowed-tools:
 - ✅ 手动触发
 - ✅ **必须** disable-model-invocation: true
 - ✅ 只读权限（审查不修改文件）
-- ✅ 动词开头命名：code-review
+- ✅ 动词+最简词命名：check-code
+
+---
+
+## 示例 4：数据库操作
+
+### SKILL.md
+```markdown
+---
+name: run-sql
+description: 执行数据库操作，通过斜杠命令触发，用于创建表、插入数据、执行查询等
+user-invocable: true
+disable-model-invocation: true
+allowed-tools:
+  - Read
+  - Write
+  - Bash(mysql)
+  - Bash(psql)
+  - Bash(sqlite3)
+---
+
+你是数据库操作专家。当用户使用 `/run-sql` 命令时，执行数据库相关操作。
+
+## 执行流程
+1. 确认数据库类型和连接信息
+2. 创建临时 SQL 脚本文件
+3. 执行 SQL 语句
+4. **删除临时脚本文件**（安全清理）
+5. 返回执行结果
+
+## 安全规范
+- 临时脚本存放在 `.tmp/` 目录
+- 执行完毕后立即删除临时文件
+- 敏感信息（密码）不写入脚本文件
+- 生产环境操作需二次确认
+
+## 临时文件清理
+```bash
+# 执行后自动清理
+rm -f .tmp/query_*.sql
+```
+
+详细规范请参考 [reference.md](./reference.md)
+```
+
+### 关键特征
+- ✅ 手动触发
+- ✅ **必须** disable-model-invocation: true
+- ✅ 读写权限，包含文件和数据库操作
+- ✅ 动词+最简词命名：run-sql
+- ✅ **统一流程**：创建临时脚本 → 执行 SQL → 删除临时脚本
 
 ---
 
@@ -217,13 +269,13 @@ allowed-tools:
 ## 参考型 Skill 自动触发
 ```
 用户：我想设计一个用户登录的 API 接口
-助手：[自动触发 api-convention] 根据 API 规范，建议使用 POST /auth/login...
+助手：[自动触发 api-rule] 根据 API 规范，建议使用 POST /auth/login...
 ```
 
 ## 任务型 Skill 手动触发
 ```
-用户：/create-component
-助手：[触发 create-component] 我将帮你创建组件，请选择组件类型...
+用户：/make-app
+助手：[触发 make-app] 我将帮你创建应用，请选择应用类型...
 ```
 
 ---
@@ -327,11 +379,19 @@ description: 创建符合项目规范的 React 组件，通过斜杠命令触发
 CreateComponent  # 大写字母
 create_component  # 下划线
 createComp       # 缩写
+api-ref          # 使用 -ref 后缀（旧规则）
+do-create        # 使用 do- 前缀（旧规则）
+api-convention  # 使用复杂词 convention
+create-component  # 使用复杂词 component
 ```
 
 ### ✅ 正确命名
 ```
-create-component  # 小写 + 连字符
+api-rule        # 参考型：名词+最简词
+style-guide     # 参考型：名词+最简词
+make-app         # 任务型：动词+最简词
+run-app          # 任务型：动词+最简词
+check-code       # 任务型：动词+最简词
 ```
 
 ---
@@ -350,7 +410,7 @@ create-component  # 小写 + 连字符
 - 用户选择：A. API 设计规范
 
 **第3题**：Skill 名称？
-- 系统建议：`api-convention`
+- 系统建议：`api-rule`
 - 用户确认：是
 
 **第4题**：权限配置？
@@ -360,7 +420,7 @@ create-component  # 小写 + 连字符
 **生成结果**：
 ```yaml
 ---
-name: api-convention
+name: api-rule
 description: 定义项目 RESTful API 设计规范，包含URL命名、响应格式、状态码与鉴权规则，在编写/审查接口、设计新API、确定请求响应格式时自动使用
 allowed-tools:
   - Read
@@ -377,13 +437,13 @@ allowed-tools:
 - 用户选择：B. 任务型 Skill（手动斜杠命令触发，执行动作）
 
 **第2题**：Skill 的主要用途是？
-- A. 创建组件
-- B. 部署服务
-- C. 代码审查
-- 用户选择：A. 创建组件
+- A. 创建应用
+- B. 部署应用
+- C. 检查代码
+- 用户选择：A. 创建应用
 
 **第3题**：Skill 名称？
-- 系统建议：`create-component`
+- 系统建议：`make-app`
 - 用户确认：是
 
 **第4题**：权限配置？
@@ -399,8 +459,8 @@ allowed-tools:
 **生成结果**：
 ```yaml
 ---
-name: create-component
-description: 创建符合项目规范的 React 组件，通过斜杠命令触发，用于快速生成标准化组件代码
+name: make-app
+description: 创建符合项目规范的应用，通过斜杠命令触发，用于快速生成标准化应用代码
 user-invocable: true
 disable-model-invocation: true
 allowed-tools:

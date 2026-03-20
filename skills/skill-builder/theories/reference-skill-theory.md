@@ -25,10 +25,12 @@ allowed-tools:
   - Glob
 ```
 
-## 5. 命名规范
-- 使用名词短语：`api-convention`、`code-style`
-- 强调知识领域：`architecture-guide`、`security-standard`
-- 避免动词开头（与任务型区分）
+## 5. 命名规范（名词+最简词）
+- **词性组合**：名词+最简词，强调知识领域
+- **示例**：`api-rule`（API规则）、`style-guide`（风格指南）、`git-flow`（Git流程）
+- **记忆口诀**：名词=知识
+- **命名模式**：`[领域]-[类型]`，如 `security-rule`、`arch-guide`
+- **简化原则**：使用最简单的单词（rule、guide、flow），避免复杂词汇
 
 ## 6. Frontmatter 配置
 ```yaml
@@ -58,7 +60,7 @@ allowed-tools:
 | 适用场景 | 规范/知识/标准 | 执行操作/部署/脚本 |
 | 权限配置 | 只读权限 | 读写权限 |
 | 关键配置 | 无需 disable-model-invocation | **必须** disable-model-invocation: true |
-| 命名规范 | 名词短语 | 动词开头 |
+| 命名规范 | 名词+名词 | 动词+名词 |
 | 副作用 | 无 | 可能有（文件修改、部署等） |
 
 ## 9. 最佳实践
@@ -86,7 +88,7 @@ allowed-tools:
 ### API 规范 Skill
 ```yaml
 ---
-name: api-convention
+name: api-rule
 description: 定义项目 RESTful API 设计规范，包含URL命名、响应格式、状态码与鉴权规则，在编写/审查接口、设计新API、确定请求响应格式时自动使用
 allowed-tools:
   - Read

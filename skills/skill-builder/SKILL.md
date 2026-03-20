@@ -40,7 +40,7 @@ allowed-tools:
 | 适用场景 | 规范、知识、风格、约定 |
 | 核心特点 | 无执行步骤，提供参考信息 |
 | 权限配置 | 只读权限（Read、Grep、Glob） |
-| 命名规范 | 名词短语：api-convention、code-style |
+| 命名规范 | 名词+最简词：api-rule、style-guide、git-flow |
 | 关键配置 | 无需 disable-model-invocation |
 
 ### 任务型 Skill（Task Skill）
@@ -50,8 +50,19 @@ allowed-tools:
 | 适用场景 | 执行操作、部署、脚本、流程 |
 | 核心特点 | 包含执行步骤，可能有副作用 |
 | 权限配置 | 读写权限（Read、Write、Edit、Bash） |
-| 命名规范 | 动词开头：create-component、deploy-service |
+| 命名规范 | 动词+最简词：make-app、run-app、check-code |
 | 关键配置 | **必须** disable-model-invocation: true |
+
+### 命名规则（动名词+最简词）
+| 类型 | 词性组合 | 示例 | 记忆口诀 |
+|------|---------|------|---------|
+| 参考型 | 名词+最简词 | api-rule、style-guide、git-flow | 名词=知识 |
+| 任务型 | 动词+最简词 | make-app、run-app、check-code | 动词=执行 |
+
+**简化原则**：
+- 使用最简单的单词（rule、guide、flow、make、run、check）
+- 避免复杂词汇（convention、component、service、review）
+- 易读易记，一看就懂
 
 ## 核心路由规则
 
