@@ -4,7 +4,16 @@
 
 ---
 
-## 一、四大基本元素详细定义
+## 核心理论
+
+本技能基于两大核心理论构建，详细内容请参考理论文件：
+
+- **[并行执行理论](./theories/parallel-execution.md)**：在保证质量的前提下，通过最大化并行处理来最短时间完成任务
+- **[质量保证理论](./theories/quality-guarantee.md)**：定义在并行执行过程中确保代码质量的理论框架
+
+---
+
+## 一、四大基本元素
 
 ### 1.1 团队类型 (Team Type)
 
@@ -19,23 +28,6 @@
 | `ops` | 运维团队 | 运维负责人、DevOps工程师、SRE | 部署发布、监控运维、故障处理 |
 | `design` | 设计团队 | 设计负责人、UI设计师、UX设计师 | 界面设计、交互设计、视觉设计 |
 | `mixed` | 混合团队 | 根据任务动态组合 | 跨职能协作、复杂项目 |
-
-**团队结构定义：**
-
-```yaml
-TeamType:
-  id: string              # 团队类型标识
-  name: string            # 团队类型名称
-  roles:                  # 角色列表
-    - id: string          # 角色标识
-      name: string        # 角色名称
-      skills: string[]    # 所需技能
-      responsibilities:   # 职责
-        - string
-  min_members: number     # 最少成员数
-  max_members: number     # 最多成员数
-  lead_role: string       # Lead角色
-```
 
 配置文件：`config/elements/team-types.yaml`
 
@@ -53,24 +45,6 @@ TeamType:
 | `hierarchical` | 层级协作 | 通过中心节点协调 | A → Lead → B | 大型团队、复杂项目 |
 | `pipeline` | 流水线协作 | 顺序传递，各司其职 | A → B → C → D | 标准化流程、CI/CD |
 
-**协作模式定义：**
-
-```yaml
-CollaborationMode:
-  id: string              # 模式标识
-  name: string            # 模式名称
-  description: string     # 模式描述
-  flow_pattern:           # 流向模式
-    type: enum            # one-way | two-way | network | hierarchical | pipeline
-    connections:          # 连接关系
-      - from: string
-        to: string
-        bidirectional: boolean
-  constraints:            # 约束条件
-    max_parallel: number  # 最大并行数
-    timeout: number       # 超时时间
-```
-
 配置文件：`config/elements/collaboration-modes.yaml`
 
 ---
@@ -86,15 +60,6 @@ CollaborationMode:
 | `interactive` | 交互式模式 | 50% | 用户频繁参与决策 | 复杂项目、创新需求 |
 | `guided` | 引导式模式 | 80% | AI 辅助，用户主导 | 探索性任务、学习场景 |
 | `manual` | 手动模式 | 100% | 用户完全控制 | 高风险操作、关键决策 |
-
-**决策点类型：**
-
-| 决策点类型 | 描述 | 示例 |
-|-----------|------|------|
-| `confirm` | 确认型决策 | 确认是否开始执行计划 |
-| `select` | 选择型决策 | 选择技术方案A或B |
-| `input` | 输入型决策 | 提供API密钥、配置参数 |
-| `review` | 审核型决策 | 审核代码变更、设计方案 |
 
 配置文件：`config/elements/human-ai-modes.yaml`
 
@@ -194,6 +159,25 @@ workflow:
 
 ---
 
+### 2.5 代码探索流程 (code-exploration)
+
+```yaml
+team:
+  type: mixed
+  members: [lead:1, explorer:3]
+collaboration:
+  mode: network
+human_ai:
+  mode: guided
+workflow:
+  type: parallel
+  stages: [目录结构, 核心模块, 依赖关系, 配置文件, 入口文件]
+```
+
+配置文件：`config/templates/code-exploration.yaml`
+
+---
+
 ## 三、配置模板间调用关系
 
 ```
@@ -234,22 +218,13 @@ workflow:
             返回 code_review
 ```
 
-**配置模板本质：**
-
-| 模板 | 团队类型 | 协作模式 | 人机协作 | 流程类型 |
-|------|---------|---------|---------|---------|
-| standard_dev | dev | hierarchical | key-node | hybrid |
-| bug_fix | mixed | network | interactive | iterative |
-| code_review | review | parallel | key-node | conditional |
-| auto_cicd | ops | pipeline | auto | serial |
-
 ---
 
 ## 四、质量保证机制
 
-### 4.1 强制性验证检查
+详细理论请参考 [theories/quality-guarantee.md](theories/quality-guarantee.md)
 
-**所有配置在报告任务完成前，都必须执行强制性验证检查：**
+### 4.1 强制性验证检查
 
 | 检查项 | 优先级 | 命令示例 | 通过标准 |
 |--------|--------|----------|----------|
@@ -274,8 +249,7 @@ workflow:
 
 ### 4.4 禁止行为
 
-**在验证检查通过前，禁止以下行为：**
-
+在验证检查通过前，禁止：
 1. ❌ 报告任务完成
 2. ❌ 提交代码到版本库
 3. ❌ 切换到其他配置
@@ -303,7 +277,13 @@ skills/agent-teams/                # 技能根目录
 │       ├── standard-dev.yaml      # 标准开发流程
 │       ├── bug-fix.yaml           # Bug修复流程
 │       ├── code-review.yaml       # 代码评审流程
+│       ├── code-exploration.yaml  # 代码探索流程
 │       └── auto-cicd.yaml         # 全自动CI/CD流程
+├── engine/                        # 执行引擎
+│   ├── README.md                  # 引擎概述
+│   ├── task-decomposer.md         # 任务分解器
+│   ├── dependency-analyzer.md     # 依赖分析器
+│   └── parallel-scheduler.md      # 并行调度器
 ├── theories/                      # 理论基础
 │   ├── parallel-execution.md      # 并行执行理论
 │   └── quality-guarantee.md       # 质量保证理论
@@ -337,175 +317,20 @@ skills/agent-teams/                # 技能根目录
 
 ---
 
-## 六、交付物留存机制
+## 六、动态组合规则
 
-### 6.1 交付物类型
-
-| 类型 | 目录 | 命名规则 |
-|------|------|----------|
-| 需求文档 | deliverables/requirements/ | [需求名称]-[日期].md |
-| 设计文档 | deliverables/designs/ | [设计名称]-[日期].md |
-| 执行计划 | deliverables/plans/ | [计划名称]-[日期].md |
-| 执行报告 | deliverables/reports/ | [报告名称]-[日期].md |
-| 评审报告 | deliverables/reviews/ | [评审名称]-[日期].md |
-
-### 6.2 留存时机
-
-| 阶段 | 留存内容 | 触发条件 |
-|------|----------|----------|
-| 规划阶段 | 需求文档、设计文档、执行计划 | 用户确认后 |
-| 执行阶段 | 中间产物、问题记录 | 每个阶段完成后 |
-| 输出阶段 | 执行报告、评审报告 | 任务完成后 |
-
-### 6.3 文档格式规范
-
-```markdown
-# [文档标题]
-
-**实例ID**: [实例ID]
-**创建时间**: [时间戳]
-**创建者**: [Teammate名称]
-**配置模板**: [模板名称]
-
----
-
-[文档内容]
-
----
-
-## 更新记录
-- [日期] [更新人]: [更新内容]
-```
-
----
-
-## 七、执行日志机制
-
-### 7.1 日志类型
-
-| 类型 | 目录 | 内容 |
-|------|------|------|
-| 执行日志 | logs/executions/ | 任务执行过程、状态变更、耗时 |
-| 决策日志 | logs/decisions/ | 用户决策、自动决策、决策依据 |
-| 质量日志 | logs/quality/ | 质量检查结果、失败原因、修复记录 |
-
-### 7.2 日志格式
-
-**执行日志：**
-```
-[时间戳] [日志级别] [实例ID] [阶段] [任务ID] [消息]
-```
-
-**决策日志：**
-```
-[时间戳] [决策类型] [决策点] [决策结果] [决策依据]
-```
-
-**质量日志：**
-```
-[时间戳] [检查类型] [任务ID] [结果] [详情]
-```
-
-### 7.3 日志级别
-
-| 级别 | 说明 |
-|------|------|
-| DEBUG | 详细调试信息 |
-| INFO | 正常执行信息（默认） |
-| WARN | 警告信息 |
-| ERROR | 错误信息 |
-| CRITICAL | 严重错误 |
-
----
-
-## 八、执行实例结构
-
-```yaml
-ExecutionInstance:
-  id: string
-  created_at: timestamp
-  status: enum                  # pending | running | completed | failed
-  
-  configuration:
-    team: TeamType
-    collaboration: CollaborationMode
-    human_ai: HumanAICollaboration
-    workflow: WorkflowType
-  
-  team_instance:
-    lead: AgentInstance
-    members: AgentInstance[]
-  
-  parallel_plan:
-    dependency_graph:
-      nodes: TaskNode[]
-      edges: DependencyEdge[]
-    execution_groups:
-      - group_id: string
-        tasks: string[]
-        status: enum
-        assigned_teammates:
-          - task_id: string
-            teammate_id: string
-    critical_path: string[]
-    max_parallelism: number
-  
-  execution:
-    current_stage: string
-    current_parallel_group: string
-    completed_stages: string[]
-    pending_stages: string[]
-    running_tasks: string[]
-    completed_tasks: string[]
-    decision_history:
-      - stage: string
-        decision: string
-        timestamp: timestamp
-  
-  parallel_monitoring:
-    active_teammates: string[]
-    resource_locks:
-      - resource: string
-        locked_by: string
-        lock_time: timestamp
-    task_progress:
-      - task_id: string
-        status: enum
-        progress: number
-        start_time: timestamp
-        estimated_end: timestamp
-    conflict_log:
-      - timestamp: timestamp
-        conflict_type: string
-        resolution: string
-  
-  results:
-    artifacts: string[]
-    reports: string[]
-    metrics:
-      duration: number
-      tasks_completed: number
-      user_interactions: number
-      parallel_efficiency: number
-      max_concurrent_tasks: number
-      time_saved_by_parallel: number
-```
-
----
-
-## 九、动态组合规则
-
-### 9.1 组合决策树
+### 6.1 组合决策树
 
 ```
 任务类型?
 ├── 开发类 → 团队:dev | 协作:层级 | 人机:关键节点 | 流程:混合
 ├── 修复类 → 团队:mixed | 协作:网络 | 人机:交互式 | 流程:迭代
 ├── 评审类 → 团队:review | 协作:并行 | 人机:关键节点 | 流程:条件
+├── 探索类 → 团队:mixed | 协作:网络 | 人机:引导式 | 流程:并行
 └── 部署类 → 团队:ops | 协作:流水线 | 人机:全自动 | 流程:串行
 ```
 
-### 9.2 风险调整
+### 6.2 风险调整
 
 | 风险等级 | 人机协作调整 | 流程调整 |
 |---------|-------------|---------|
@@ -513,7 +338,7 @@ ExecutionInstance:
 | 中 | key-node | hybrid |
 | 低 | auto | serial |
 
-### 9.3 团队规模调整
+### 6.3 团队规模调整
 
 | 规模 | 协作模式调整 |
 |------|-------------|
@@ -523,7 +348,7 @@ ExecutionInstance:
 
 ---
 
-## 十、核心设计原则
+## 七、核心设计原则
 
 | 原则 | 描述 |
 |------|------|

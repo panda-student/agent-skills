@@ -1,0 +1,271 @@
+template:
+  id: code-exploration
+  name: 代码探索流程
+  description: 适用于代码库探索、架构分析、代码理解等场景
+
+execution_engine:
+  enabled: true
+  auto_decompose: true
+  auto_analyze: true
+  auto_schedule: true
+
+decomposition:
+  trigger_keywords:
+    - 探索
+    - 分析
+    - 了解
+    - 查看
+    - 理解
+    - 研究
+    - 熟悉
+    - 梳理
+    
+  rules:
+    - stage: 探索
+      tasks:
+        - id: T1
+          name: 目录结构探索
+          file_scope: "根目录"
+          output: "目录树结构说明"
+          complexity: low
+          agent_prompt: |
+            你是一个专门执行目录结构探索任务的 Agent。
+            
+            ## 任务目标
+            探索代码库的目录结构，理解项目组织方式
+            
+            ## 文件范围
+            根目录及其子目录
+            
+            ## 输出要求
+            - 目录树结构图
+            - 各目录职责说明
+            - 项目组织特点
+            
+        - id: T2
+          name: 核心模块探索
+          file_scope: "src/core/, src/main/, lib/, core/"
+          output: "核心模块职责说明"
+          complexity: medium
+          agent_prompt: |
+            你是一个专门执行核心模块探索任务的 Agent。
+            
+            ## 任务目标
+            探索代码库的核心模块，理解核心业务逻辑
+            
+            ## 文件范围
+            src/core/, src/main/, lib/, core/ 等核心目录
+            
+            ## 输出要求
+            - 核心模块列表
+            - 各模块职责说明
+            - 模块间依赖关系
+            
+        - id: T3
+          name: 依赖关系探索
+          file_scope: "package.json, requirements.txt, pom.xml, Cargo.toml, go.mod"
+          output: "依赖图谱"
+          complexity: low
+          agent_prompt: |
+            你是一个专门执行依赖关系探索任务的 Agent。
+            
+            ## 任务目标
+            探索项目的依赖关系，理解技术栈
+            
+            ## 文件范围
+            package.json, requirements.txt, pom.xml, Cargo.toml, go.mod 等依赖文件
+            
+            ## 输出要求
+            - 依赖列表
+            - 依赖分类（核心/开发/测试）
+            - 技术栈说明
+            
+        - id: T4
+          name: 配置文件探索
+          file_scope: "*.config.*, *.yaml, *.json, .env*, config/"
+          output: "配置项说明"
+          complexity: low
+          agent_prompt: |
+            你是一个专门执行配置文件探索任务的 Agent。
+            
+            ## 任务目标
+            探索项目的配置文件，理解配置项
+            
+            ## 文件范围
+            *.config.*, *.yaml, *.json, .env*, config/ 等配置文件
+            
+            ## 输出要求
+            - 配置文件列表
+            - 各配置项说明
+            - 环境配置说明
+            
+        - id: T5
+          name: 入口文件探索
+          file_scope: "main.*, index.*, app.*, server.*, src/index.*"
+          output: "入口逻辑说明"
+          complexity: medium
+          agent_prompt: |
+            你是一个专门执行入口文件探索任务的 Agent。
+            
+            ## 任务目标
+            探索项目的入口文件，理解启动流程
+            
+            ## 文件范围
+            main.*, index.*, app.*, server.*, src/index.* 等入口文件
+            
+            ## 输出要求
+            - 入口文件位置
+            - 启动流程说明
+            - 初始化逻辑说明
+            
+        - id: T6
+          name: API接口探索
+          file_scope: "api/, routes/, controllers/, handlers/, src/api/"
+          output: "API接口文档"
+          complexity: medium
+          agent_prompt: |
+            你是一个专门执行API接口探索任务的 Agent。
+            
+            ## 任务目标
+            探索项目的API接口，理解接口设计
+            
+            ## 文件范围
+            api/, routes/, controllers/, handlers/, src/api/ 等API相关目录
+            
+            ## 输出要求
+            - API接口列表
+            - 接口路径和方法
+            - 接口功能说明
+            
+        - id: T7
+          name: 数据模型探索
+          file_scope: "models/, entities/, schemas/, src/models/"
+          output: "数据模型说明"
+          complexity: medium
+          agent_prompt: |
+            你是一个专门执行数据模型探索任务的 Agent。
+            
+            ## 任务目标
+            探索项目的数据模型，理解数据结构
+            
+            ## 文件范围
+            models/, entities/, schemas/, src/models/ 等数据模型目录
+            
+            ## 输出要求
+            - 数据模型列表
+            - 各模型字段说明
+            - 模型间关系说明
+            
+        - id: T8
+          name: 测试文件探索
+          file_scope: "tests/, test/, __tests__/, *.test.*, *.spec.*"
+          output: "测试覆盖说明"
+          complexity: low
+          agent_prompt: |
+            你是一个专门执行测试文件探索任务的 Agent。
+            
+            ## 任务目标
+            探索项目的测试文件，理解测试覆盖
+            
+            ## 文件范围
+            tests/, test/, __tests__/, *.test.*, *.spec.* 等测试文件
+            
+            ## 输出要求
+            - 测试文件列表
+            - 测试类型说明
+            - 测试覆盖情况
+
+dependency_analysis:
+  dependencies: []
+  
+  parallel_groups:
+    - group: 1
+      type: parallel
+      tasks: [T1, T2, T3, T4, T5, T6, T7, T8]
+      file_isolation:
+        T1: "根目录结构"
+        T2: "src/core/, src/main/, lib/"
+        T3: "依赖配置文件"
+        T4: "配置文件"
+        T5: "入口文件"
+        T6: "api/, routes/, controllers/"
+        T7: "models/, entities/, schemas/"
+        T8: "tests/, test/"
+      note: "所有探索任务无依赖，可全部并行执行"
+
+parallel_scheduling:
+  max_parallelism: 8
+  launch_rule: "simultaneous"
+  conflict_detection: true
+  
+  quality_gates:
+    - after_group: 1
+      checks:
+        - exploration_complete
+        - no_conflicts
+
+result_aggregation:
+  strategy: merge
+  output_format: |
+    # 代码库探索报告
+    
+    ## 1. 目录结构
+    {T1.output}
+    
+    ## 2. 核心模块
+    {T2.output}
+    
+    ## 3. 依赖关系
+    {T3.output}
+    
+    ## 4. 配置文件
+    {T4.output}
+    
+    ## 5. 入口文件
+    {T5.output}
+    
+    ## 6. API接口
+    {T6.output}
+    
+    ## 7. 数据模型
+    {T7.output}
+    
+    ## 8. 测试覆盖
+    {T8.output}
+    
+    ## 总结
+    [综合分析结果]
+
+team:
+  type: mixed
+  members:
+    - role: lead
+      count: 1
+    - role: explorer
+      count: 8
+
+collaboration:
+  mode: network
+  rules:
+    - condition: "探索任务分配"
+      action: "lead分配探索范围给explorer"
+    - condition: "结果汇总"
+      action: "所有explorer汇报给lead"
+
+human_ai:
+  mode: auto
+  decision_points:
+    - stage: completion
+      type: review
+      required: false
+      description: "查看探索结果"
+
+deliverables:
+  - type: report
+    path: deliverables/explorations/
+    format: "[项目名称]-探索报告-[日期].md"
+
+logging:
+  execution_log: logs/executions/
+  decision_log: logs/decisions/
+  quality_log: logs/quality/

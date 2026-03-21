@@ -3,6 +3,267 @@ template:
   name: 标准开发流程
   description: 适用于常规功能开发的标准流程
 
+execution_engine:
+  enabled: true
+  auto_decompose: true
+  auto_analyze: true
+  auto_schedule: true
+
+decomposition:
+  trigger_keywords:
+    - 开发
+    - 实现
+    - 新增
+    - 添加
+    - 重构
+    - 修改
+    - 创建
+    
+  rules:
+    - stage: 需求分析
+      tasks:
+        - id: T1
+          name: 需求分析
+          file_scope: "docs/"
+          output: "需求文档"
+          complexity: medium
+          agent_prompt: |
+            你是一个专门执行需求分析任务的 Agent。
+            
+            ## 任务目标
+            分析用户需求，生成需求文档
+            
+            ## 文件范围
+            docs/requirements/
+            
+            ## 输出要求
+            - 功能需求列表
+            - 非功能需求
+            - 验收标准
+            - 风险评估
+            
+    - stage: 设计
+      tasks:
+        - id: T2
+          name: API设计
+          file_scope: "docs/api/"
+          output: "API文档"
+          complexity: medium
+          agent_prompt: |
+            你是一个专门执行API设计任务的 Agent。
+            
+            ## 任务目标
+            设计API接口，生成API文档
+            
+            ## 文件范围
+            docs/api/
+            
+            ## 输入
+            需求文档: {T1.output}
+            
+            ## 输出要求
+            - API路径设计
+            - 请求/响应格式
+            - 错误码定义
+            
+        - id: T3
+          name: 数据库设计
+          file_scope: "docs/db/"
+          output: "数据库设计"
+          complexity: medium
+          agent_prompt: |
+            你是一个专门执行数据库设计任务的 Agent。
+            
+            ## 任务目标
+            设计数据库表结构
+            
+            ## 文件范围
+            docs/db/
+            
+            ## 输入
+            需求文档: {T1.output}
+            
+            ## 输出要求
+            - 表结构设计
+            - 索引设计
+            - 关系图
+            
+        - id: T4
+          name: UI设计
+          file_scope: "docs/ui/"
+          output: "UI设计稿"
+          complexity: medium
+          agent_prompt: |
+            你是一个专门执行UI设计任务的 Agent。
+            
+            ## 任务目标
+            设计用户界面
+            
+            ## 文件范围
+            docs/ui/
+            
+            ## 输入
+            需求文档: {T1.output}
+            
+            ## 输出要求
+            - 界面布局
+            - 交互流程
+            - 样式规范
+            
+    - stage: 开发
+      tasks:
+        - id: T5
+          name: 前端开发
+          file_scope: "src/frontend/"
+          output: "前端代码"
+          complexity: high
+          agent_prompt: |
+            你是一个专门执行前端开发任务的 Agent。
+            
+            ## 任务目标
+            实现前端功能
+            
+            ## 文件范围
+            src/frontend/
+            
+            ## 输入
+            UI设计: {T4.output}
+            API文档: {T2.output}
+            
+            ## 输出要求
+            - 组件代码
+            - 样式代码
+            - 测试代码
+            
+        - id: T6
+          name: 后端开发
+          file_scope: "src/backend/"
+          output: "后端代码"
+          complexity: high
+          agent_prompt: |
+            你是一个专门执行后端开发任务的 Agent。
+            
+            ## 任务目标
+            实现后端功能
+            
+            ## 文件范围
+            src/backend/
+            
+            ## 输入
+            API文档: {T2.output}
+            数据库设计: {T3.output}
+            
+            ## 输出要求
+            - API实现代码
+            - 数据库操作代码
+            - 测试代码
+            
+    - stage: 测试
+      tasks:
+        - id: T7
+          name: 单元测试
+          file_scope: "tests/unit/"
+          output: "测试代码"
+          complexity: medium
+          agent_prompt: |
+            你是一个专门执行单元测试任务的 Agent。
+            
+            ## 任务目标
+            编写单元测试
+            
+            ## 文件范围
+            tests/unit/
+            
+            ## 输入
+            前端代码: {T5.output}
+            后端代码: {T6.output}
+            
+            ## 输出要求
+            - 测试用例
+            - 测试覆盖率报告
+
+dependency_analysis:
+  dependencies:
+    - from: T1
+      to: [T2, T3, T4]
+      type: hard
+      reason: "设计阶段需要需求文档作为输入"
+      
+    - from: T2
+      to: [T5, T6]
+      type: hard
+      reason: "开发需要API文档"
+      
+    - from: T3
+      to: [T6]
+      type: hard
+      reason: "后端开发需要数据库设计"
+      
+    - from: T4
+      to: [T5]
+      type: hard
+      reason: "前端开发需要UI设计"
+      
+    - from: T5
+      to: [T7]
+      type: hard
+      reason: "测试需要前端代码"
+      
+    - from: T6
+      to: [T7]
+      type: hard
+      reason: "测试需要后端代码"
+      
+  parallel_groups:
+    - group: 1
+      type: serial
+      tasks: [T1]
+      
+    - group: 2
+      type: parallel
+      tasks: [T2, T3, T4]
+      file_isolation:
+        T2: "docs/api/"
+        T3: "docs/db/"
+        T4: "docs/ui/"
+        
+    - group: 3
+      type: parallel
+      tasks: [T5, T6]
+      file_isolation:
+        T5: "src/frontend/"
+        T6: "src/backend/"
+        
+    - group: 4
+      type: serial
+      tasks: [T7]
+
+parallel_scheduling:
+  max_parallelism: 3
+  launch_rule: "simultaneous"
+  conflict_detection: true
+  
+  quality_gates:
+    - after_group: 1
+      checks:
+        - requirement_document_complete
+        
+    - after_group: 2
+      checks:
+        - design_document_complete
+        - design_review_passed
+        
+    - after_group: 3
+      checks:
+        - compile_passed
+        - typecheck_passed
+        - lint_passed
+        
+    - after_group: 4
+      checks:
+        - test_coverage_met
+        - all_tests_passed
+
 team:
   type: dev
   members:
@@ -38,104 +299,6 @@ human_ai:
       type: review
       required: true
       description: "审核完成结果"
-
-workflow:
-  type: hybrid
-  stages:
-    - id: requirement
-      name: 需求分析
-      execution: serial
-      tasks:
-        - analyze_requirements
-        - clarify_scope
-        - identify_dependencies
-      dependencies: []
-      quality_gate:
-        checks:
-          - requirement_document_complete
-        action: "用户确认需求文档"
-
-    - id: design
-      name: 设计阶段
-      execution: parallel
-      tasks:
-        - api_design
-        - database_design
-        - ui_design
-      dependencies:
-        - requirement
-      quality_gate:
-        checks:
-          - design_document_complete
-          - design_review_passed
-        action: "用户审核设计方案"
-
-    - id: development
-      name: 开发阶段
-      execution: parallel
-      tasks:
-        - frontend_development
-        - backend_development
-      dependencies:
-        - design
-      quality_gate:
-        checks:
-          - compile_passed
-          - typecheck_passed
-          - lint_passed
-        action: "自动质量检查"
-
-    - id: integration
-      name: 集成阶段
-      execution: serial
-      tasks:
-        - integrate_components
-        - integration_test
-      dependencies:
-        - development
-      quality_gate:
-        checks:
-          - integration_test_passed
-        action: "自动集成测试"
-
-    - id: testing
-      name: 测试阶段
-      execution: parallel
-      tasks:
-        - unit_test
-        - e2e_test
-      dependencies:
-        - integration
-      quality_gate:
-        checks:
-          - test_coverage_met
-          - all_tests_passed
-        action: "自动测试验证"
-
-    - id: delivery
-      name: 交付阶段
-      execution: serial
-      tasks:
-        - code_review
-        - documentation
-        - deployment
-      dependencies:
-        - testing
-      quality_gate:
-        checks:
-          - final_review_passed
-          - docs_complete
-        action: "用户最终审核"
-
-parallel_execution:
-  max_parallelism: 3
-  resource_conflict:
-    file_exclusive: true
-    module_exclusive: true
-  quality_integration:
-    - rule: "每个阶段完成后立即执行质量验证"
-    - rule: "质量验证可并行执行"
-    - rule: "质量门不通过则阻塞后续任务"
 
 deliverables:
   - type: requirement

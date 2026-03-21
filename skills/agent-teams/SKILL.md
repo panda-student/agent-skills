@@ -1,145 +1,163 @@
 ---
 name: agent-teams
-description: 多Agent协作技能，通过四大基本元素自由组合适应复杂开发需求。Invoke when: 开发任务、Bug修复、代码评审、自动化部署、或需要团队协作的复杂任务。
+description: 多Agent并行协作、团队编排、任务分解、依赖分析、并行调度、执行引擎，在开发任务、Bug修复、代码评审、自动化部署、代码探索、团队协作、复杂任务处理时自动触发，通过斜杠命令 /agent-teams 手动调用，用于最大化并行执行效率、保证交付质量
+user-invocable: true
+disable-model-invocation: true
+allowed-tools:
+  - Read
+  - Write
+  - Grep
+  - Glob
+  - LS
+  - SearchCodebase
+  - Task
+  - AskUserQuestion
+  - RunCommand
+  - TodoWrite
 ---
 
-# Agent Teams
+你是**Agent Teams 并行执行引擎**，定位为智能路由器，通过高信息密度的路由表引导多Agent协作执行复杂任务。
 
 **核心目标：在保证质量的前提下，最短时间完成任务**
 
+---
+
+## 路由表
+
+| 触发条件 | 资源路径 | 内容预期 |
+|---------|---------|---------|
+| 查看执行引擎 | [engine/README.md](engine/README.md) | 并行执行核心模块 |
+| 查看任务分解器 | [engine/task-decomposer.md](engine/task-decomposer.md) | 任务分解算法 |
+| 查看依赖分析器 | [engine/dependency-analyzer.md](engine/dependency-analyzer.md) | 依赖分析算法 |
+| 查看并行调度器 | [engine/parallel-scheduler.md](engine/parallel-scheduler.md) | 并行调度算法 |
+| 查看详细规范 | [reference.md](reference.md) | 四大元素、配置模板、质量保证 |
+| 查看使用示例 | [examples.md](examples.md) | 场景演示、执行流程 |
+| 查看并行理论 | [theories/parallel-execution.md](theories/parallel-execution.md) | 并行处理策略 |
+| 查看质量理论 | [theories/quality-guarantee.md](theories/quality-guarantee.md) | 质量门机制 |
+
+---
+
 ## 快速路由
 
-| 任务类型 | 关键词 | 配置模板 |
-|---------|--------|---------|
-| 功能开发 | 开发、实现、新增、重构、添加 | `standard-dev` |
-| Bug修复 | bug、修复、问题、错误、缺陷 | `bug-fix` |
-| 代码评审 | 评审、检查、审查、审计 | `code-review` |
-| 自动部署 | 部署、发布、CI/CD、自动化 | `auto-cicd` |
+| 任务类型 | 关键词 | 配置模板 | 并行度 |
+|---------|--------|---------|--------|
+| 代码探索 | 探索、分析、了解、查看、研究 | `code-exploration` | 8 |
+| 功能开发 | 开发、实现、新增、重构、添加 | `standard-dev` | 3 |
+| Bug修复 | bug、修复、问题、错误、缺陷 | `bug-fix` | 3 |
+| 代码评审 | 评审、检查、审查、审计 | `code-review` | 4 |
+| 自动部署 | 部署、发布、CI/CD、自动化 | `auto-cicd` | 2 |
 
 ---
 
-## 触发流程
-
-### 步骤一：创建团队（强制）
+## 执行流程（强制遵循）
 
 ```
-📋 正在创建团队...
-✅ 团队已创建：
-- Lead: [协调者]
-- Teammate 1-3+: [角色]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+用户请求
+    │
+    ▼
+┌─────────────────┐
+│ 1. 任务分解      │ ← 识别任务类型，生成子任务列表
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ 2. 依赖分析      │ ← 构建依赖图，划分并行执行组
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ 3. 并行调度      │ ← 同时启动多个 agent 执行
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ 4. 结果聚合      │ ← 汇总结果，执行质量检查
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ 5. 输出交付      │ ← 生成报告，交付产物
+└─────────────────┘
 ```
-
-### 步骤二：匹配配置
-
-**需求明确 → 自动匹配**
-
-```
-📋 分析需求 → ✅ 匹配配置：[模板名称]
-👉 加载配置：.claude/config/templates/[文件名].yaml
-```
-
-**需求不明确 → 用户选择**
-
-```
-AskUserQuestion:
-  question: "请选择执行配置："
-  options:
-    - "📦 标准开发流程"
-    - "🐛 Bug修复流程"
-    - "🔍 代码评审流程"
-    - "🚀 全自动CI/CD流程"
-    - "⚙️ 自定义组合"
-```
-
-### 步骤三：执行循环
-
-```
-a. 识别并行任务组 → b. 分配给Teammates → c. 并行执行 → d. 质量门验证 → e. 下一批
-```
-
-### 步骤四：输出与转换
-
-```
-🎉 执行完成 → 📊 结果汇总 → 📦 交付物 → 🔄 可切换配置
-```
-
----
-
-## 四大基本元素
-
-| 元素 | 类型 | 说明 |
-|------|------|------|
-| **团队类型** | product/dev/test/review/ops/design/mixed | 角色构成 |
-| **协作模式** | one-way/two-way/network/hierarchical/pipeline | 信息流向 |
-| **人机协作** | auto/key-node/interactive/guided/manual | 用户参与度 |
-| **流程类型** | serial/parallel/hybrid/iterative/conditional | 执行顺序 |
-
-详细定义 → [reference.md](reference.md)
-
----
-
-## 质量保证
-
-**强制检查项（P0）：**
-- 代码编译 ✅
-- 类型检查 ✅
-- 单元测试 ✅
-
-**禁止行为（验证通过前）：**
-- ❌ 报告完成 / ❌ 提交代码 / ❌ 切换配置
-
-详细规范 → [reference.md#质量保证机制](reference.md#质量保证机制)
-
----
-
-## 工作目录
-
-```
-.claude/
-├── config/elements/     # 基本元素定义
-├── config/templates/    # 预设模板
-├── deliverables/        # 交付物留存
-├── logs/                # 执行日志
-└── instances/           # 实例数据
-```
-
-详细结构 → [reference.md#工作目录结构](reference.md#工作目录结构)
-
----
-
-## 配置模板间调用
-
-```
-standard_dev → code_review → [通过:完成 | 需修改:bug_fix | 不通过:standard_dev]
-                        ↓
-                    bug_fix → code_review
-```
-
-详细流程 → [reference.md#配置模板间调用关系](reference.md#配置模板间调用关系)
-
----
-
-## 附录资源
-
-| 资源 | 用途 | 路径 |
-|------|------|------|
-| 详细规范 | 完整定义和规范 | [reference.md](reference.md) |
-| 示例文档 | 使用示例 | [examples.md](examples.md) |
-| 并行执行理论 | 并行处理策略 | [theories/parallel-execution.md](theories/parallel-execution.md) |
-| 质量保证理论 | 质量门机制 | [theories/quality-guarantee.md](theories/quality-guarantee.md) |
-| 执行计划模板 | 计划文档模板 | [templates/plan-template.md](templates/plan-template.md) |
-| 执行报告模板 | 报告文档模板 | [templates/report-template.md](templates/report-template.md) |
 
 ---
 
 ## 核心原则
 
-| 原则 | 描述 |
-|------|------|
-| **并行优先** | 最大化并行，最短时间完成 |
-| **质量优先** | 质量是底线，必须通过 |
-| **文件隔离** | 不同文件集，避免冲突 |
-| **模块隔离** | 不同模块，职责清晰 |
-| **状态同步** | 实时监控，及时处理 |
-| **灵活组合** | 自由组合，适应场景 |
+| 原则 | 描述 | 强制性 |
+|------|------|--------|
+| **并行优先** | 最大化并行，最短时间完成 | ✅ 必须 |
+| **任务分解** | 所有任务必须分解到可并行粒度 | ✅ 必须 |
+| **文件隔离** | 不同 agent 操作不同文件集 | ✅ 必须 |
+| **质量优先** | 质量是底线，必须通过 | ✅ 必须 |
+| **状态同步** | 实时监控，及时处理异常 | ✅ 必须 |
+
+---
+
+## 任务分解规则
+
+详细算法请参考 [engine/task-decomposer.md](engine/task-decomposer.md)
+
+### 探索类任务
+```
+T1: 目录结构探索 → 根目录
+T2: 核心模块探索 → src/core/
+T3: 依赖关系探索 → package.json
+T4: 配置文件探索 → *.config.*
+T5: 入口文件探索 → main.*, index.*
+→ 并行执行组1（无依赖）
+```
+
+### 开发类任务
+```
+T1: 需求分析 → 无依赖
+T2, T3, T4: 设计阶段 → 依赖 T1
+T5, T6: 开发阶段 → 依赖 T2, T3, T4
+T7: 测试阶段 → 依赖 T5, T6
+→ 组1串行 → 组2并行 → 组3并行 → 组4串行
+```
+
+### 修复类任务
+```
+T1, T2, T3: 分析阶段 → 无依赖，并行
+T4: 修复实施 → 依赖分析结果
+T5: 验证测试 → 依赖 T4
+→ 组1并行 → 组2串行 → 组3串行
+```
+
+---
+
+## 质量保证机制
+
+详细规范请参考 [theories/quality-guarantee.md](theories/quality-guarantee.md)
+
+### 强制性验证检查
+
+| 检查项 | 优先级 | 命令示例 |
+|--------|--------|----------|
+| 代码编译 | P0 | `npm run build` |
+| 类型检查 | P0 | `npm run typecheck` |
+| 代码规范 | P1 | `npm run lint` |
+| 单元测试 | P0 | `npm test` |
+
+### 禁止行为
+
+在验证检查通过前，禁止：
+1. ❌ 报告任务完成
+2. ❌ 提交代码到版本库
+3. ❌ 切换到其他配置
+4. ❌ 结束当前任务
+
+---
+
+## 配置模板
+
+详细配置请参考 [reference.md](reference.md)
+
+| 模板 | 团队类型 | 协作模式 | 人机协作 | 流程类型 |
+|------|---------|---------|---------|---------|
+| standard-dev | dev | hierarchical | key-node | hybrid |
+| bug-fix | mixed | network | interactive | iterative |
+| code-review | review | parallel | key-node | conditional |
+| auto-cicd | ops | pipeline | auto | serial |
+| code-exploration | mixed | network | guided | parallel |
