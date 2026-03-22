@@ -470,3 +470,279 @@ allowed-tools:
   - AskUserQuestion
 ---
 ```
+
+---
+
+# 知识预编译封装示例
+
+## 示例 1：验证检查类封装
+
+### 场景
+项目需要频繁执行代码质量检查，包括 lint、typecheck、test。
+
+### 封装方案
+```json
+// package.json
+{
+  "scripts": {
+    "lint": "eslint src/ --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit",
+    "test": "jest --passWithNoTests",
+    "test:all": "npm run lint && npm run typecheck && npm run test"
+  }
+}
+```
+
+### Skill 中使用
+```markdown
+## 代码检查
+执行完整检查：`npm run test:all`
+
+单独检查：
+- 代码规范：`npm run lint`
+- 类型检查：`npm run typecheck`
+- 单元测试：`npm run test`
+```
+
+### 收益
+- 执行时间：从 5 分钟推理 → 30 秒执行
+- 稳定性：结果一致可预测
+- 可维护性：集中管理检查规则
+
+---
+
+## 示例 2：构建部署类封装
+
+### 场景
+项目需要标准化构建和部署流程。
+
+### 封装方案
+```bash
+#!/bin/bash
+# scripts/build.sh
+
+set -e
+
+echo "🔨 开始构建..."
+
+# 1. 执行检查
+npm run test:all
+
+# 2. 清理旧构建
+rm -rf dist/
+
+# 3. 执行构建
+npm run build
+
+# 4. 生成版本信息
+echo "{\"version\": \"$(git describe --tags)\", \"commit\": \"$(git rev-parse HEAD)\"}" > dist/version.json
+
+echo "✅ 构建完成"
+```
+
+### Skill 中使用
+```markdown
+## 构建流程
+执行构建：`./scripts/build.sh`
+
+构建产物：
+- dist/ 目录
+- dist/version.json 版本信息
+```
+
+---
+
+## 示例 3：代码生成类封装
+
+### 场景
+需要频繁创建标准化的 React 组件。
+
+### 封装方案
+```bash
+#!/bin/bash
+# scripts/gen-component.sh
+
+set -e
+
+NAME=$1
+if [ -z "$NAME" ]; then
+  echo "用法: ./scripts/gen-component.sh <组件名>"
+  exit 1
+fi
+
+COMPONENT_DIR="src/components/${NAME}"
+mkdir -p "${COMPONENT_DIR}"
+
+# 生成组件文件
+cat > "${COMPONENT_DIR}/${NAME}.tsx" << EOF
+import React from 'react';
+import styles from './${NAME}.module.css';
+
+export interface ${NAME}Props {
+  children?: React.ReactNode;
+}
+
+export const ${NAME}: React.FC<${NAME}Props> = ({ children }) => {
+  return (
+    <div className={styles.container}>
+      {children}
+    </div>
+  );
+};
+
+export default ${NAME};
+EOF
+
+# 生成样式文件
+cat > "${COMPONENT_DIR}/${NAME}.module.css" << EOF
+.container {
+  /* 样式定义 */
+}
+EOF
+
+# 生成索引文件
+cat > "${COMPONENT_DIR}/index.ts" << EOF
+export { ${NAME} } from './${NAME}';
+export type { ${NAME}Props } from './${NAME}';
+EOF
+
+echo "✅ 组件 ${NAME} 创建成功"
+```
+
+### Skill 中使用
+```markdown
+## 组件生成
+创建组件：`./scripts/gen-component.sh Button`
+
+生成文件：
+- src/components/Button/Button.tsx
+- src/components/Button/Button.module.css
+- src/components/Button/index.ts
+```
+
+---
+
+## 示例 4：Git 操作类封装
+
+### 场景
+需要规范化的 Git 提交流和版本发布流程。
+
+### 封装方案
+```bash
+#!/bin/bash
+# scripts/release.sh
+
+set -e
+
+# 检查工作区状态
+if [ -n "$(git status --porcelain)" ]; then
+  echo "❌ 存在未提交的更改"
+  exit 1
+fi
+
+# 检查当前分支
+CURRENT_BRANCH=$(git branch --show-current)
+if [ "$CURRENT_BRANCH" != "main" ]; then
+  echo "❌ 请在 main 分支执行发布"
+  exit 1
+fi
+
+# 执行测试
+npm run test:all
+
+# 获取版本号
+VERSION=$(node -p "require('./package.json').version")
+TAG="v${VERSION}"
+
+# 创建标签
+git tag -a "${TAG}" -m "Release ${TAG}"
+git push origin "${TAG}"
+
+echo "✅ 发布标签 ${TAG} 创建成功"
+```
+
+### Skill 中使用
+```markdown
+## 版本发布
+执行发布：`./scripts/release.sh`
+
+发布流程：
+1. 检查工作区状态
+2. 确认 main 分支
+3. 执行测试
+4. 创建版本标签
+5. 推送标签到远程
+```
+
+---
+
+## 示例 5：环境配置类封装
+
+### 场景
+新成员加入项目需要快速配置开发环境。
+
+### 封装方案
+```bash
+#!/bin/bash
+# scripts/setup.sh
+
+set -e
+
+echo "🚀 开始配置开发环境..."
+
+# 1. 检查 Node 版本
+NODE_VERSION=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
+if [ "$NODE_VERSION" -lt 18 ]; then
+  echo "❌ 需要 Node.js 18 或更高版本"
+  exit 1
+fi
+
+# 2. 安装依赖
+echo "📦 安装依赖..."
+npm install
+
+# 3. 复制环境变量模板
+if [ ! -f ".env" ]; then
+  cp .env.example .env
+  echo "📝 已创建 .env 文件，请配置环境变量"
+fi
+
+# 4. 创建必要目录
+mkdir -p .tmp
+mkdir -p logs
+
+# 5. 初始化 Git Hooks
+npm run prepare
+
+echo "✅ 开发环境配置完成"
+echo "下一步："
+echo "  1. 配置 .env 文件"
+echo "  2. 运行 npm run dev 启动开发服务器"
+```
+
+### Skill 中使用
+```markdown
+## 环境配置
+初始化环境：`./scripts/setup.sh`
+
+配置步骤：
+1. 检查 Node.js 版本
+2. 安装项目依赖
+3. 创建环境变量文件
+4. 初始化 Git Hooks
+```
+
+---
+
+## 封装决策示例
+
+### 场景分析
+
+| 场景 | 频率 | 确定性 | 决策 | 封装方式 |
+|------|------|--------|------|---------|
+| 代码检查 | 高 | 高 | P0 优先封装 | npm script |
+| 项目构建 | 高 | 高 | P0 优先封装 | shell 脚本 |
+| 组件生成 | 中 | 高 | P2 建议封装 | shell 脚本 |
+| 环境配置 | 低 | 高 | P3 可选封装 | shell 脚本 |
+| 架构建议 | 中 | 低 | P4 不封装 | AI 推理 |
+| 创意设计 | 低 | 低 | P4 不封装 | AI 推理 |
