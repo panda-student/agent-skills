@@ -17,7 +17,7 @@ allowed-tools:
 
 | 触发条件 | 资源路径 | 内容预期 |
 |---------|---------|---------|
-| 查看核心理论 | [theories/](./theories/) | 渐进式披露、任务型/参考型理论、单一职责原则 |
+| 查看核心理论 | [theories/](./theories/) | 渐进式披露、任务型/参考型理论、单一职责、知识预编译 |
 | 查看详细规范 | [reference.md](./reference.md) | Skill 类型分类、权限配置、命名规则、最佳实践 |
 | 查看分类示例 | [examples.md](./examples.md) | 参考型/任务型 Skill 分类示例、常见错误 |
 | 查看测试清单 | [theories/skill-test-checklist.md](./theories/skill-test-checklist.md) | Skill 测试验证清单 |
@@ -70,24 +70,9 @@ allowed-tools:
 `功能描述 + 执行方式 + 触发场景`
 
 ### 知识预编译原则
-将确定性、可重复的执行逻辑封装为命令、工具或脚本，避免运行时重复推理。
-
-**封装优先级**：
-| 优先级 | 适用场景 | 封装方式 |
-|-------|---------|---------|
-| P0 | 验证检查、构建部署 | 独立脚本/工具 |
-| P1 | 代码生成、环境配置 | npm script |
-| P2 | Git 操作、数据处理 | shell 脚本 |
-| P3 | 文件操作、批量任务 | 文档化命令 |
+将确定性、可重复的执行逻辑封装为命令、工具或脚本，避免运行时重复推理。详见 [theories/knowledge-precompilation.md](./theories/knowledge-precompilation.md)。
 
 **判断标准**：高频 + 高确定性 = 优先封装
-
-**适合封装的逻辑类型**：
-- 验证检查类：lint、typecheck、test、audit
-- 构建部署类：build、release、docker、deploy
-- 代码生成类：组件生成、API 生成、类型生成
-- 环境配置类：初始化、依赖安装、环境变量
-- Git 操作类：规范化提交、分支管理、变更日志
 
 ### 渐进式披露原则
 - **目录层**：仅加载 description，用于语义匹配

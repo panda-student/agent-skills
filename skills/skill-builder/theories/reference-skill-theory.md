@@ -85,24 +85,4 @@ allowed-tools:
 
 ## 10. 典型示例
 
-### API 规范 Skill
-```yaml
----
-name: api-rule
-description: 定义项目 RESTful API 设计规范，包含URL命名、响应格式、状态码与鉴权规则，在编写/审查接口、设计新API、确定请求响应格式时自动使用
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
----
-
-你是项目的 API 设计规范专家。当用户讨论 API 设计、接口定义或 RESTful 规范时，提供符合项目标准的指导。
-
-## 核心原则
-- 遵循 RESTful 设计规范
-- 使用统一的响应格式
-- 实施版本控制策略
-- 保证接口安全性
-
-详细规范请参考 [reference.md](./reference.md)
-```
+详见 [examples.md](../examples.md) 参考型 Skill 示例部分。
