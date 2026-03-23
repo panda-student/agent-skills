@@ -5,14 +5,6 @@ allowed-tools:
   - Read
   - Grep
   - Glob
-{{#if context-injection}}
-context-injection:
-{{#each context-injection}}
-  - name: {{name}}
-    command: {{command}}
-    description: {{description}}
-{{/each}}
-{{/if}}
 ---
 
 你是项目的【领域】专家。当用户讨论【相关话题】时，提供符合项目标准的指导。
