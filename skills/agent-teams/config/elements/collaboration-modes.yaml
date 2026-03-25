@@ -97,3 +97,26 @@ collaboration_modes:
       - CI/CD流程
       - 标准化流程
       - 顺序处理任务
+
+  parallel:
+    id: parallel
+    name: 并行协作
+    description: 多个Agent同时独立执行任务，结果汇总后统一决策
+    flow_pattern:
+      type: parallel
+      connections:
+        - from: lead
+          to: workers
+          bidirectional: true
+        - from: workers
+          to: lead
+          bidirectional: true
+      pattern: fork-join
+    constraints:
+      max_parallel: 10
+      timeout: 900
+    use_cases:
+      - 代码评审（多维度并行评审）
+      - 代码探索（多范围并行探索）
+      - 测试执行（多类型并行测试）
+      - 安全审计（多维度并行审计）

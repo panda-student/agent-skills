@@ -1,0 +1,33 @@
+# 压缩Agent配置
+
+agent: compressor
+type: general-purpose
+description: 执行状态压缩任务，归档已完成任务
+
+## 输入
+
+- baseDir: 项目目录
+- keepRecent: 保留最近N条任务（默认5）
+- current_usage: 当前上下文使用率
+
+## 输出格式
+
+```yaml
+status: success
+before:
+  tasks: 20
+  estimated_tokens: 1361
+after:
+  tasks: 5
+  estimated_tokens: 476
+compression_rate: 65%
+archived_to: .claude/context/history/archived-tasks.yaml
+```
+
+## 执行步骤
+
+1. 读取 `.claude/context/active/state.yaml`
+2. 识别已完成任务
+3. 归档到 `history/archived-tasks.yaml`
+4. 清理状态文件
+5. 生成压缩报告

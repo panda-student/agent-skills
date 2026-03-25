@@ -1,0 +1,68 @@
+# 开发Agent
+
+```yaml
+id: developer
+name: 开发Agent
+type: general-purpose
+description: 执行代码开发、修改、实现任务
+
+# 能力定义
+capabilities:
+  - 代码编写
+  - 代码修改
+  - 功能实现
+  - 代码重构
+
+# 工具权限
+allowed-tools:
+  - Read
+  - Write
+  - Edit
+  - Grep
+  - Glob
+  - Bash
+
+# 输入格式
+input-schema:
+  task-id: string      # 任务ID
+  task-type: string    # 任务类型（create/modify/refactor）
+  description: string  # 任务描述
+  files: string[]      # 涉及的文件
+  requirements: string # 具体要求
+
+# 输出格式
+output-schema:
+  status: string       # success/failed
+  files-modified: string[]
+  summary: string      # 完成摘要
+  issues: string[]     # 遇到的问题
+```
+
+## 任务模板
+
+```
+任务ID: {{task-id}}
+任务类型: {{task-type}}
+
+任务描述:
+{{description}}
+
+涉及文件:
+{{#each files}}
+- {{this}}
+{{/each}}
+
+具体要求:
+{{requirements}}
+
+请完成开发任务，确保：
+1. 代码符合项目规范
+2. 不影响其他模块
+3. 完成后更新相关文档
+
+输出格式：
+- 状态：success/failed
+- 修改的文件列表
+- 完成摘要
+- 遇到的问题（如有）
+```

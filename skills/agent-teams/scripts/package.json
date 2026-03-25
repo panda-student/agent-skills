@@ -1,0 +1,18 @@
+{
+  "name": "agent-teams-scripts",
+  "version": "1.0.0",
+  "description": "Agent Teams 执行脚本 - 上下文管理、WAL、检查点、恢复机制",
+  "main": "lib/context.js",
+  "scripts": {
+    "check": "node cli.js check",
+    "recover": "node cli.js recover",
+    "init": "node cli.js init",
+    "status": "node cli.js status",
+    "checkpoint": "node cli.js checkpoint",
+    "complete": "node cli.js complete",
+    "broadcast": "node cli.js broadcast",
+    "list": "node cli.js list"
+  },
+  "keywords": ["agent", "teams", "parallel", "context", "wal", "checkpoint"],
+  "license": "MIT"
+}

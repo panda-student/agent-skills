@@ -6,10 +6,11 @@
 
 ## 核心理论
 
-本技能基于两大核心理论构建，详细内容请参考理论文件：
+本技能基于三大核心理论构建，详细内容请参考理论文件：
 
 - **[并行执行理论](./theories/parallel-execution.md)**：在保证质量的前提下，通过最大化并行处理来最短时间完成任务
 - **[质量保证理论](./theories/quality-guarantee.md)**：定义在并行执行过程中确保代码质量的理论框架
+- **[上下文腐化控制理论](./theories/context-decay-control.md)**：定义长时间运行任务中保持上下文质量的机制（WAL + 检查点）
 
 ---
 
@@ -44,6 +45,7 @@
 | `network` | 网络协作 | 多对多自由沟通 | A ↔ B ↔ C | 复杂问题、创意讨论 |
 | `hierarchical` | 层级协作 | 通过中心节点协调 | A → Lead → B | 大型团队、复杂项目 |
 | `pipeline` | 流水线协作 | 顺序传递，各司其职 | A → B → C → D | 标准化流程、CI/CD |
+| `parallel` | 并行协作 | 多Agent同时独立执行，结果汇总 | Workers → Lead | 代码评审、代码探索、测试执行 |
 
 配置文件：`config/elements/collaboration-modes.yaml`
 

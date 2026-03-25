@@ -1,0 +1,58 @@
+# Agent 配置索引
+
+## 可用Agent列表
+
+| Agent ID | 名称 | 类型 | 用途 |
+|----------|------|------|------|
+| explorer | 代码探索Agent | search | 探索代码库结构、分析模块 |
+| developer | 开发Agent | general-purpose | 代码开发、修改、实现 |
+| tester | 测试Agent | general-purpose | 测试执行、质量验证 |
+| reviewer | 评审Agent | general-purpose | 代码评审、质量检查 |
+
+## 选择规则
+
+```yaml
+# 根据任务类型选择Agent
+task-type-to-agent:
+  explore: explorer      # 探索类任务
+  analyze: explorer      # 分析类任务
+  develop: developer     # 开发类任务
+  implement: developer   # 实现类任务
+  modify: developer      # 修改类任务
+  refactor: developer    # 重构类任务
+  test: tester           # 测试类任务
+  verify: tester         # 验证类任务
+  review: reviewer       # 评审类任务
+  audit: reviewer        # 审计类任务
+```
+
+## 并行规则
+
+```yaml
+# Agent并行执行规则
+parallel-rules:
+  # 可以并行执行的Agent组合
+  allowed:
+    - [explorer, explorer]      # 多个探索任务可并行
+    - [explorer, developer]     # 探索和开发可并行（不同文件）
+    - [developer, developer]    # 多个开发任务可并行（需文件隔离）
+    - [developer, tester]       # 开发和测试可并行（不同范围）
+
+  # 禁止并行执行的Agent组合
+  forbidden:
+    - [developer, developer]    # 同一文件不能同时开发
+    - [developer, reviewer]     # 开发完成前不能评审
+    - [tester, tester]          # 同一范围不能同时测试
+```
+
+## 文件隔离规则
+
+```yaml
+# 确保并行任务文件不冲突
+file-isolation:
+  enabled: true
+  rules:
+    - 不同developer操作不同文件集
+    - 检测文件写冲突
+    - 资源独占时串行执行
+```
