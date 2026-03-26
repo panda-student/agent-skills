@@ -2,15 +2,17 @@
  * Agent Teams - 模块入口
  *
  * 提供统一API，主Agent调用这些API完成任务分解、依赖分析、调度
+ * 任务分析和分解由 Agent 智能完成
  */
 
 const ContextManager = require('./lib/context');
 const RecoveryManager = require('./lib/recovery');
 const CheckpointManager = require('./lib/checkpoint');
 const WALManager = require('./lib/wal');
-const { TaskDecomposer, TASK_TYPES, AGENT_MAP } = require('./lib/decomposer');
+const { TaskDecomposer, TASK_TYPES, AGENT_MAP, DECOMPOSITION_MODES } = require('./lib/decomposer');
 const { DependencyAnalyzer } = require('./lib/analyzer');
 const { ParallelScheduler } = require('./lib/scheduler');
+const { ComplexityAnalyzer, COMPLEXITY_LEVELS, EXECUTION_STRATEGIES } = require('./lib/complexity-analyzer');
 const { getTimestamp, generateId, ensureDir, writeFile, writeYAML, readYAML, readFile, deleteFile } = require('./lib/utils');
 const { getPaths, DIRS } = require('./lib/constants');
 const path = require('path');
@@ -24,12 +26,36 @@ module.exports = {
   TaskDecomposer,
   DependencyAnalyzer,
   ParallelScheduler,
+  ComplexityAnalyzer,
 
   TASK_TYPES,
   AGENT_MAP,
+  DECOMPOSITION_MODES,
+  COMPLEXITY_LEVELS,
+  EXECUTION_STRATEGIES,
 
   getTimestamp,
   generateId,
+
+  getAnalysisInstruction(request, context = {}) {
+    const decomposer = new TaskDecomposer();
+    return decomposer.decompose(request, context);
+  },
+
+  applyAnalysisResult(request, analysisResult, context = {}) {
+    const decomposer = new TaskDecomposer();
+    return decomposer.applyAnalysisResult(request, analysisResult, context);
+  },
+
+  getComplexityAnalysisInstruction(request, context = {}) {
+    const analyzer = new ComplexityAnalyzer();
+    return analyzer.analyze(request, context);
+  },
+
+  applyComplexityResult(analysisResult) {
+    const analyzer = new ComplexityAnalyzer();
+    return analyzer.applyAnalysisResult(analysisResult);
+  },
 
   checkRecovery(baseDir) {
     const rm = new RecoveryManager(baseDir);
@@ -90,7 +116,7 @@ module.exports = {
     };
   },
 
-  plan(baseDir, request) {
+  plan(baseDir, request, options = {}) {
     const recoveryCheck = this.checkRecovery(baseDir);
     if (recoveryCheck.needed) {
       return {
@@ -100,7 +126,24 @@ module.exports = {
       };
     }
 
-    const decomposed = this.decompose(request);
+    return {
+      needs_analysis: true,
+      mission_goal: request,
+      analysis_instruction: this.getAnalysisInstruction(request, options).analysis_instruction
+    };
+  },
+
+  planWithResult(baseDir, request, analysisResult, options = {}) {
+    const recoveryCheck = this.checkRecovery(baseDir);
+    if (recoveryCheck.needed) {
+      return {
+        recovery_needed: true,
+        recovery: recoveryCheck,
+        message: '检测到未完成任务，请先调用 recover() 恢复'
+      };
+    }
+
+    const decomposed = this.applyAnalysisResult(request, analysisResult, options);
 
     const cm = new ContextManager(baseDir);
     cm.initMission({ goal: request });
@@ -132,10 +175,14 @@ module.exports = {
       mission_id: decomposed.mission_id,
       mission_goal: decomposed.mission_goal,
       task_type: decomposed.task_type,
+      decomposition_mode: decomposed.decomposition_mode,
+      complexity: decomposed.complexity,
+      execution_strategy: decomposed.execution_strategy,
       recovery: recoveryCheck,
       decomposition: {
         total_tasks: decomposed.total_tasks,
-        tasks: decomposed.tasks
+        tasks: decomposed.tasks,
+        mode: decomposed.decomposition_mode
       },
       analysis: {
         parallel_groups: analysis.parallel_groups,
@@ -191,6 +238,7 @@ module.exports = {
 **实例ID**: ${decomposed.mission_id}
 **创建时间**: ${timestamp}
 **任务类型**: ${decomposed.task_type}
+**分解模式**: ${decomposed.decomposition_mode}
 
 ---
 

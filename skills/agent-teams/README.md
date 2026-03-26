@@ -75,24 +75,178 @@
 
 ## 快速开始
 
+### 完整工作流程
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           Agent Teams 工作流程                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  1. 获取分析指令                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ const instruction = at.getAnalysisInstruction(request)              │   │
+│  │ 返回: Agent分析提示词 + 期望输出格式                                  │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                              │                                              │
+│                              ▼                                              │
+│  2. 启动分析Agent                                                           │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ 主Agent调用Agent工具，传入分析提示词                                  │   │
+│  │ Agent智能分析: 任务类型、复杂度、分解方案                             │   │
+│  │ 返回: JSON格式分析结果                                               │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                              │                                              │
+│                              ▼                                              │
+│  3. 应用分析结果                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ const plan = at.planWithResult(baseDir, request, analysisResult)    │   │
+│  │ 生成: 任务列表、依赖关系、执行计划                                    │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                              │                                              │
+│                              ▼                                              │
+│  4. 执行任务                                                                 │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ 根据执行计划启动Worker Agent                                         │   │
+│  │ - 简单任务: 单Agent直接执行                                          │   │
+│  │ - 中等任务: 2-3个Agent简化并行                                       │   │
+│  │ - 复杂任务: 多Agent团队协作                                          │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                              │                                              │
+│                              ▼                                              │
+│  5. 质量保障（可选）                                                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ 开发 → 评审 → 测试 → 验收                                            │   │
+│  │ 不通过则反馈迭代                                                      │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 代码示例
+
 ```javascript
 const at = require('./scripts/index');
 
-// 完整流程：分解 → 分析 → 调度
-const plan = at.plan('.', '开发用户登录功能');
+// ===== 步骤1: 获取分析指令 =====
+const instruction = at.getAnalysisInstruction('开发用户登录功能');
+console.log(instruction);
+// {
+//   needs_analysis: true,
+//   analysis_instruction: {
+//     action: 'launch_analysis_agent',
+//     agent_type: 'general-purpose',
+//     prompt: '分析以下任务请求...',
+//     expected_output: { task_type, complexity, subtasks, ... }
+//   }
+// }
 
-// 输出
+// ===== 步骤2: 启动分析Agent =====
+// 主Agent调用Agent工具执行分析
+// Agent返回分析结果（JSON格式）
+
+// ===== 步骤3: 应用分析结果 =====
+const plan = at.planWithResult('.', '开发用户登录功能', analysisResult);
+console.log(plan);
 // {
 //   mission_id: 'mission-xxx',
 //   task_type: 'develop',
-//   decomposition: { total_tasks: 8, tasks: [...] },
-//   analysis: { parallel_groups: [...], conflicts: [] },
-//   schedule: { total_phases: 5, ... },
-//   next_action: { action: 'launch_agents', agents: [...] },
-//   persisted: true,
-//   plan_file: '.claude/context/plans/执行计划-2026-03-26.md'
+//   decomposition_mode: 'full',
+//   complexity: { level: 'complex', score: 8 },
+//   decomposition: { total_tasks: 6, tasks: [...] },
+//   schedule: { phases: [...], next_action: {...} }
 // }
+
+// ===== 步骤4: 执行任务 =====
+// 根据plan.schedule.next_action启动Worker Agent
 ```
+
+### 分析Agent输出格式
+
+Agent分析后返回JSON格式：
+
+```json
+{
+  "task_type": "develop",
+  "complexity": {
+    "level": "complex",
+    "score": 8,
+    "reason": "涉及前后端多个模块，需要数据库设计"
+  },
+  "decomposition_mode": "full",
+  "subtasks": [
+    {
+      "name": "需求分析",
+      "type": "explore",
+      "scope": "targeted",
+      "description": "分析登录功能需求和技术方案",
+      "phase": "analysis"
+    },
+    {
+      "name": "数据库设计",
+      "type": "develop",
+      "scope": "module",
+      "description": "设计用户表和会话表",
+      "phase": "design",
+      "depends_on": ["T1"]
+    },
+    {
+      "name": "后端API开发",
+      "type": "develop",
+      "scope": "module",
+      "description": "实现登录、登出、Token验证API",
+      "phase": "develop",
+      "depends_on": ["T2"]
+    },
+    {
+      "name": "前端页面开发",
+      "type": "develop",
+      "scope": "module",
+      "description": "实现登录页面和状态管理",
+      "phase": "develop",
+      "depends_on": ["T2"]
+    },
+    {
+      "name": "集成测试",
+      "type": "test",
+      "scope": "module",
+      "description": "测试登录流程",
+      "phase": "test",
+      "depends_on": ["T3", "T4"]
+    },
+    {
+      "name": "代码评审",
+      "type": "review",
+      "scope": "module",
+      "description": "评审代码质量",
+      "phase": "review",
+      "depends_on": ["T5"]
+    }
+  ],
+  "execution_strategy": {
+    "use_team": true,
+    "parallel": true,
+    "phases": 4
+  }
+}
+```
+
+### 复杂度评估维度
+
+Agent评估复杂度时考虑以下维度：
+
+| 维度 | 低分(1-2) | 中分(3-4) | 高分(5) |
+|------|----------|----------|---------|
+| **作用范围** | 单文件 | 模块级 | 整个项目 |
+| **操作类型** | 读取/简单修改 | Bug修复/重构 | 架构变更 |
+| **依赖关系** | 无依赖 | 内部依赖 | 破坏性变更 |
+
+### 执行策略对照
+
+| 复杂度 | 分解模式 | 子任务数 | 是否创建Team | 执行方式 |
+|--------|---------|---------|-------------|---------|
+| simple | direct | 1 | 否 | 单Agent直接执行 |
+| medium | simplified | 2-3 | 否 | 多Agent并行执行 |
+| complex | full | 4-8 | 是 | 团队协作执行 |
 
 ### 质量保障流程
 
@@ -125,6 +279,27 @@ const result = await qas.run({
 ```
 
 ## API
+
+### 任务分析
+
+```javascript
+// 获取分析指令
+at.getAnalysisInstruction(request)     // 返回Agent分析提示词
+
+// 应用分析结果
+at.applyAnalysisResult(request, result) // 根据分析结果生成任务
+
+// 获取复杂度分析指令
+at.getComplexityAnalysisInstruction(request)
+
+// 应用复杂度分析结果
+at.applyComplexityResult(result)
+
+// 常量
+at.TASK_TYPES              // { EXPLORE, DEVELOP, FIX, REVIEW, DEPLOY, TEST }
+at.DECOMPOSITION_MODES     // { DIRECT, SIMPLIFIED, FULL }
+at.COMPLEXITY_LEVELS       // { SIMPLE, MEDIUM, COMPLEX }
+```
 
 ### 任务分解与调度
 
@@ -296,7 +471,8 @@ at.cleanupIntermediate(baseDir, {
 scripts/
 ├── index.js                 # 主API入口
 └── lib/
-    ├── decomposer.js        # 任务分解
+    ├── decomposer.js        # 任务分解（支持复杂度感知）
+    ├── complexity-analyzer.js # 复杂度评估器
     ├── analyzer.js          # 依赖分析
     ├── scheduler.js         # 调度器
     ├── context.js           # 上下文管理
@@ -315,6 +491,12 @@ config/agents/
 ├── tester.yaml              # 测试Agent配置
 ├── reviewer.yaml            # 评审Agent配置
 └── compressor.yaml          # 压缩Agent配置
+
+config/elements/
+├── collaboration-modes.yaml # 协作模式配置
+├── human-ai-modes.yaml      # 人机协作模式
+├── team-types.yaml          # 团队类型配置
+└── workflow-types.yaml      # 工作流类型配置
 ```
 
 ## 上下文腐化控制

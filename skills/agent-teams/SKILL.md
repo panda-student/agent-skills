@@ -35,6 +35,117 @@ allowed-tools:
 
 ---
 
+## 任务分析流程（Agent智能分析）
+
+**核心原则：任务识别和复杂度评估由 Agent 智能完成，不使用硬编码规则**
+
+### 分析流程
+
+```
+用户请求
+    │
+    ▼
+┌─────────────────────────────────────┐
+│     获取分析指令 (getAnalysisInstruction)  │
+│  返回: Agent分析提示词和期望输出格式        │
+└─────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────┐
+│     启动分析Agent                      │
+│  - 分析任务类型                        │
+│  - 评估复杂度                          │
+│  - 生成分解方案                        │
+└─────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────┐
+│     应用分析结果 (applyAnalysisResult)    │
+│  - 创建任务列表                        │
+│  - 设置执行策略                        │
+└─────────────────────────────────────┘
+    │
+    ├── 简单任务 (score < 5)
+    │   └── 直接执行，不分解
+    │
+    ├── 中等任务 (5 ≤ score < 8)
+    │   └── 简化分解（2-3个子任务）
+    │
+    └── 复杂任务 (score ≥ 8)
+        └── 完整分解流程
+```
+
+### API 使用示例
+
+```javascript
+const at = require('./scripts/index');
+
+// 步骤1: 获取分析指令
+const analysisInstruction = at.getAnalysisInstruction('开发用户登录功能');
+// 返回: { needs_analysis: true, analysis_instruction: { action, agent_type, prompt, expected_output } }
+
+// 步骤2: 启动Agent执行分析（由主Agent调用Agent工具）
+// Agent返回分析结果
+
+// 步骤3: 应用分析结果
+const plan = at.planWithResult('.', '开发用户登录功能', analysisResult);
+// 返回完整的执行计划
+
+// 或者一步完成（需要先获取分析结果）
+const plan = at.plan('.', '开发用户登录功能');
+// 返回: { needs_analysis: true, analysis_instruction: {...} }
+```
+
+### 分析Agent输出格式
+
+Agent分析后应返回以下格式的JSON：
+
+```json
+{
+  "task_type": "develop",
+  "complexity": {
+    "level": "complex",
+    "score": 8,
+    "reason": "涉及多个模块，需要前后端协作"
+  },
+  "decomposition_mode": "full",
+  "subtasks": [
+    {
+      "name": "需求分析",
+      "type": "explore",
+      "scope": "targeted",
+      "description": "分析登录功能需求",
+      "phase": "analysis"
+    },
+    {
+      "name": "API设计",
+      "type": "develop",
+      "scope": "module",
+      "description": "设计登录API接口",
+      "phase": "design",
+      "depends_on": ["T1"]
+    }
+  ],
+  "execution_strategy": {
+    "use_team": true,
+    "parallel": true,
+    "phases": 4
+  }
+}
+```
+
+### 复杂度评估维度
+
+Agent评估复杂度时应考虑：
+
+| 维度 | 低分(1-2) | 中分(3-4) | 高分(5) |
+|------|----------|----------|---------|
+| **作用范围** | 单文件 | 模块级 | 整个项目 |
+| **操作类型** | 读取/简单修改 | Bug修复/重构 | 架构变更 |
+| **依赖关系** | 无依赖 | 内部依赖 | 破坏性变更 |
+
+---
+
 ## 选择决策树
 
 ```
