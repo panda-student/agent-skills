@@ -16,11 +16,14 @@ allowed-tools:
 
 | 触发条件 | 资源路径 | 内容预期 |
 |---------|---------|---------|
-| 查看核心理论 | [theories/](./theories/) | 渐进式披露、单一职责、Skill 类型理论 |
-| 查看详细规范 | [reference.md](./reference.md) | 配置规范、命名规则、最佳实践 |
-| 查看分类示例 | [examples.md](./examples.md) | 参考型/任务型示例、常见错误 |
-| 查看测试清单 | [theories/skill-test-checklist.md](./theories/skill-test-checklist.md) | Skill 测试验证清单 |
-| 使用模板生成 | [templates/](./templates/) | 参考型/任务型模板 |
+| **查看核心理论** | [theories/](./theories/) | 渐进式披露、单一职责、Skill 类型理论 |
+| **查看详细规范** | [reference.md](./reference.md) | 配置规范、命名规则、最佳实践 |
+| **查看分类示例** | [examples.md](./examples.md) | 参考型/任务型示例、常见错误 |
+| **查看测试清单** | [theories/skill-test-checklist.md](./theories/skill-test-checklist.md) | Skill 测试验证清单 |
+| **使用模板生成** | [templates/](./templates/) | 参考型/任务型模板 |
+| **判断 Skill 类型** | [参考型理论](./theories/reference-skill-theory.md) \| [任务型理论](./theories/task-skill-theory.md) | 自动判断参考型/任务型，基于关键词分析 |
+| **创建新 Skill** | [参考型模板](./templates/reference-skill-template.md) \| [任务型模板](./templates/task-skill-template.md) | 快速生成符合标准的 Skill 文件 |
+| **优化现有 Skill** | [测试清单](./theories/skill-test-checklist.md) | 诊断问题、优化建议、重构指南 |
 
 ## 核心功能
 
@@ -72,6 +75,8 @@ AI：[触发 make-component] 请输入组件名称...
 - "部署脚本，执行构建和发布流程"
 - "代码风格规范，定义命名规则"
 
+**💡 路由指引**：不确定功能类型？查看 [Skill 类型核心区别](#️-skill-类型核心区别) 或 [examples.md](./examples.md)
+
 ### 步骤 2：确认类型（可调整）
 系统根据描述自动判断类型，**并告知你判断依据**：
 
@@ -83,20 +88,55 @@ AI：[触发 make-component] 请输入组件名称...
 确认或调整：A.确认  B.切换为另一种类型
 ```
 
+**💡 路由指引**：
+- 了解类型判断逻辑 → [reference.md - Skill 类型自动判断](./reference.md#skill-类型自动判断)
+- 查看类型对比 → [reference.md - Skill 类型对比](./reference.md#skill-类型对比)
+- 查看完整示例 → [examples.md](./examples.md)
+
 ### 步骤 3：确认名称
 系统根据类型建议命名，你确认或修改
 
+**💡 路由指引**：
+- 参考型命名规范 → [reference.md - 参考型 Skill 规范](./reference.md#参考型-skill-规范)
+- 任务型命名规范 → [reference.md - 任务型 Skill 规范](./reference.md#任务型-skill-规范)
+
 ### 步骤 4：生成文件
 输出完整 SKILL.md 和目录结构
+
+**💡 路由指引**：
+- 使用模板快速生成 → [参考型模板](./templates/reference-skill-template.md) 或 [任务型模板](./templates/task-skill-template.md)
+- 验证生成结果 → [测试清单](./theories/skill-test-checklist.md)
 
 ---
 
 ## 优化流程
 
-1. **Skill 诊断** → 分析现有 Skill 问题
-2. **优化建议** → 提供改进方案
-3. **重构实施** → 执行优化操作
-4. **验证测试** → 确认优化效果
+### 1. Skill 诊断
+分析现有 Skill 问题
+
+**💡 路由指引**：
+- 使用测试清单诊断 → [skill-test-checklist.md](./theories/skill-test-checklist.md)
+- 查看常见错误 → [examples.md - 常见错误示例](./examples.md#常见错误示例)
+
+### 2. 优化建议
+提供改进方案
+
+**💡 路由指引**：
+- 参考最佳实践 → [reference.md - 最佳实践建议](./reference.md#最佳实践建议)
+- 查看理论依据 → [theories/](./theories/)
+
+### 3. 重构实施
+执行优化操作
+
+**💡 路由指引**：
+- 遵循渐进式披露原则 → [progressive-disclosure.md](./theories/progressive-disclosure.md)
+- 遵循单一职责原则 → [single-responsibility.md](./theories/single-responsibility.md)
+
+### 4. 验证测试
+确认优化效果
+
+**💡 路由指引**：
+- 使用测试清单验证 → [skill-test-checklist.md](./theories/skill-test-checklist.md)
 
 ---
 
