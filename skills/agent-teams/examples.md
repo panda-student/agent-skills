@@ -1,677 +1,416 @@
-# Agent Teams 使用示例
+# Agent Teams 工作流示例
 
-本文档包含 Agent Teams 技能的使用示例和场景演示。
+## 示例一：评审闭环流程
 
----
-
-## 目录
-
-- [API 使用示例](#api-使用示例)
-- [执行模式示例](#执行模式示例)
-- [快速开始示例](#快速开始示例)
-- [完整工作流示例](#完整工作流示例)
-
----
-
-## API 使用示例
-
-### 基础 API 调用
+**场景**：评审用户认证模块代码
 
 ```javascript
-const at = require('./scripts/index');
+const at = require('./engine');
 
-// 步骤1: 获取分析指令
-const analysisInstruction = at.getAnalysisInstruction('开发用户登录功能');
-// 返回: { needs_analysis: true, analysis_instruction: { action, agent_type, prompt, expected_output } }
+// 1. 创建评审团队
+const team = at.registerTeam({
+  type: 'review',
+  name: '认证模块评审团队',
+  memberCount: 3,
+  members: ['张三', '李四', '王五'],
+  work: '评审认证模块代码质量',
+  request: '评审认证模块代码'
+}, '用户认证系统开发');
 
-// 步骤2: 启动Agent执行分析（由主Agent调用Agent工具）
-// Agent返回分析结果
+// 2. 团队执行评审（AI 协调成员分析代码）
+// ... 执行过程 ...
 
-// 步骤3: 应用分析结果
-const plan = at.planWithResult('.', '开发用户登录功能', analysisResult);
-// 返回完整的执行计划
+// 3. 收集投票并反馈
+const result = at.feedback(team.id, {
+  outputs: ['reports/评审报告.md'],
+  documents: [
+    {
+      path: 'reports/评审报告.md',
+      content: `# 认证模块评审报告
 
-// 或者一步完成（需要先获取分析结果）
-const plan = at.plan('.', '开发用户登录功能');
-// 返回: { needs_analysis: true, analysis_instruction: {...} }
-```
+## 发现问题
+1. SQL注入风险（高危）
+2. 缺少输入验证（中危）
+3. 缺少单元测试（中危）
 
----
+## 建议
+修复安全问题后重新评审`
+    }
+  ],
+  decision: at.DECISION.DELEGATE,  // 委托给开发团队修复
+  delegateRequest: '修复发现的安全问题和添加单元测试',
+  delegateType: 'development',
+  votes: [
+    { member: '张三', vote: 'reject', reason: '存在SQL注入风险' },
+    { member: '李四', vote: 'reject', reason: '缺少输入验证' },
+    { member: '王五', vote: 'approve', reason: '基本功能正确' }
+  ]
+});
 
-## 执行模式示例
+// 投票结果：rejected（一票否决）
+console.log(result.voteResult);  // 'rejected'
 
-### 模式1: 独立Agent并行（推荐）
-
-**适用**: 探索类、评审类、独立开发任务
-
-```javascript
-// 主Agent执行调度（不执行具体任务）
-const plan = at.plan('.', '探索代码库架构');
-
-// 在单个消息中同时启动多个Agent（获得独立上下文）
-// 每个Agent有~200k tokens独立上下文，互不影响
-```
-
-**启动方式**：在单个响应中调用多个Agent工具
-
-```
-Agent 1: subagent_type="search", prompt="探索src/core/目录..."
-Agent 2: subagent_type="search", prompt="探索src/api/目录..."
-Agent 3: subagent_type="search", prompt="分析package.json..."
-... (并行启动8个Agent)
-```
-
-**优势**：
-- 每个Agent有独立上下文，不会互相污染
-- 主Agent只接收聚合结果，保持精简
-- 最大化并行效率
-
----
-
-### 模式2: Team协作
-
-**适用**: 开发类任务（需要多Agent协作）
-
-```javascript
-// 1. 创建Team
-TeamCreate({ team_name: "dev-login", description: "开发登录功能" })
-
-// 2. 创建任务
-TaskCreate({ subject: "需求分析", description: "..." })
-TaskCreate({ subject: "API设计", description: "..." })
-TaskCreate({ subject: "前端开发", description: "..." })
-
-// 3. 启动Worker Agent（team模式）
-Agent({
-  subagent_type: "general-purpose",
-  team_name: "dev-login",
-  prompt: "加入团队，查看任务列表..."
-})
-```
-
-**协作机制**：
-- Team成员共享任务列表（TaskList）
-- 通过SendMessage通信
-- Team Leader协调任务分配
-
----
-
-### 模式3: 后台Task
-
-**适用**: 测试、构建、简单命令
-
-```javascript
-// 仅用于不需要独立上下文的简单任务
-Task({ prompt: "npm test" })
-Task({ prompt: "npm run build" })
-```
-
----
-
-## 快速开始示例
-
-### 完整工作流程
-
-```javascript
-const at = require('./scripts/index');
-
-// 1. 检查恢复
-if (at.checkRecovery('.').needed) {
-  at.recover('.');
+// 4. 处理委托
+if (result.hasDelegate) {
+  const pending = at.getPendingDelegate();
+  // 创建开发团队修复问题
+  const devTeam = at.registerTeam({
+    type: 'development',
+    name: '认证模块修复团队',
+    memberCount: 3,
+    members: ['开发者A', '开发者B', '开发者C'],
+    request: pending.request
+  });
 }
 
-// 2. 任务规划
-const plan = at.plan('.', '开发用户登录功能');
+// 5. 最终汇总
+at.summary();
+```
 
-// 3. 根据plan.next_action决定启动方式
-if (plan.next_action.parallel) {
-  // 并行启动多个独立Agent
-  // 在单个响应中调用多个Agent工具
-} else {
-  // 串行启动Agent
+---
+
+## 示例二：完整开发流程（规划→开发→测试→评审）
+
+```javascript
+const at = require('./engine');
+
+// 阶段1: 规划
+const planningTeam = at.registerTeam({
+  type: 'planning',
+  name: '需求规划团队',
+  memberCount: 3,
+  members: ['产品经理', '架构师', '技术顾问'],
+  request: '分析用户认证系统需求'
+}, '用户认证系统开发');
+
+at.feedback(planningTeam.id, {
+  outputs: ['docs/需求规格说明书.md', 'docs/技术设计文档.md'],
+  documents: [
+    { path: 'docs/需求规格说明书.md', content: '...' },
+    { path: 'docs/技术设计文档.md', content: '...' }
+  ],
+  decision: at.DECISION.DELEGATE,
+  delegateRequest: '根据设计文档实现认证系统',
+  delegateType: 'development'
+});
+
+// 阶段2: 开发
+const pending1 = at.getPendingDelegate();
+const devTeam = at.registerTeam({
+  type: 'development',
+  name: '认证系统开发团队',
+  memberCount: 3,
+  request: pending1.request
+});
+
+at.feedback(devTeam.id, {
+  outputs: ['src/auth.js', 'src/middleware.js', 'tests/auth.test.js'],
+  decision: at.DECISION.DELEGATE,
+  delegateRequest: '测试认证系统功能',
+  delegateType: 'testing'
+});
+
+// 阶段3: 测试
+const pending2 = at.getPendingDelegate();
+const testTeam = at.registerTeam({
+  type: 'testing',
+  name: '认证系统测试团队',
+  memberCount: 3,
+  request: pending2.request
+});
+
+at.feedback(testTeam.id, {
+  outputs: ['reports/测试报告.md'],
+  decision: at.DECISION.DELEGATE,
+  delegateRequest: '评审代码质量',
+  delegateType: 'review'
+});
+
+// 阶段4: 评审
+const pending3 = at.getPendingDelegate();
+const reviewTeam = at.registerTeam({
+  type: 'review',
+  name: '认证系统评审团队',
+  memberCount: 3,
+  request: pending3.request
+});
+
+at.feedback(reviewTeam.id, {
+  outputs: ['reports/评审报告.md'],
+  decision: at.DECISION.COMPLETE,  // 完成闭环
+  votes: [
+    { member: '评审员A', vote: 'approve', reason: '代码质量良好' },
+    { member: '评审员B', vote: 'approve', reason: '测试覆盖完整' },
+    { member: '评审员C', vote: 'approve', reason: '符合设计规范' }
+  ]
+});
+
+// 最终汇总
+at.summary();
+```
+
+---
+
+## 示例三：NoPUA 失败恢复流程
+
+**场景**：开发团队遇到困难，使用 NoPUA 恢复
+
+```javascript
+const at = require('./engine');
+
+// 创建开发团队
+const team = at.registerTeam({
+  type: 'development',
+  name: 'API集成团队',
+  memberCount: 3,
+  members: ['开发者A', '开发者B', '开发者C'],
+  request: '集成第三方支付API'
+}, '支付系统集成');
+
+// 第1次失败
+at.updateNoPUA(team.id, {
+  event: 'failure',
+  failureMode: 'stuck-in-loops',
+  attempt: '调整API参数',
+  hypothesis: '参数格式可能不对'
+});
+
+// 查看状态
+const state1 = at.getNoPUAState(team.id);
+// failureCount: 1, cognitiveLevel: 'normal'
+
+// 第2次失败
+at.updateNoPUA(team.id, {
+  event: 'failure',
+  attempt: '更换请求方式',
+  excluded: '参数格式问题'
+});
+
+const state2 = at.getNoPUAState(team.id);
+// failureCount: 2, cognitiveLevel: 'switch_eyes'
+// 建议：切换到根本不同的方法
+
+// 第3次失败
+at.updateNoPUA(team.id, {
+  event: 'failure',
+  failureMode: 'guessing',
+  hypothesis: '可能是认证方式问题'
+});
+
+const state3 = at.getNoPUAState(team.id);
+// failureCount: 3, cognitiveLevel: 'elevate', wisdomWay: 'mirror'
+// 建议：使用镜道，用工具验证而非猜测
+
+// 生成报告发送给 Leader
+const report = at.generateNoPUAReport(team.id);
+if (report) {
+  SendMessage({
+    to: 'leader',
+    message: `[NOPUA-REPORT]
+teammate: 开发者A
+task: 集成第三方支付API
+failure_count: 3
+failure_mode: guessing
+attempts: 调整API参数, 更换请求方式
+excluded: 参数格式问题
+next_hypothesis: 可能是认证方式问题
+cognitive_level: elevate
+wisdom_way: mirror`
+  });
 }
 
-// 4. 阶段完成后创建检查点
-at.checkpoint('.', 'segment');
+// 成功后重置
+at.updateNoPUA(team.id, { event: 'success' });
+```
 
-// 5. 检查上下文使用情况
-const usage = at.contextUsage('.');
-if (usage.recommendation === 'compress') {
-  at.compress('.', { keepRecent: 5 });
+---
+
+## 示例四：跨队友转移上下文
+
+**场景**：队友A卡住，转移给队友B继续
+
+```javascript
+const at = require('./engine');
+
+// 队友A的团队
+const teamA = at.registerTeam({
+  type: 'development',
+  name: '调试团队A',
+  memberCount: 3,
+  request: '修复数据库连接问题'
+});
+
+// 队友A多次失败
+at.updateNoPUA(teamA.id, {
+  event: 'failure',
+  failureMode: 'stuck-in-loops',
+  attempt: '检查连接字符串'
+});
+at.updateNoPUA(teamA.id, {
+  event: 'failure',
+  attempt: '更换驱动版本',
+  excluded: '连接字符串问题'
+});
+at.updateNoPUA(teamA.id, {
+  event: 'failure',
+  attempt: '修改超时配置',
+  excluded: '驱动版本问题'
+});
+
+// 获取转移上下文
+const context = at.getTransferContext(teamA.id);
+// {
+//   previousTeamId: 'dev-xxx',
+//   previousTeamName: '调试团队A',
+//   investigationDirections: 3,
+//   excluded: ['连接字符串问题', '驱动版本问题'],
+//   cognitiveLevel: 'elevate',
+//   failureCount: 3
+// }
+
+// 创建队友B的团队，传递上下文
+const teamB = at.registerTeam({
+  type: 'development',
+  name: '调试团队B',
+  memberCount: 3,
+  request: `继续修复数据库连接问题。
+前一位队友调查了${context.investigationDirections}个方向，
+排除了[${context.excluded.join(', ')}]，
+当前认知级别：${context.cognitiveLevel}。
+请尝试完全不同的方向。`
+});
+
+// 队友B从认知级别 'elevate' 开始，不重置
+const stateB = at.getNoPUAState(teamB.id);
+// cognitiveLevel: 'elevate' (继承)
+```
+
+---
+
+## 示例五：投票决策详解
+
+### 一票否决规则
+
+```javascript
+const at = require('./engine');
+
+// 3人团队，1票反对 → 不通过
+const result1 = at.feedback(teamId, {
+  votes: [
+    { member: 'A', vote: 'approve', reason: '符合规范' },
+    { member: 'B', vote: 'approve', reason: '代码质量好' },
+    { member: 'C', vote: 'reject', reason: '缺少测试' }
+  ]
+});
+console.log(result1.voteResult);  // 'rejected'
+
+// 5人团队，1票反对 → 不通过（一票否决）
+const result2 = at.feedback(teamId, {
+  votes: [
+    { member: 'A', vote: 'approve', reason: '...' },
+    { member: 'B', vote: 'approve', reason: '...' },
+    { member: 'C', vote: 'approve', reason: '...' },
+    { member: 'D', vote: 'approve', reason: '...' },
+    { member: 'E', vote: 'reject', reason: '安全问题' }
+  ]
+});
+console.log(result2.voteResult);  // 'rejected'
+
+// 全票通过 → 通过
+const result3 = at.feedback(teamId, {
+  votes: [
+    { member: 'A', vote: 'approve', reason: '...' },
+    { member: 'B', vote: 'approve', reason: '...' },
+    { member: 'C', vote: 'approve', reason: '...' }
+  ]
+});
+console.log(result3.voteResult);  // 'approved'
+
+// 弃权不影响结果（只计算反对票）
+const result4 = at.feedback(teamId, {
+  votes: [
+    { member: 'A', vote: 'approve', reason: '...' },
+    { member: 'B', vote: 'abstain', reason: '不熟悉此模块' },
+    { member: 'C', vote: 'approve', reason: '...' }
+  ]
+});
+console.log(result4.voteResult);  // 'approved'
+```
+
+---
+
+## 示例六：文档交付物管理
+
+```javascript
+const at = require('./engine');
+
+// 创建团队并指定任务名称
+const team = at.registerTeam({
+  type: 'planning',
+  name: '架构设计团队',
+  request: '设计系统架构'
+}, '电商平台重构');
+
+// 反馈时保存文档
+at.feedback(team.id, {
+  outputs: ['docs/架构设计文档.md', 'docs/API规范.md'],
+  documents: [
+    {
+      path: 'docs/架构设计文档.md',
+      content: `# 架构设计文档
+
+## 系统架构
+...`
+    },
+    {
+      path: 'docs/API规范.md',
+      content: `# API 规范
+
+## RESTful 设计原则
+...`
+    }
+  ],
+  decision: at.DECISION.COMPLETE
+});
+
+// 文档保存位置
+// {项目根目录}/.planning/电商平台重构/docs/
+//   - 架构设计文档.md
+//   - API规范.md
+
+// 汇总报告包含文档清单
+const summary = at.summary();
+// 汇总报告位于: {项目根目录}/.planning/任务名称/reports/汇总报告-2026-03-28.md
+```
+
+---
+
+## 示例七：状态监控
+
+```javascript
+const at = require('./engine');
+
+// 查看当前状态
+const status = at.getStatus();
+console.log(status);
+// {
+//   taskId: 'task-xxx',
+//   teamCount: 4,         // 创建了4个团队
+//   completedTeams: 2,    // 2个已完成
+//   pendingDelegates: 1,  // 1个待处理委托
+//   documentCount: 5,     // 5份文档交付物
+//   voteCount: 2          // 2次投票记录
+// }
+
+// 检查是否有待处理委托
+if (at.hasPending()) {
+  const pending = at.getPendingDelegate();
+  console.log('待处理委托:', pending.request);
+  console.log('建议类型:', pending.suggestedType);
 }
 
-// 6. 获取精简摘要（传递给子Agent）
-const summary = at.getSummary('.');
-
-// 7. 所有阶段完成后
-at.complete('.');
-```
-
----
-
-## 完整工作流示例
-
-### 示例一：标准开发流程
-
-#### 场景描述
-
-用户需要开发一个用户登录功能。
-
-#### 触发过程
-
-```
-用户: 帮我开发一个用户登录功能
-
-📋 正在创建团队...
-
-✅ 团队已创建：
-- Lead: 技术负责人
-- Teammate 1: 前端开发
-- Teammate 2: 后端开发
-- Teammate 3: 测试工程师
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📋 正在分析需求...
-
-需求类型：开发
-
-✅ 自动匹配配置：标准开发流程
-
-🚀 正在进入规划阶段...
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-👉 进入 标准开发流程 (config: .claude/config/templates/standard-dev.yaml)
-```
-
-#### 规划阶段
-
-```
-📋 正在分析需求...
-
-需求类型：功能开发
-复杂度：中等
-风险等级：低
-
-📄 计划文档已生成：.claude/deliverables/plans/login-feature-plan-2024-01-15.md
-
-执行计划：
-1. 需求分析：明确登录功能需求和边界
-2. 设计阶段：API设计、数据库设计、UI设计（并行）
-3. 开发阶段：前端开发、后端开发（并行）
-4. 集成测试：集成测试、回归测试
-5. 交付阶段：代码评审、文档完善
-
-预期产出：
-- 登录功能代码
-- API文档
-- 测试报告
-
-风险评估：
-- 安全风险：需要实现密码加密和防暴力破解
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-请确认是否按此计划执行？
-- 确认：输入"确认"或"开始"
-- 修改：说明需要调整的内容
-- 切换配置：指定其他配置模板
-```
-
-#### 执行阶段
-
-```
-用户: 确认
-
-✅ 计划已确认
-
-🚀 开始执行...
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-【阶段1：需求分析】
-📋 Lead 正在分析需求...
-✅ 需求分析完成
-
-【质量门验证】
-✅ 需求文档完整
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-【阶段2：设计阶段】（并行执行）
-┌─────────────────────────────────────────────────────────────┐
-│ Teammate 1 (前端)    │ Teammate 2 (后端)    │ Teammate 3 (测试) │
-│ 执行: UI设计         │ 执行: API设计        │ 执行: 测试设计    │
-│ 进度: 100% ✅        │ 进度: 100% ✅        │ 进度: 100% ✅     │
-└─────────────────────────────────────────────────────────────┘
-
-【质量门验证】
-✅ 设计文档完整
-✅ 设计评审通过
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-【阶段3：开发阶段】（并行执行）
-┌─────────────────────────────────────────────────────────────┐
-│ Teammate 1 (前端)    │ Teammate 2 (后端)    │ Teammate 3 (测试) │
-│ 执行: 前端开发       │ 执行: 后端开发       │ 执行: 测试用例    │
-│ 文件: login.tsx      │ 文件: auth.ts        │ 文件: login.test  │
-│ 进度: 100% ✅        │ 进度: 100% ✅        │ 进度: 100% ✅     │
-└─────────────────────────────────────────────────────────────┘
-
-【质量门验证】
-✅ 代码编译通过
-✅ 类型检查通过
-✅ 代码规范通过
-✅ 单元测试通过
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-【阶段4：集成测试】
-📋 Lead 正在协调集成测试...
-✅ 集成测试通过
-✅ 回归测试通过
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-【阶段5：交付阶段】
-📋 Lead 正在进行代码评审...
-✅ 代码评审通过
-✅ 文档完善完成
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-#### 输出阶段
-
-```
-🎉 标准开发流程 执行完成
-
-📊 执行结果：
-- 登录功能开发完成
-- 前后端代码已集成
-- 测试全部通过
-
-📦 交付物：
-- .claude/deliverables/plans/login-feature-plan-2024-01-15.md
-- .claude/deliverables/designs/login-design-2024-01-15.md
-- .claude/deliverables/reports/login-report-2024-01-15.md
-
-📈 执行指标：
-- 总耗时: 15分钟
-- 并行效率: 85%
-- 质量检查: 全部通过
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-可切换的配置模板：
-- code_review: 代码评审流程（推荐）
-- auto_cicd: 全自动CI/CD流程
-- 或自定义组合基本元素
-
-👉 任务完成！或继续执行其他配置
-```
-
----
-
-### 示例二：Bug修复流程
-
-#### 场景描述
-
-用户报告了一个登录失败的Bug。
-
-#### 触发过程
-
-```
-用户: 登录功能有bug，用户无法登录
-
-📋 正在创建团队...
-
-✅ 团队已创建：
-- Lead: 技术负责人
-- Teammate 1: 后端开发
-- Teammate 2: QA工程师
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📋 正在分析需求...
-
-需求类型：Bug修复
-
-✅ 自动匹配配置：Bug修复流程
-
-🚀 正在进入规划阶段...
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-👉 进入 Bug修复流程 (config: .claude/config/templates/bug-fix.yaml)
-```
-
-#### 执行阶段（迭代流程）
-
-```
-【迭代1】
-
-【阶段1：问题复现】
-📋 Lead 正在分析问题...
-✅ 问题已复现
-
-【阶段2：根因分析】（并行执行）
-┌─────────────────────────────────────────────────────────────┐
-│ Teammate 1          │ Teammate 2          │ Lead            │
-│ 执行: 日志分析      │ 执行: 代码分析      │ 执行: 数据分析  │
-│ 进度: 100% ✅       │ 进度: 100% ✅       │ 进度: 100% ✅   │
-└─────────────────────────────────────────────────────────────┘
-
-【决策点】
-根因分析结果：
-1. 密码加密算法不匹配
-2. 数据库连接超时
-3. 会话管理问题
-
-请选择根因：
-用户: 选择1，密码加密算法不匹配
-
-✅ 根因确认：密码加密算法不匹配
-
-【阶段3：假设验证】
-📋 验证假设：密码加密算法不匹配
-✅ 假设验证通过
-
-【阶段4：修复实施】
-📋 Teammate 1 正在修复代码...
-✅ 修复完成
-
-【质量门验证】
-✅ 代码编译通过
-✅ 类型检查通过
-✅ 本地测试通过
-
-【阶段5：验证测试】
-📋 QA工程师 正在验证修复...
-✅ Bug已修复
-✅ 无新Bug引入
-✅ 回归测试通过
-
-【迭代判断】
-✅ Bug已修复，进入完成阶段
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
----
-
-### 示例三：需求不明确时的处理
-
-#### 场景描述
-
-用户只说"帮我处理一下"，需求不明确。
-
-#### 触发过程
-
-```
-用户: 帮我处理一下
-
-📋 正在创建团队...
-
-✅ 团队已创建：
-- Lead: 协调者
-- Teammate 1: 开发人员
-- Teammate 2: 测试人员
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📋 需求不明确，请选择执行配置：
-
-┌─────────────────────────────────────────────────────────────┐
-│ 请选择执行配置：                                              │
-│                                                              │
-│ 1. 📦 标准开发流程                                           │
-│    功能开发、需求实现、代码重构                               │
-│                                                              │
-│ 2. 🐛 Bug修复流程                                            │
-│    问题排查、bug修复、缺陷处理                                │
-│                                                              │
-│ 3. 🔍 代码评审流程                                           │
-│    代码评审、质量检查、安全审计                               │
-│                                                              │
-│ 4. 🚀 全自动CI/CD流程                                        │
-│    自动化构建、测试、部署                                     │
-│                                                              │
-│ 5. ⚙️ 自定义组合                                             │
-│    自定义团队类型、协作模式、流程类型                         │
-└─────────────────────────────────────────────────────────────┘
-
-用户: 1
-
-✅ 您选择了：标准开发流程
-
-🚀 正在进入规划阶段...
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-请描述您的开发需求：
-```
-
----
-
-### 示例四：自定义组合
-
-#### 场景描述
-
-用户需要自定义团队配置。
-
-#### 触发过程
-
-```
-用户: 5
-
-✅ 您选择了：自定义组合
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📋 请配置以下元素：
-
-【团队类型】
-1. product - 产品团队
-2. dev - 开发团队
-3. test - 测试团队
-4. review - 评审团队
-5. ops - 运维团队
-6. design - 设计团队
-7. mixed - 混合团队
-
-用户: 2
-
-✅ 团队类型：dev
-
-【协作模式】
-1. one-way - 单向协作
-2. two-way - 双向协作
-3. network - 网络协作
-4. hierarchical - 层级协作
-5. pipeline - 流水线协作
-
-用户: 4
-
-✅ 协作模式：hierarchical
-
-【人机协作模式】
-1. auto - 全自动模式 (0%用户参与)
-2. key-node - 关键节点确认 (20%用户参与)
-3. interactive - 交互式模式 (50%用户参与)
-4. guided - 引导式模式 (80%用户参与)
-5. manual - 手动模式 (100%用户参与)
-
-用户: 2
-
-✅ 人机协作模式：key-node
-
-【流程类型】
-1. serial - 串行流程
-2. parallel - 并行流程
-3. hybrid - 混合流程
-4. iterative - 迭代流程
-5. conditional - 条件流程
-
-用户: 3
-
-✅ 流程类型：hybrid
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📋 自定义配置已生成：
-
-团队类型：dev
-协作模式：hierarchical
-人机协作：key-node
-流程类型：hybrid
-
-🚀 正在进入规划阶段...
-```
-
----
-
-### 示例五：配置模板间切换
-
-#### 场景描述
-
-开发完成后自动切换到代码评审。
-
-#### 切换过程
-
-```
-🎉 标准开发流程 执行完成
-
-📊 执行结果：
-- 功能开发完成
-- 代码已提交
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📋 检测到开发完成，建议进行代码评审
-
-是否切换到代码评审流程？
-- 确认：输入"确认"或"是"
-- 跳过：输入"跳过"或"否"
-
-用户: 确认
-
-✅ 正在切换到代码评审流程...
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-👉 进入 代码评审流程 (config: .claude/config/templates/code-review.yaml)
-
-【阶段1：评审准备】
-📋 Lead 正在收集评审材料...
-✅ 评审材料收集完成
-
-【阶段2：评审执行】（并行执行）
-┌─────────────────────────────────────────────────────────────┐
-│ Teammate 1          │ Teammate 2          │                 │
-│ 执行: 代码质量评审  │ 执行: 安全审计      │                 │
-│ 进度: 100% ✅       │ 进度: 100% ✅       │                 │
-└─────────────────────────────────────────────────────────────┘
-
-【评审结果】
-✅ 代码质量：通过
-✅ 安全审计：通过
-✅ 性能检查：通过
-
-【决策】
-✅ 评审通过
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-🎉 任务完成！
-
-📦 最终交付物：
-- 功能代码
-- 评审报告
-- 测试报告
-```
-
----
-
-### 示例六：质量检查失败处理
-
-#### 场景描述
-
-开发过程中质量检查失败。
-
-#### 处理过程
-
-```
-【阶段3：开发阶段】
-
-【质量门验证】
-✅ 代码编译通过
-❌ 类型检查失败：3个类型错误
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-⚠️ 质量检查失败，正在处理...
-
-【错误详情】
-1. login.tsx:45 - 类型 'string' 不能赋值给类型 'number'
-2. auth.ts:78 - 缺少属性 'token'
-3. user.ts:120 - 类型 'undefined' 不能赋值给类型 'User'
-
-【修复任务】
-📋 Lead 正在分配修复任务...
-
-┌─────────────────────────────────────────────────────────────┐
-│ Teammate 1 (前端)    │ Teammate 2 (后端)    │                 │
-│ 修复: login.tsx:45   │ 修复: auth.ts:78     │                 │
-│      user.ts:120     │                      │                 │
-│ 进度: 100% ✅        │ 进度: 100% ✅        │                 │
-└─────────────────────────────────────────────────────────────┘
-
-【重新验证】
-✅ 代码编译通过
-✅ 类型检查通过
-✅ 代码规范通过
-✅ 单元测试通过
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-✅ 质量检查全部通过，继续执行...
-```
-
----
-
-### 示例七：执行日志示例
-
-#### 执行日志 (executions)
-
-```
-2024-01-15 10:30:00 INFO  inst-001 规划 需求分析完成
-2024-01-15 10:35:00 INFO  inst-001 设计 UI设计完成
-2024-01-15 10:35:00 INFO  inst-001 设计 API设计完成
-2024-01-15 10:35:00 INFO  inst-001 设计 数据库设计完成
-2024-01-15 10:40:00 INFO  inst-001 开发 前端开发完成
-2024-01-15 10:40:00 INFO  inst-001 开发 后端开发完成
-2024-01-15 10:41:00 WARN  inst-001 质量 类型检查失败
-2024-01-15 10:45:00 INFO  inst-001 质量 类型检查通过
-2024-01-15 10:50:00 INFO  inst-001 完成 任务完成
-```
-
-#### 决策日志 (decisions)
-
-```
-2024-01-15 10:20:00 USER_CONFIRM 规划确认 确认执行 用户确认计划
-2024-01-15 10:25:00 AUTO_SELECT 配置模板 standard_dev 自动匹配
-2024-01-15 11:00:00 USER_SELECT 修复方案 方案A 用户选择最优方案
-```
-
-#### 质量日志 (quality)
-
-```
-2024-01-15 10:40:00 COMPILE task-001 PASS 无编译错误
-2024-01-15 10:41:00 TYPECHECK task-001 FAIL 类型错误:3个
-2024-01-15 10:45:00 TYPECHECK task-001 PASS 类型检查通过
-2024-01-15 10:46:00 LINT task-001 PASS 规范检查通过
-2024-01-15 10:47:00 TEST task-001 PASS 测试通过:覆盖率85%
+// 获取任务目录
+const taskDir = at.getTaskDir();
+console.log('任务目录:', taskDir);
+// {项目根目录}/.planning/用户认证系统开发
 ```
