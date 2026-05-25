@@ -142,17 +142,34 @@ allowed-tools:
 
 ### A - Act（处理）：执行更新与标准化
 
-用户确认后执行固化：
+**重要原则**：/learn 只负责分析和识别固化内容，实际更新操作必须调用 /skill-builder 执行。
 
-| 动作 | 执行方式 |
-|------|---------|
-| 流程优化固化 | skill-builder 更新对应技能 |
-| 新发现固化 | skill-builder 更新对应技能 |
-| 命令经验固化 | skill-builder 更新对应技能 |
-| 新建技能 | skill-builder 创建 |
-| 更新技能 | skill-builder 优化 |
-| 记录 Memory | learn 直接处理 |
-| 更新路由表 | learn 直接处理 |
+用户确认后，按以下方式处理：
+
+| 动作 | 执行方式 | 说明 |
+|------|---------|------|
+| 流程优化固化 | **调用 skill-builder** | 更新对应技能的流程模板 |
+| 新发现固化 | **调用 skill-builder** | 更新对应技能的 reference.md |
+| 命令经验固化 | **调用 skill-builder** | 更新对应技能的 examples.md |
+| 新建技能 | **调用 skill-builder** | 创建新技能 |
+| 更新技能 | **调用 skill-builder** | 优化现有技能 |
+| 记录 Memory | **learn 直接处理** | 写入 memory 目录 |
+| 更新路由表 | **learn 直接处理** | 更新 using-superpowers |
+
+**固化执行流程**：
+
+```
+/learn 分析经验 → 识别固化目标 → 用户确认 → 调用 /skill-builder 执行更新
+                                                    ↓
+                                          skill-builder 实际修改技能文件
+```
+
+**调用 skill-builder 的参数格式**：
+
+```
+/skill-builder update <技能名> --add <固化内容>
+/skill-builder create <新技能名> --content <技能内容>
+```
 
 **固化格式模板**：
 
@@ -205,15 +222,17 @@ allowed-tools:
 
 ## 技能协作
 
-| 动作 | 协作技能 |
-|------|---------|
-| 流程优化固化 | skill-builder（更新对应技能） |
-| 新发现固化 | skill-builder（更新对应技能） |
-| 命令经验固化 | skill-builder（更新对应技能） |
-| 新建技能 | skill-builder |
-| 更新/整理技能 | skill-builder |
-| 记录 Memory | learn 直接处理 |
-| 更新路由表 | learn 直接处理 |
+**核心原则**：/learn 只分析不修改技能文件，所有技能更新必须调用 /skill-builder。
+
+| 动作 | 协作技能 | 执行方式 |
+|------|---------|---------|
+| 流程优化固化 | skill-builder | 调用 `/skill-builder update` |
+| 新发现固化 | skill-builder | 调用 `/skill-builder update` |
+| 命令经验固化 | skill-builder | 调用 `/skill-builder update` |
+| 新建技能 | skill-builder | 调用 `/skill-builder create` |
+| 更新/整理技能 | skill-builder | 调用 `/skill-builder update` |
+| 记录 Memory | learn 直接处理 | 写入 memory 目录 |
+| 更新路由表 | learn 直接处理 | 更新 using-superpowers/SKILL.md |
 
 ---
 
