@@ -7,6 +7,7 @@
 | 技能 | 说明 | 文档 |
 |------|------|------|
 | [agent-teams](skills/agent-teams/) | 多 Agent 协作技能 | [查看](skills/agent-teams/README.md) |
+| [learn](skills/learn/) | 知识管理专家，会话复盘与知识固化 | [查看](skills/learn/SKILL.md) |
 
 ## 目录结构
 
