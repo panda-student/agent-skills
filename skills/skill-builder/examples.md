@@ -5,7 +5,6 @@
 | 示例类型 | 跳转链接 |
 |---------|---------|
 | **完整交互流程** | [完整交互流程示例](#完整交互流程示例) |
-| **双模式型 Skill 示例** | [双模式型 Skill 示例](#双模式型-skill-示例) ⭐ 推荐 |
 | **参考型 Skill 示例** | [参考型 Skill 示例](#参考型-skill-示例) |
 | **任务型 Skill 示例** | [任务型 Skill 示例](#任务型-skill-示例) |
 | **路由定位示例** | [路由定位最佳实践](#路由定位最佳实践) |
@@ -19,17 +18,16 @@
 
 **创建前必须明确：**
 
-| 类型 | 触发方式 | 适合场景 | 推荐度 |
-|------|---------|---------|--------|
-| **双模式型** | AI自动 + 用户手动 `/命令` | 通用技能 | ⭐⭐⭐ 默认推荐 |
-| **参考型** | AI 自动识别调用 | 纯知识规范 | ⭐⭐ 特定场景 |
-| **任务型** | 用户手动 `/命令` 调用 | 敏感操作 | ⭐⭐ 特定场景 |
+| 类型 | 触发方式 | 适合场景 |
+|------|---------|---------|
+| **参考型** | AI 自动识别调用 | 提供规范、知识、指南 |
+| **任务型** | 用户手动 `/命令` 调用 | 执行操作、生成文件 |
 
 ---
 
 ## 完整交互流程示例
 
-### 示例 1：双模式型 Skill 创建（默认推荐）
+### 示例 1：参考型 Skill 创建
 
 **步骤 1：用户描述功能**
 ```
@@ -41,17 +39,15 @@
 系统：根据描述自动判断...
 
 ┌─────────────────────────────────────────┐
-│  判断结果：【双模式型】（默认推荐）         │
-│  判断依据：大多数技能都适合双模式型         │
+│  判断结果：【参考型】                      │
+│  判断依据：包含"规范"、"指导"关键词         │
 │                                         │
-│  触发方式：AI 自动调用 + 用户手动调用       │
-│  （用户讨论 API 时自动加载，也可用         │
-│   /api-rule 手动触发）                   │
+│  触发方式：AI 自动识别调用                  │
+│  （用户讨论 API 时自动加载，无需手动触发）    │
 │                                         │
 │  确认类型？                               │
-│  A. 确认双模式型（推荐）                   │
-│  B. 切换为参考型（仅AI调用）               │
-│  C. 切换为任务型（仅用户调用）             │
+│  A. 确认（推荐）                          │
+│  B. 切换为任务型（用户手动调用）            │
 └─────────────────────────────────────────┘
 
 用户：A
@@ -67,19 +63,14 @@
 ```yaml
 ---
 name: api-rule
-description: 定义项目 RESTful API 设计规范，包含URL命名、响应格式、状态码与鉴权规则，支持 AI 自动调用和用户通过斜杠命令 `/api-rule` 手动触发，在编写/审查接口、设计新API、确定请求响应格式时使用
-user-invocable: true
+description: 定义项目 RESTful API 设计规范，包含URL命名、响应格式、状态码与鉴权规则，在编写/审查接口、设计新API、确定请求响应格式时自动使用
 allowed-tools:
   - Read
   - Grep
   - Glob
 ---
 
-你是项目的 API 设计规范专家。当用户讨论 API 设计或使用 `/api-rule` 命令时，提供符合项目标准的指导。
-
-## 双模式触发说明
-- AI 自动调用：讨论 API 时自动加载
-- 用户手动调用：使用 `/api-rule` 命令
+你是项目的 API 设计规范专家。当用户讨论 API 设计、接口定义或 RESTful 规范时，提供符合项目标准的指导。
 
 ## 核心原则
 - 遵循 RESTful 设计规范
@@ -88,11 +79,11 @@ allowed-tools:
 
 ---
 
-### 示例 2：任务型 Skill 创建（敏感操作）
+### 示例 2：任务型 Skill 创建
 
 **步骤 1：用户描述功能**
 ```
-用户：创建一个部署命令，执行构建和发布流程
+用户：创建一个生成组件的命令，自动创建组件文件
 ```
 
 **步骤 2：系统判断并确认类型**
@@ -101,16 +92,14 @@ allowed-tools:
 
 ┌─────────────────────────────────────────┐
 │  判断结果：【任务型】                      │
-│  判断依据：包含"部署"（敏感操作关键词）     │
+│  判断依据：包含"生成"、"命令"、"创建"关键词  │
 │                                         │
-│  触发方式：仅用户手动调用                  │
-│  （用户需输入 /deploy-app 触发，AI        │
-│   不会自动执行部署操作）                  │
+│  触发方式：用户手动调用                     │
+│  （用户需输入 /make-component 触发）       │
 │                                         │
 │  确认类型？                               │
-│  A. 确认任务型（推荐，敏感操作）           │
-│  B. 切换为双模式型                        │
-│  C. 切换为参考型                         │
+│  A. 确认（推荐）                          │
+│  B. 切换为参考型（AI自动调用）             │
 └─────────────────────────────────────────┘
 
 用户：A
@@ -118,34 +107,34 @@ allowed-tools:
 
 **步骤 3：确认名称**
 ```
-系统：建议命名：deploy-app（动词+最简词）
+系统：建议命名：make-component（动词+最简词）
 用户：确认
 ```
 
 **步骤 4：生成结果**
 ```yaml
 ---
-name: deploy-app
-description: 部署应用到生产环境，通过斜杠命令触发，用于自动化部署流程，仅用户手动调用（敏感操作）
+name: make-component
+description: 创建符合项目规范的组件，通过斜杠命令触发，用于快速生成标准化组件代码
 user-invocable: true
 disable-model-invocation: true
 allowed-tools:
   - Read
-  - Bash(npm run build)
-  - Bash(docker build)
-  - Bash(docker push)
+  - Write
+  - Edit
+  - AskUserQuestion
 ---
 
-你是应用部署专家。当用户使用 `/deploy-app` 命令时，执行标准化的部署流程。
+你是组件创建专家。当用户使用 `/make-component` 命令时，引导用户创建组件。
 ```
 
 ---
 
-### 示例 3：参考型 Skill 创建（纯知识规范）
+### 示例 3：用户主动调整类型
 
 **步骤 1：用户描述功能**
 ```
-用户：创建一个代码风格规范，用户不需要手动调用，只想让AI自动提供参考
+用户：创建一个代码检查工具
 ```
 
 **步骤 2：系统判断并确认类型**
@@ -153,39 +142,24 @@ allowed-tools:
 系统：根据描述自动判断...
 
 ┌─────────────────────────────────────────┐
-│  判断结果：【参考型】                      │
-│  判断依据：明确"不需要手动调用"，纯知识     │
+│  判断结果：【任务型】                      │
+│  判断依据：包含"检查"（执行操作关键词）      │
 │                                         │
-│  触发方式：仅 AI 自动调用                  │
-│  （用户讨论代码风格时自动加载，无斜杠命令）  │
+│  触发方式：用户手动调用                     │
+│  （用户需输入 /check-code 触发）           │
 │                                         │
 │  确认类型？                               │
-│  A. 确认参考型（推荐，纯知识规范）         │
-│  B. 切换为双模式型                        │
-│  C. 切换为任务型                         │
+│  A. 确认（推荐）                          │
+│  B. 切换为参考型（AI自动调用）             │
 └─────────────────────────────────────────┘
 
-用户：A
-```
+用户：B（用户希望 AI 自动识别调用）
 
-**步骤 3：确认名称**
-```
-系统：建议命名：style-guide（名词+最简词）
-用户：确认
-```
+系统：已切换为参考型
+触发方式：AI 自动识别调用
+（用户讨论代码质量时自动加载）
 
-**步骤 4：生成结果**
-```yaml
----
-name: style-guide
-description: 定义项目代码风格规范，包含命名约定、格式化规则、注释标准，在编写代码、代码审查、格式化代码时自动使用
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
----
-
-你是项目的代码风格规范专家。当用户讨论代码风格时，提供符合项目标准的指导。
+建议命名：code-rule
 ```
 
 ---
@@ -242,92 +216,9 @@ allowed-tools:
 
 ---
 
-# 双模式型 Skill 示例 ⭐ 推荐
-
-## 示例 1：API 规范（双模式型）
-
-### 目录结构
-```
-.claude/skills/
-└── api-rule/
-    ├── SKILL.md
-    └── reference.md
-```
-
-### SKILL.md
-```markdown
----
-name: api-rule
-description: 定义项目 RESTful API 设计规范，包含URL命名、响应格式、状态码与鉴权规则，支持 AI 自动调用和用户通过斜杠命令 `/api-rule` 手动触发，在编写/审查接口、设计新API、确定请求响应格式时使用
-user-invocable: true
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
----
-
-你是项目的 API 设计规范专家。当用户讨论 API 设计或使用 `/api-rule` 命令时，提供符合项目标准的指导。
-
-## 双模式触发说明
-- **AI 自动调用**：讨论 API 设计时自动加载
-- **用户手动调用**：使用 `/api-rule` 命令主动触发
-
-## 核心原则
-- 遵循 RESTful 设计规范
-- 使用统一的响应格式
-- 实施版本控制策略
-- 保证接口安全性
-
-详细规范请参考 [reference.md](./reference.md)
-```
-
-### 关键特征
-- ✅ 双模式触发：AI 自动 + 用户手动
-- ✅ 设置 `user-invocable: true`
-- ✅ **不设置** `disable-model-invocation`
-- ✅ 只读权限，适合知识规范
-
----
-
-## 示例 2：组件生成器（双模式型）
-
-### SKILL.md
-```markdown
----
-name: make-component
-description: 创建符合项目规范的组件，支持 AI 自动调用和用户通过斜杠命令 `/make-component` 手动触发，用于快速生成标准化组件代码
-user-invocable: true
-allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - AskUserQuestion
----
-
-你是组件创建专家。当用户讨论创建组件或使用 `/make-component` 命令时，引导用户创建组件。
-
-## 双模式触发说明
-- **AI 自动调用**：讨论创建组件时自动加载
-- **用户手动调用**：使用 `/make-component` 命令主动触发
-
-## 执行流程（手动调用时）
-1. 询问组件名称和类型
-2. 确认组件功能需求
-3. 生成组件代码文件
-```
-
-### 关键特征
-- ✅ 双模式触发
-- ✅ 包含读写权限（可创建文件）
-- ✅ 适合大多数操作类技能
-
----
-
 # 参考型 Skill 示例
 
-> **注意**：参考型仅用于**纯知识规范**，用户明确不需要手动调用的情况。大多数情况下推荐使用双模式型。
-
-## 示例 1：API 规范（参考型 - 仅用于纯知识）
+## 示例 1：API 规范
 
 ### 目录结构
 ```
@@ -360,11 +251,10 @@ allowed-tools:
 ```
 
 ### 关键特征
-- ✅ **仅 AI 自动触发**，用户无法手动调用
+- ✅ 自动触发，无需用户手动调用
 - ✅ 只读权限，无副作用操作
 - ✅ 名词+最简词命名：api-rule
-- ✅ **不设置** `user-invocable` 和 `disable-model-invocation`
-- ⚠️ 仅用于纯知识规范场景
+- ✅ **不设置** `disable-model-invocation`
 
 ---
 
@@ -425,53 +315,53 @@ allowed-tools:
 
 # 任务型 Skill 示例
 
-> **注意**：任务型仅用于**敏感操作**（删除、部署、发布等），需要用户明确意图，不让 AI 自动触发。大多数操作类技能推荐使用双模式型。
-
-## 示例 1：部署应用（任务型 - 敏感操作）
+## 示例 1：创建应用
 
 ### 目录结构
 ```
 .claude/skills/
-└── deploy-app/
+└── make-app/
     ├── SKILL.md
-    └── reference.md
+    ├── reference.md
+    └── templates/
+        └── component.tsx
 ```
 
 ### SKILL.md
 ```markdown
 ---
-name: deploy-app
-description: 部署应用到生产环境，通过斜杠命令触发，用于自动化部署流程，仅用户手动调用（敏感操作）
+name: make-app
+description: 创建符合项目规范的应用，通过斜杠命令触发，用于快速生成标准化应用代码
 user-invocable: true
 disable-model-invocation: true
 allowed-tools:
   - Read
-  - Bash(npm run build)
-  - Bash(docker build)
-  - Bash(docker push)
-  - Bash(kubectl apply)
+  - Write
+  - AskUserQuestion
 ---
 
-你是应用部署专家。当用户使用 `/deploy-app` 命令时，执行标准化的部署流程。
+你是应用创建专家。当用户使用 `/make-app` 命令时，引导用户创建符合项目规范的应用。
 
-## 部署流程
-1. 构建项目：`npm run build`
-2. 构建 Docker 镜像：`docker build -t ...`
-3. 推送镜像：`docker push ...`
-4. 应用 Kubernetes 配置：`kubectl apply -f ...`
+## 执行流程
+1. 询问应用名称和类型
+2. 确认应用功能需求
+3. 生成应用代码文件
+4. 创建对应的样式文件
+5. 生成测试文件（可选）
 
-## 安全检查
-- 确认当前分支为 main
-- 确认所有测试通过
-- 确认无未提交的更改
+## 应用规范
+- 使用函数式组件和 Hooks
+- 遵循单一职责原则
+- 组件文件不超过 300 行
+
+详细规范和模板请参考 [reference.md](./reference.md) 和 [templates/](./templates/)
 ```
 
 ### 关键特征
-- ✅ **仅用户手动触发**，AI **不能**自动执行
+- ✅ 手动触发，必须使用斜杠命令
 - ✅ **必须** `disable-model-invocation: true`
-- ✅ 精确权限控制，不使用 Bash(*)
-- ✅ 动词+最简词命名：deploy-app
-- ⚠️ 仅用于敏感操作场景
+- ✅ 读写权限，包含文件修改操作
+- ✅ 动词+最简词命名：make-app
 
 ---
 
@@ -726,16 +616,14 @@ allowed-tools:
 
 ## 错误 1：类型配置错误
 
-### ❌ 双模式型 Skill 设置了 disable-model-invocation: true
+### ❌ 参考型 Skill 设置了 disable-model-invocation: true
 ```yaml
 ---
 name: api-rule
 description: API 设计规范
-user-invocable: true
-disable-model-invocation: true  # 错误！双模式型不应禁用模型调用
+disable-model-invocation: true  # 错误！参考型不应禁用模型调用
 ---
 ```
-**问题**：设置了 `disable-model-invocation: true`，导致 AI 无法自动调用，变成了任务型。
 
 ### ❌ 任务型 Skill 缺少 disable-model-invocation: true
 ```yaml
@@ -743,48 +631,26 @@ disable-model-invocation: true  # 错误！双模式型不应禁用模型调用
 name: deploy-service
 description: 部署服务
 user-invocable: true
-# 错误！敏感操作缺少 disable-model-invocation: true
+# 错误！缺少 disable-model-invocation: true
 ---
 ```
-**问题**：缺少 `disable-model-invocation: true`，AI 可能自动执行部署操作，存在风险。
-
-### ❌ 参考型 Skill 设置了 user-invocable: true
-```yaml
----
-name: style-guide
-description: 代码风格规范
-user-invocable: true  # 错误！参考型不需要用户手动调用
----
-```
-**问题**：参考型是纯知识规范，用户不需要手动调用，应该不设置 `user-invocable`。
 
 ### ✅ 正确配置
 ```yaml
-# 双模式型（默认推荐）
+# 参考型
 ---
 name: api-rule
-description: 定义项目 RESTful API 设计规范，支持 AI 自动调用和用户手动调用...
-user-invocable: true
+description: 定义项目 RESTful API 设计规范...
 allowed-tools:
   - Read
   - Grep
   - Glob
 ---
 
-# 参考型（纯知识规范）
----
-name: style-guide
-description: 定义项目代码风格规范，在编写代码时自动使用...
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
----
-
-# 任务型（敏感操作）
+# 任务型
 ---
 name: deploy-service
-description: 部署服务到生产环境，仅用户手动调用（敏感操作）...
+description: 部署服务到生产环境，通过斜杠命令触发...
 user-invocable: true
 disable-model-invocation: true
 allowed-tools:
