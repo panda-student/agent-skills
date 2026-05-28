@@ -241,7 +241,7 @@
 
 ## 文件路径
 
-- 技能目录：`C:\Users\JOMOO\.claude\skills\`
+- 技能目录：`C:\Users\JOMOO\.agents\skills\`
 - Memory 目录：`C:\Users\JOMOO\.claude\projects\<project-name>\memory\`
 - Memory 索引：`C:\Users\JOMOO\.claude\projects\<project-name>\memory\MEMORY.md`
 - 技能路由表：`C:\Users\JOMOO\.claude\skills\using-superpowers\SKILL.md`

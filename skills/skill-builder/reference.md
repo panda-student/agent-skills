@@ -38,6 +38,7 @@ SKILL.md 是技能的**智能路由器**，其质量直接决定：
 | **Description 编写** | [Description 编写公式](#description-编写公式) |
 | **权限配置** | [权限控制配置](#权限控制配置) |
 | **目录结构** | [目录结构标准](#目录结构标准) |
+| **cc-switch 同步** | [cc-switch 技能管理工具](#cc-switch-技能管理工具) ⚠️ 重要 |
 | **最佳实践** | [最佳实践建议](#最佳实践建议) |
 
 ---
@@ -51,6 +52,7 @@ SKILL.md 是技能的**智能路由器**，其质量直接决定：
 - **[任务型 Skills 核心理论](./theories/task-skill-theory.md)**：任务型 Skill 设计原则与核心概念
 - **[任务型 Skill 七步设计清单](./theories/task-skill-checklist.md)**：任务型 Skill 实践指南
 - **[单一职责原则](./theories/single-responsibility.md)**：每个文件只负责一个明确的功能领域
+- **[依赖抽象原则](./theories/dependency-inversion.md)**：技能依赖功能接口而非具体技能名称
 
 ---
 
@@ -60,10 +62,26 @@ SKILL.md 是技能的**智能路由器**，其质量直接决定：
 
 | 类型 | 触发方式 | 调用者 | 典型场景 |
 |------|---------|-------|---------|
-| **参考型** | **AI 自动识别调用** | Claude 主动触发 | 规范、知识、指南 |
-| **任务型** | **用户手动调用** | 用户用 `/命令` 触发 | 执行操作、生成文件 |
+| **双模式型** | **AI自动 + 用户手动** | Claude主动触发 / 用户 `/命令` | 通用技能（推荐） |
+| **参考型** | **AI 自动识别调用** | Claude 主动触发 | 纯知识规范 |
+| **任务型** | **用户手动调用** | 用户用 `/命令` 触发 | 敏感操作 |
 
-## 参考型（AI 自动调用）
+## 双模式型（推荐，同时支持两种调用）
+
+```
+用户：我想设计一个登录 API
+AI：[自动加载 api-rule] 根据 API 规范，建议使用 POST /auth/login...
+
+用户：/api-rule
+AI：[触发 api-rule] 请描述你的 API 需求...
+```
+
+- **触发方式**：AI 识别到相关话题时自动加载，用户也可通过 `/命令` 主动触发
+- **适合场景**：大多数技能，既可提供知识参考，也可执行操作
+- **配置特征**：设置 `user-invocable: true`，**不设置** `disable-model-invocation`
+- **命名规范**：根据主要功能选择（规范类用名词，操作类用动词）
+
+## 参考型（纯知识规范，仅 AI 自动调用）
 
 ```
 用户：我想设计一个登录 API
@@ -71,11 +89,11 @@ AI：[自动加载 api-rule] 根据 API 规范，建议使用 POST /auth/login..
 ```
 
 - **触发方式**：AI 识别到相关话题时自动加载，用户无需主动触发
-- **适合场景**：提供规范、标准、指南、最佳实践
-- **配置特征**：不设置 `disable-model-invocation` 或设为 `false`
+- **适合场景**：纯知识规范、标准、指南、最佳实践（不执行任何操作）
+- **配置特征**：不设置 `disable-model-invocation` 和 `user-invocable`
 - **命名规范**：名词+最简词（api-rule、style-guide、git-flow）
 
-## 任务型（用户手动调用）
+## 任务型（敏感操作，仅用户手动调用）
 
 ```
 用户：/make-component
@@ -83,8 +101,8 @@ AI：[触发 make-component] 请输入组件名称...
 ```
 
 - **触发方式**：用户显式输入斜杠命令才能触发
-- **适合场景**：执行操作、生成文件、部署、测试
-- **配置特征**：必须设置 `disable-model-invocation: true`
+- **适合场景**：敏感操作、文件修改、部署、测试（需要用户明确意图）
+- **配置特征**：必须设置 `disable-model-invocation: true` 和 `user-invocable: true`
 - **命名规范**：动词+最简词（make-app、run-app、check-code）
 
 ---
@@ -163,25 +181,105 @@ AI：[触发 make-component] 请输入组件名称...
 
 # Skill 类型对比 {#skill-类型对比}
 
-## 核心区别：disable-model-invocation
+## 核心区别：user-invocable 和 disable-model-invocation 组合
 
-**这是区分两种 Skill 类型的决定性字段：**
+**这是区分三种 Skill 类型的决定性配置：**
 
-| 类型 | disable-model-invocation | 本质 |
-|------|-------------------------|------|
-| **参考型** | `false` 或不设置 | 知识提供者（Claude 可主动调用） |
-| **任务型** | `true` | 动作执行者（必须用户手动触发） |
+| 类型 | user-invocable | disable-model-invocation | 本质 |
+|------|---------------|-------------------------|------|
+| **双模式型** | `true` | 不设置或 `false` | 通用技能（AI可调用 + 用户可调用） |
+| **参考型** | 不设置 | 不设置或 `false` | 纯知识提供者（仅AI可调用） |
+| **任务型** | `true` | `true` | 敏感操作执行者（仅用户可调用） |
 
 ## 详细对比
 
-| 特征 | 参考型 Skill | 任务型 Skill |
-|------|-------------|-------------|
-| 触发方式 | 语义自动触发 | 斜杠命令手动触发 |
-| 适用场景 | 规范/知识/标准 | 执行操作/部署/脚本 |
-| 权限配置 | 只读权限 | 读写权限 |
-| 命名规范 | 名词+最简词 | 动词+最简词 |
-| 副作用 | 无 | 可能有（文件修改、部署等） |
-| user-invocable | 不需要 | 必须设置为 true |
+| 特征 | 双模式型 Skill | 参考型 Skill | 任务型 Skill |
+|------|---------------|-------------|-------------|
+| AI自动调用 | ✅ 是 | ✅ 是 | ❌ 否 |
+| 用户手动调用 | ✅ 是 (`/命令`) | ❌ 否 | ✅ 是 (`/命令`) |
+| 适用场景 | 通用技能 | 纯知识/规范 | 敏感操作/部署 |
+| 权限配置 | 只读或读写 | 只读权限 | 读写权限 |
+| 副作用 | 可选 | 无 | 可能有 |
+| user-invocable | 必须设置 `true` | 不需要 | 必须设置 `true` |
+| disable-model-invocation | 不设置 | 不设置 | 必须设置 `true` |
+| 推荐度 | ⭐⭐⭐ 推荐 | ⭐⭐ 特定场景 | ⭐⭐ 特定场景 |
+
+## 配置示例
+
+### 双模式型（推荐）
+```yaml
+---
+name: skill-name
+description: 功能描述 + 执行方式 + 触发场景
+user-invocable: true
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+---
+```
+
+### 参考型（纯知识）
+```yaml
+---
+name: skill-name
+description: 功能描述 + 执行方式 + 触发场景
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+---
+```
+
+### 任务型（敏感操作）
+```yaml
+---
+name: skill-name
+description: 功能描述 + 执行方式 + 触发场景
+user-invocable: true
+disable-model-invocation: true
+allowed-tools:
+  - Read
+  - Write
+  - Edit
+  - Bash
+---
+```
+
+---
+
+# 双模式 Skill 规范 {#双模式-skill-规范}
+
+## 核心特征
+
+- **触发方式**：双模式触发，AI 识别相关话题时自动加载，用户也可通过 `/命令` 主动触发
+- **适用场景**：大多数技能，既可提供知识参考，也可执行操作
+- **核心特点**：灵活性最高，用户和 AI 都能使用
+- **推荐度**：⭐⭐⭐ 默认推荐此类型
+
+## Frontmatter 配置
+
+```yaml
+---
+name: skill-name
+description: 功能描述 + 执行方式 + 触发场景
+user-invocable: true
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+---
+```
+
+**关键配置**：
+- **必须设置** `user-invocable: true`（允许用户调用）
+- **不设置** `disable-model-invocation`（默认允许 AI 自动调用）
+
+## 命名规范
+
+根据主要功能选择：
+- **知识导向**：名词+最简词（api-rule、style-guide）
+- **操作导向**：动词+最简词（make-app、run-app）
 
 ---
 
@@ -222,8 +320,9 @@ allowed-tools:
 ## 核心特征
 
 - **触发方式**：斜杠命令手动触发，用户必须使用 `/xxx` 命令显式调用
-- **适用场景**：执行操作、部署、脚本、流程、代码生成、文件修改
-- **核心特点**：包含具体执行步骤和操作指令，可能包含副作用操作
+- **适用场景**：**敏感操作**、文件修改、部署、测试、删除等需要用户明确意图的操作
+- **核心特点**：包含具体执行步骤和操作指令，可能有副作用，需要用户确认
+- **推荐度**：⭐⭐ 仅用于敏感操作场景
 
 ## Frontmatter 配置
 
@@ -245,8 +344,20 @@ allowed-tools:
 
 | 字段 | 必需 | 说明 |
 |------|------|------|
-| disable-model-invocation | **是** | 必须设置为 true |
-| user-invocable | **是** | 必须设置为 true |
+| disable-model-invocation | **是** | 必须设置为 true（禁止 AI 自动调用） |
+| user-invocable | **是** | 必须设置为 true（允许用户手动调用） |
+
+## 适用场景判断
+
+**何时使用任务型？**
+- 操作可能产生不可逆后果（删除、重置）
+- 涉及敏感资源（部署、发布、权限变更）
+- 需要用户明确确认意图的操作
+
+**何时使用双模式型？**
+- 知识查询、规范参考
+- 代码生成（不涉及删除/部署）
+- 一般性文件操作（创建、修改）
 
 ## 命名规范（动词+最简词）
 
@@ -405,21 +516,126 @@ SKILL.md 定位为智能路由器，只包含核心提示和路由表
 ## 2. 遵循单一职责原则
 每个文件只负责一个明确的功能领域
 
-## 3. 遵循最小权限原则
+## 3. 遵循依赖抽象原则
+技能依赖功能接口而非具体技能名称，详见 [依赖抽象原则](./theories/dependency-inversion.md)
+
+## 4. 遵循最小权限原则
 精确授权到子命令，不使用 `Bash(*)`
 
-## 4. 合理拆分内容
+## 5. 合理拆分内容
 - 高频核心语义 → SKILL.md（内联）
 - 低频细节、示例、数据 → reference.md、examples.md（外置）
 - 核心理论 → theories/（独立管理）
 - 可复用模板 → templates/
 
-## 5. 定期维护更新
+## 6. 定期维护更新
 随着项目发展，及时更新 Skill 内容以保持其有效性
 
-## 6. 遵循行数规范
+## 7. 遵循行数规范
 - SKILL.md：≤500 行
 - reference.md、examples.md：按需设置
+
+---
+
+# cc-switch 技能管理工具 {#cc-switch-技能管理工具}
+
+## ⚠️ 关键原则
+
+**任何技能的名称和描述更新后，必须同步更新 cc-switch 数据库！**
+
+cc-switch 使用 SQLite 数据库管理技能信息，**不会自动从 SKILL.md 同步**，需要手动执行数据库更新。
+
+---
+
+## cc-switch 架构
+
+| 项目 | 说明 |
+|------|------|
+| npm 包 | `@aravhawk/cc-switch` |
+| 数据库位置 | `~/.cc-switch/cc-switch.db`（SQLite） |
+| 技能表 | `skills` |
+| 关键字段 | `name`, `description`, `directory`, `id`, `enabled_claude` |
+
+---
+
+## skills 表结构
+
+```sql
+CREATE TABLE skills (
+    id TEXT PRIMARY KEY,           -- 技能ID，格式：local:<name>
+    name TEXT NOT NULL,            -- 技能名称
+    description TEXT,              -- 技能描述（从 SKILL.md frontmatter）
+    directory TEXT NOT NULL,       -- 技能目录名
+    repo_owner TEXT,               -- 来源仓库 owner（本地技能为 NULL）
+    repo_name TEXT,                -- 来源仓库 name（本地技能为 NULL）
+    repo_branch TEXT DEFAULT 'main',
+    readme_url TEXT,
+    enabled_claude BOOLEAN NOT NULL DEFAULT 0,
+    enabled_codex BOOLEAN NOT NULL DEFAULT 0,
+    enabled_gemini BOOLEAN NOT NULL DEFAULT 0,
+    enabled_opencode BOOLEAN NOT NULL DEFAULT 0,
+    installed_at INTEGER NOT NULL DEFAULT 0
+);
+```
+
+---
+
+## 常用更新操作
+
+### 更新技能名称
+
+```python
+import sqlite3
+conn = sqlite3.connect('~/.cc-switch/cc-switch.db')
+cursor = conn.cursor()
+cursor.execute('UPDATE skills SET name = ?, directory = ?, id = ? WHERE name = "old-name"',
+               ('new-name', 'new-name', 'local:new-name'))
+conn.commit()
+conn.close()
+```
+
+### 更新技能描述
+
+```python
+import sqlite3
+import re
+
+conn = sqlite3.connect('~/.cc-switch/cc-switch.db')
+cursor = conn.cursor()
+
+# 从 SKILL.md 提取 description
+skill_path = '~/.agents/skills/<skill-name>/SKILL.md'
+with open(skill_path, 'r', encoding='utf-8') as f:
+    content = f.read()
+
+match = re.search(r'description:\s*(.+?)\n', content)
+if match:
+    description = match.group(1).strip()
+    cursor.execute('UPDATE skills SET description = ? WHERE name = "<skill-name>"', (description,))
+    conn.commit()
+conn.close()
+```
+
+---
+
+## 常见问题
+
+### 问题：cc-switch 中看不到技能描述
+
+**原因**：cc-switch 导入技能时未正确解析 SKILL.md frontmatter，导致 description 字段为 NULL
+
+**解决方案**：手动从 SKILL.md 提取 description 并更新数据库
+
+```bash
+# 查询验证
+python -c "
+import sqlite3
+conn = sqlite3.connect('~/.cc-switch/cc-switch.db')
+cursor = conn.cursor()
+cursor.execute('SELECT name, description FROM skills WHERE description IS NULL')
+print([r[0] for r in cursor.fetchall()])
+"
+```
 
 ---
 
@@ -429,8 +645,8 @@ SKILL.md 定位为智能路由器，只包含核心提示和路由表
 
 | 项目 | 路径 | 说明 |
 |------|------|------|
-| 本地技能目录 | `C:\Users\ZhuanZ\.agents\skills` | Claude Code 实际使用的技能 |
-| 技能仓库 | `D:\TraeProject\agent-skills` | Git 管理的技能仓库 |
+| 本地技能目录 | `C:\Users\JOMOO\.agents\skills` | Claude Code 实际使用的技能 |
+| 技能仓库 | `D:\TraeProjects\agent-skills` | Git 管理的技能仓库 |
 
 ## 同步触发条件
 
@@ -451,7 +667,7 @@ cp -r [本地技能路径]/[技能名] [仓库路径]/skills/
 
 ## README.md 更新
 
-当新增或删除技能时，更新 `D:\TraeProject\agent-skills\README.md` 的技能列表表格。
+当新增或删除技能时，更新 `D:\TraeProjects\agent-skills\README.md` 的技能列表表格。
 
 ## 同步检查清单
 
