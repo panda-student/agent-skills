@@ -1,0 +1,14 @@
+{
+  "name": "简单线性流程",
+  "nodes": [
+    { "id": "start", "type": "startEvent", "name": "开始" },
+    { "id": "submit", "type": "userTask", "name": "提交申请" },
+    { "id": "review", "type": "userTask", "name": "主管审核" },
+    { "id": "end", "type": "endEvent", "name": "结束" }
+  ],
+  "edges": [
+    { "id": "f1", "source": "start", "target": "submit" },
+    { "id": "f2", "source": "submit", "target": "review" },
+    { "id": "f3", "source": "review", "target": "end" }
+  ]
+}

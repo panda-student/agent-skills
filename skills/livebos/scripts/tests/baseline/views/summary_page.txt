@@ -1,0 +1,10 @@
+======================================================================
+FILE: 1整体管理\流程表单\项目效益收集\QT04009_WDSQ.xml
+  父对象: WO_QT04009
+  可排序字段(推断,可多值): FDate / WF_STATE / WF_CURRENTSTEPS / FTheme / FNO / FUser / FProject / FName / FYM / FTMoney / FTBackM
+  属性63: true
+  筛选/权限条件(1 条):
+    #1 args: $Login.User
+       FUser={0}
+  展示列(20): ID, InstID, FTheme, FNO, FUser, FAppPost, FOrg, FDate, FFullName, FPhone, FBenUnit, FFeeMBen, FEnclosure, NewFileUp_file, FWorkFlowID, WorkFlowCode, FWorkFlow, FUserName, VER, FSAPLongCode
+

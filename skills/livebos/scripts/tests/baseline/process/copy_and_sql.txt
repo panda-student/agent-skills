@@ -1,0 +1,15 @@
+======================================================================
+FILE: 1整体管理\流程表单\项目效益收集\WO_QT04009_AddBackM.lbz
+<process xmlns="http://www.livebos.com/bizlogic/process" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" attribute="0" exitOnStandardFault="false" isHorizontalLayout="false" method="WO_QT04009_AddBackM" name="WO_QT04009_AddBackM" object="WO_QT04009" type="0" xsi:schemaLocation="http://www.livebos.com/bizlogic/process http://www.livebos.com/bizlogic_process.xsd">
+描述: 项目效益收集申请单-新增项目月效益明细流程
+----------------------------------------------------------------------
+◆ SEQUENCE 赋值
+  = 赋值 赋值
+  = 拷贝 V_1 ← O_MASTER.FFeeMBen
+  = 拷贝 ? ← 
+  ◆ FOREACH 迭代
+    ◆ SEQUENCE 批量修改对象[项目效益台账]
+      • [FormSetOperate/update] T_PJBenefit (批量修改对象[项目效益台账])  → 改字段: FTMoney  | cond: ["FProject={0}",[{"expression":"V_2.FProject","length":"","s
+      • [SQL/execute]  (commit)  | SQL: commit
+      • [CallBizProcess/?]  (对象流程-【项目月效益明细-新增流程】)  → 改字段: FProject, FName, FProNo, FUnits, FDate, FMoneyM, FMoneyTM, FMonthCut
+

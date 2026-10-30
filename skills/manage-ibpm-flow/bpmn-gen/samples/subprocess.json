@@ -1,0 +1,16 @@
+{
+  "name": "含子流程的订单处理",
+  "nodes": [
+    { "id": "start", "type": "startEvent", "name": "订单到达" },
+    { "id": "validate", "type": "serviceTask", "name": "校验订单" },
+    { "id": "fulfill", "type": "subProcess", "name": "履约（子流程）" },
+    { "id": "notify", "type": "serviceTask", "name": "通知客户" },
+    { "id": "end", "type": "endEvent", "name": "订单完成" }
+  ],
+  "edges": [
+    { "id": "f1", "source": "start", "target": "validate" },
+    { "id": "f2", "source": "validate", "target": "fulfill" },
+    { "id": "f3", "source": "fulfill", "target": "notify" },
+    { "id": "f4", "source": "notify", "target": "end" }
+  ]
+}

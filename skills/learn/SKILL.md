@@ -1,6 +1,6 @@
 ---
 name: learn
-description: 会话复盘技能，分析经验教训，固化到对应技能文件，支持自身迭代优化
+description: 会话复盘技能，分析经验教训，固化到对应全局技能/项目规约文档，支持自身迭代优化
 user-invocable: true
 allowed-tools:
   - Read
@@ -14,10 +14,12 @@ allowed-tools:
 
 ## 核心原则
 
-**固化必须找到对应技能，不能依赖记忆文件**
+**固化必须找到对应载体，不能依赖记忆文件**
 
-- 经验固化 → 找到对应的技能文件 → 更新 SKILL.md / reference.md / examples.md
+- 全局通用经验 → 找到对应的全局技能 → 更新 SKILL.md / reference.md / examples.md
+- 项目级开发约束/规约 → 找到项目的 AGENTS.md（及 docs/rules 等关联文档） → 更新规约文档
 - 记忆文件仅用于跨会话上下文，不承载固化知识
+- 固化目标一律**按职责/功能定位，禁止写死具体技能名**（技能随迭代随时替换）
 - **learn技能本身也可被迭代**（通过 `/learn 更新learn技能`）
 
 ---
@@ -80,15 +82,22 @@ allowed-tools:
 
 从会话中提取经验后，先识别是否为共性经验：
 
+**第一道闸：工具化优先判断**（先于一切分类执行）：
+
+- 判断经验能否表达为工具的机械规则：搜什么/怎么搜/什么算命中/采集什么字段与格式
+- **能工具化** → 首选固化为目标技能的工具能力（脚本解析 + 渲染 + 回归夹具样本三件套，经 skill-builder 执行），跑一次命令即生效、永不遗忘
+- **不能工具化**（需人判断的裁决/分诊类，如悬空引用裁决、异常分诊）→ 才进技能文档条目
+- 反模式警示：把可脚本化经验写成文档条目 → 能力未进工具，下次同类任务仍靠人工检索、同样遗漏重演（2026-10-22 实证：平迁梳理靠人工 grep 补 constraint 候选 SQL，第一轮复盘全写成文档被质疑，改造脚本后才闭环）
+
 **经验分类提取**：
 
-**业务知识类**（固化到 jpm-business）：
+**业务知识类**（固化为全局业务领域技能，按功能关键词定位，勿写死技能名）：
 - 业务规则：字段联动规则、数据校验规则、计算逻辑
 - 字段含义：特定流程字段的业务含义、用途
 - 审批流程：审批节点、审批条件、流程约束
 - 业务约束：金额限制、条件判断、必填规则
 
-**技术架构类**（固化到 jpm-architecture）：
+**技术架构类**（固化为全局技术架构技能，按功能关键词定位，勿写死技能名）：
 - 前端组件：Vue组件结构、渲染机制、插件开发
 - 后端服务：Java服务类、数据访问层、业务逻辑层
 
@@ -107,6 +116,11 @@ allowed-tools:
 - 调试经验：问题排查思路、根因分析
 - 绕坑经验：踩过的坑及解决方案
 
+**项目规约类**（固化到项目 AGENTS.md 及 docs/rules 关联文档）：
+- 开发硬约束：工程/编码/接口/部署等强制约定
+- 领域数据约定：软删、缓存、字段/命名/语义约定
+- 权限与领域规则：注解、拦截器、白名单等
+
 **共性经验识别**：
 - 多个技能都可能遇到的问题（如编码问题、连接问题）
 - 可复用的基础设施逻辑（如数据库连接、API调用）
@@ -119,22 +133,27 @@ allowed-tools:
 ```
 
 **定位方法**：
-1. 根据任务类型推断技能名（如 entity-client 相关经验 → entity-client 技能）
-2. 用 Glob 搜索技能目录：`C:\Users\JOMOO\.agents\skills\*\SKILL.md`
-3. 用 Grep 搜索技能描述关键词
-4. 确认技能文件存在后再固化
+1. 先判断经验归属：全局通用经验 → 全局技能；项目级开发约束 → 项目 AGENTS.md
+2. 全局技能按职责/功能推断（业务领域 / 技术架构 / 流程 / 命令…），不依赖具体技能名
+3. 用 Glob 搜索技能目录：`C:\Users\JOMOO\.agents\skills\*\SKILL.md`
+4. 用 Grep 搜索技能描述关键词
+5. 项目规约 → 在项目仓库定位 AGENTS.md 及 docs/rules/ 关联文档
+6. 确认载体存在后再固化
 
 **经验分类与固化目标**：
 
 | 经验类型 | 固化目标 | 文件 |
 |---------|---------|------|
-| **业务知识** | **jpm-business** | SKILL.md（流程业务章节） |
-| **技术架构** | **jpm-architecture** | reference.md（技术实现章节） |
+| **业务知识** | **全局技能**（业务/流程领域，按功能定位） | SKILL.md（流程业务章节） |
+| **技术架构** | **全局技能**（技术/架构实现，按功能定位） | reference.md（技术实现章节） |
 | 流程优化 | 对应技能 | SKILL.md（流程模板章节） |
 | 新发现 | 对应技能 | reference.md |
 | 命令经验 | 对应技能 | examples.md |
 | **共性经验** | **新建共享技能** | 新技能 SKILL.md |
+| **项目规约** | **项目 AGENTS.md 及 docs/rules 关联文档** | AGENTS.md + docs/rules/ |
 | 技能迭代请求 | learn技能 | SKILL.md（直接更新） |
+
+> 固化目标一律按职责/功能描述，**禁止写死具体技能名**（如 jpm-business/jpm-architecture）。定位不到对应技能时提示新建。
 
 **共性经验示例**：
 
@@ -196,16 +215,16 @@ allowed-tools:
   - 验证方式：<实际执行的命令/操作>
 是否全部固化？(Y/n/逐项确认)
 
-【业务知识 - 固化到 jpm-business】(N项)
+【业务知识】(N项)
 - 流程类型：XXX（entityType）
   - 业务内容：<字段含义/业务规则/审批流程>
   - 验证方式：<接口查询/代码确认>
-是否固化到 jpm-business？(Y/n)
+是否固化（定位对应业务领域全局技能）？(Y/n)
 
-【技术架构 - 固化到 jpm-architecture】(N项)
+【技术架构】(N项)
 - 技术内容：<前端组件/后端服务/数据访问>
   - 验证方式：<代码确认/接口测试>
-是否固化到 jpm-architecture？(Y/n)
+是否固化（定位对应技术架构全局技能）？(Y/n)
 
 【共性经验 - 抽取共享技能】(N项)
 - 共性问题：XXX
@@ -213,6 +232,12 @@ allowed-tools:
   - 适用场景：需要<功能描述>时
   - 验证方式：<实际执行的命令/操作>
 是否抽取为共享技能？(Y/n)
+
+【项目规约 - 固化到项目 AGENTS.md】(N项)
+- 规约内容：<开发硬约束/领域数据约定/权限规则>
+  - 关联文档：AGENTS.md 或 docs/rules/xxx.md
+  - 验证方式：<代码确认/既有文档对比>
+是否固化到项目规约文档？(Y/n)
 
 【learn技能迭代】(N项)
 - 迭代内容：XXX
@@ -238,8 +263,8 @@ allowed-tools:
 | 共性经验抽取 | 调用 skill-builder | ❌ 禁止 Edit/Write |
 | 新建技能 | 调用 skill-builder | ❌ 禁止 Edit/Write |
 | **learn自身迭代** | **调用 skill-builder** | ❌ 禁止 Edit/Write |
+| **固化到项目规约** | **learn 直接处理** | 编辑项目 AGENTS.md / docs/rules 关联文档 |
 | 记录 Memory | learn 直接处理 | 写入 memory 目录 |
-| 更新路由表 | learn 直接处理 | 更新 using-superpowers |
 
 **固化原则**：
 ```
@@ -261,7 +286,6 @@ learn自身迭代：Skill(skill="skill-builder", args="update learn --fix <内�
 ### 下一轮 PDCA
 
 固化完成后，为下次复盘做准备：
-- 检查是否有新技能需要注册到路由表
 - 检查是否有技能需要补充 examples.md
 - 记录本次复盘的改进点，下次继续优化
 
@@ -289,7 +313,7 @@ learn自身迭代：Skill(skill="skill-builder", args="update learn --fix <内�
 
 ## 固化格式模板
 
-业务知识（写入 jpm-business/SKILL.md）：
+业务知识（写入业务领域全局技能 SKILL.md）：
 ```markdown
 ## <流程名称>（<entityType>）
 
@@ -307,7 +331,7 @@ learn自身迭代：Skill(skill="skill-builder", args="update learn --fix <内�
 - <审批条件>
 ```
 
-技术架构（写入 jpm-architecture/reference.md）：
+技术架构（写入技术架构全局技能 reference.md）：
 ```markdown
 ## 技术实现
 
@@ -378,6 +402,17 @@ description: <共性问题解决方案，按功能场景引用>
 - 需要<功能>时 → 参考 [[<共享技能名>]]
 ```
 
+项目规约（写入项目 AGENTS.md / docs/rules/xxx.md）：
+```markdown
+## <主题>
+
+### 硬约束/约定
+- <约束描述>
+
+### 关联文档
+- <关联的 docs/rules 文档或章节>
+```
+
 ---
 
 ## 文件路径
@@ -385,6 +420,5 @@ description: <共性问题解决方案，按功能场景引用>
 - 技能目录：`C:\Users\JOMOO\.agents\skills\`
 - learn技能：`C:\Users\JOMOO\.agents\skills\learn\SKILL.md`
 - Memory 目录：`C:\Users\JOMOO\.claude\projects\<project-name>\memory\`
-- 技能路由表：`C:\Users\JOMOO\.agents\skills\using-superpowers\SKILL.md`
 
 更多分类标准和整理指南见 [reference.md](./reference.md)

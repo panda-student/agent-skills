@@ -1,0 +1,8 @@
+======================================================================
+FILE: 效益分析\基础数据\T_Spring.xml
+  [命令] 新增             => T_Spring / Add
+  [命令] 删除             => T_Spring / Delete
+  [命令] 修改             => T_Spring / Update
+  [命令] 导入             => T_Spring / LoadExcel
+  [命令] 导出             => T_Spring / ToExcel
+

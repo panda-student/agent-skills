@@ -1,0 +1,39 @@
+{
+  "_comment": "ibpm 流程分类环境配置。换分类/换环境时手改此文件即可。字段来源：真实导出包逆向验证（含平台人工修正后的 golden 导出）。",
+  "category": {
+    "typeId": "2077307621480931328",
+    "typeName": "项目管理系统_100836348",
+    "system": "100836348",
+    "tenantId": "100836348"
+  },
+  "_comment_form": "全局表单环境常量：targetSystemId 是前端页面所属子系统 ID。PMS 前端固定落在子系统 100837377，与流程分类主系统 100836348 不同，生成 globalForm URL 时写死取此值（不随 spec.sysName 走）。",
+  "form": {
+    "targetSystemId": "100837377"
+  },
+  "_comment_hrScript": "人员脚本（汇报关系）环境常量。scriptVariants 两种变体的 scriptId/方法名/参数描述来自目标环境【系统脚本管理】，orgDim 是默认组织纬度 ID。",
+  "hrScript": {
+    "orgDim": "jomoo-zuhu_EG",
+    "scriptVariants": {
+      "byId": {
+        "scriptId": "1517446518708367360",
+        "scriptName": "根据用户Id获取指定汇报关系",
+        "method": "getUserByFlowUser",
+        "userParaDesc": "用户id",
+        "userParaCtBindKey": "id",
+        "dimParaDesc": "维度id"
+      },
+      "byCode": {
+        "scriptId": "1559561472816123904",
+        "scriptName": "根据用户code获取指定用户的汇报关系",
+        "method": "getUserByFlowUserCode",
+        "userParaDesc": "用户账号account",
+        "userParaCtBindKey": "account",
+        "dimParaDesc": "组织纬度ID"
+      }
+    }
+  },
+  "_comment_builtinVars": "平台内置流程变量（无需在 variables 声明）：变量名 → 人读描述。",
+  "builtinVars": {
+    "startorAccount": "发起人工号"
+  }
+}

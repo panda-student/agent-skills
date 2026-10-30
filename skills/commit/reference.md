@@ -2,37 +2,48 @@
 
 ## 1. 变更分析流程
 
-### 1.1 获取变更状态
+### 1.1 判断提交范围（escape hatch 优先）
+
+**先检测暂存区是否已有内容**：
+
+```bash
+git diff --cached --name-only
+```
+
+- **非空** → 仅按暂存区提交（escape hatch，尊重用户显式 `git add` 意图），跳过下方 all 流程
+- **为空** → 进入 all 模式，取工作区全部变更
+
+**all 模式：取工作区全部变更**：
 
 ```bash
 # 获取当前分支
 git branch --show-current
 
-# 获取变更文件列表
+# 获取工作区全部变更（含 untracked，前缀 ?? 表示新文件）
 git status --porcelain
 
-# 获取暂存区变更
-git diff --cached --name-only
-
-# 获取工作区变更
-git diff --name-only
-
-# 获取未跟踪文件
-git ls-files --others --exclude-standard
-```
-
-### 1.2 分析变更内容
-
-```bash
-# 获取文件详细变更
+# 已跟踪文件的详细 diff
 git diff -- <file>
 
-# 获取暂存区详细变更
-git diff --cached -- <file>
+# untracked 新文件内容（直接读取文件）
+cat -- <new-file>
 
-# 获取变更统计
+# 变更统计
 git diff --stat
 ```
+
+### 1.2 应用排除清单
+
+按 SKILL.md「排除清单」剔除敏感/噪音文件（不 add、不提交），命中时提示用户已跳过。
+
+**补充模式**（视项目情况扩展，主表见 SKILL.md）：
+
+| 类别 | 扩展模式 |
+|------|---------|
+| 密钥 | `*.pfx`、`*.keystore`、`secrets.*` |
+| 编辑器临时 | `*.swo` |
+| 备份 | `*.bak`、`*.orig` |
+| 编译产物 | `*.class`、`*.pyc` |
 
 ## 2. 分类策略
 
@@ -50,7 +61,7 @@ git diff --stat
 ### 2.2 内容分析关键词
 
 | 关键词 | 类型推断 |
-|--------|----------|
+|--------|---------|
 | 新增、添加、实现 | feat |
 | 修复、解决、修正 | fix |
 | 优化、重构、改进 | refactor |
@@ -70,7 +81,7 @@ git diff --stat
 ### 3.1 功能开发
 
 ```
-feat(模块): 简短描述
+<zentao-id>-feat(模块): 简短描述
 
 - 新增功能点1
 - 新增功能点2
@@ -81,7 +92,7 @@ Closes #123
 ### 3.2 Bug 修复
 
 ```
-fix(模块): 修复问题描述
+<zentao-id>-fix(模块): 修复问题描述
 
 问题描述：
 - 问题现象
@@ -95,7 +106,7 @@ Fixes #456
 ### 3.3 配置变更
 
 ```
-chore: 更新依赖/配置
+<zentao-id>-chore: 更新依赖/配置
 
 - 更新 xxx 到 x.x.x
 - 修改 xxx 配置项
@@ -104,7 +115,7 @@ chore: 更新依赖/配置
 ### 3.4 代码重构
 
 ```
-refactor(模块): 重构描述
+<zentao-id>-refactor(模块): 重构描述
 
 重构原因：
 - 原有设计的问题
@@ -115,116 +126,27 @@ refactor(模块): 重构描述
 
 ## 4. 执行命令
 
-### 4.1 暂存文件
+**all 模式**：按分类组先 `git add` 再 `git commit`：
 
 ```bash
-# 暂存指定文件
-git add <file1> <file2> ...
+# 按组 add 后提交
+git add <file1> <file2>
+git commit -m "<zentao-id>-<type>(<scope>): <subject>"
 
-# 暂存目录
-git add <directory>/
-
-# 交互式暂存
-git add -p
+# 多行提交信息
+git commit -m "<subject>" -m "<body content>"
 ```
 
-### 4.2 提交变更
+**escape hatch 模式**（暂存区已有内容）：直接 `git commit`，无需再 add。
 
-```bash
-# 提交暂存区
-git commit -m "type(scope): subject"
+> 提交信息前缀必须含禅道编号，格式见 SKILL.md「提交信息格式」。
 
-# 提交并添加详细描述
-git commit -m "type(scope): subject" -m "body content"
+## 5. 异常处理
 
-# 使用多行提交信息
-git commit -F- <<EOF
-type(scope): subject
-
-body content
-
-footer
-EOF
-```
-
-## 5. 交互流程
-
-### 5.1 展示分类结果
-
-```
-📋 变更分类结果：
-
-提交 1 [feat(user)]: 新增用户登录功能
-  - src/components/Login.vue
-  - src/api/user.js
-  - src/store/user.js
-
-提交 2 [fix(cart)]: 修复购物车数量计算错误
-  - src/utils/cart.js
-
-提交 3 [docs]: 更新 README 文档
-  - README.md
-  - docs/api.md
-
-提交 4 [chore]: 更新项目配置
-  - package.json
-  - vite.config.js
-```
-
-### 5.2 确认选项
-
-- **确认提交**：按分类结果执行提交
-- **调整分类**：修改文件分组
-- **合并提交**：将多个分组合并
-- **取消操作**：放弃本次提交
-
-## 6. 异常处理
-
-### 6.1 无变更
-
-```
-⚠️ 当前没有需要提交的变更
-```
-
-### 6.2 文件过大
-
-```
-⚠️ 以下文件变更较大，建议检查：
-  - large-file.js (+500/-200 行)
-
-是否继续？
-```
-
-### 6.3 合并冲突
-
-```
-❌ 存在合并冲突，请先解决：
-  - conflicted-file.js
-
-解决方法：
-1. 手动编辑冲突文件
-2. git add <resolved-file>
-3. 重新执行 /commit
-```
-
-## 7. 最佳实践
-
-### 7.1 提交粒度
-
-- **太小**：单个文件的小改动可合并
-- **适中**：一个完整的功能点
-- **太大**：多个功能应拆分提交
-
-### 7.2 提交时机
-
-- 功能完成一个单元时
-- 修复一个 Bug 时
-- 重构一个模块时
-- 下班前保存进度时
-
-### 7.3 避免的情况
-
-- 提交半成品代码
-- 提交无法运行的代码
-- 一个提交包含多个不相关修改
-- 提交信息模糊不清
+| 异常 | 处理方式 |
+|------|---------|
+| 命中排除清单 | 提示已跳过该文件，不 add |
+| 工作区无变更（all 模式） | 提示无可提交内容 |
+| 暂存区无变更（escape hatch 触发时） | 自动回退到 all 模式 |
+| 文件过大 | 警告并询问是否继续 |
+| 合并冲突 | 提示先解决冲突后重试 |
