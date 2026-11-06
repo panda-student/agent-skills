@@ -1,0 +1,30 @@
+======================================================================
+FILE: 1整体管理\流程表单\项目效益收集\WF_QT04009.xml
+<workflow>
+----------------------------------------------------------------------
+  审批链(5 步):
+  [发起] 流转: 开始: 完成→完成→步骤3
+  1. 结束 (结束)
+       挂接(pre): WO_QT04009_AddBackM
+  2. 填写申请
+       挂接(pre): WO_QT04009_MBug
+       流转: 下一步: 完成→完成→步骤5
+       字段权限[WO_QT04009(editAttribute=0)]: 可编辑(6): FUser, FFullName, FBenUnit, FFeeMBen, FEnclosure, NewFileUp_file | 锁定可见(5) | 隐藏(9): ID, InstID, FOrg, FWorkFlowID, WorkFlowCode, FWorkFlow, FUserName, VER, FSAPLongCode
+         子表权限[WO_QT04009_FFeeMBen(editAttribute=17)]: 可编辑(5): FYM, FTBackM, FTSaveUser, FTMoney, FRemark | 锁定可见(8) | 隐藏(7): ID, FSubstandard, FImprove, F, FName, FUnits, FInvtmMoney
+  3. 财务主管
+       动态办理人: 动态用户 {"name":"DYNOWNER_User_Leader","parameters":{"Userid":"O_WORKFLOW.FUser.UserID","RoleCode":"if(O_WOR
+       流转: 下一步: 完成→完成→步骤14
+       字段权限[WO_QT04009(editAttribute=0)]: 锁定可见(11) | 隐藏(9): ID, InstID, FOrg, FWorkFlowID, WorkFlowCode, FWorkFlow, FUserName, VER, FSAPLongCode
+         子表权限[WO_QT04009_FFeeMBen(editAttribute=0)]: 可编辑(11): FProject, FYM, FTBackM, FTSaveUser, FBackM, FTMoney, FTAddBen, FBenKey, FSaveUser, FFRecMon, FRemark | 锁定可见(2) | 隐藏(7): ID, FSubstandard, FImprove, F, FName, FUnits, FInvtmMoney
+  4. 项目经理
+       动态办理人: 动态用户 ["tUser.ID in(select FProjMng from WO_QT04009_FFeeMBen where WO_QT04009_ID={0} and FTBackM<FBackM)",
+       挂接(pre): WO_QT04009_M
+       流转: 下一步: 完成→完成→步骤5
+       字段权限[WO_QT04009(editAttribute=0)]: 可编辑(1): FFeeMBen | 锁定可见(9) | 隐藏(9): ID, InstID, FOrg, FWorkFlowID, WorkFlowCode, FWorkFlow, FUserName, VER, FSAPLongCode
+         子表权限[WO_QT04009_FFeeMBen(editAttribute=21)]: 可编辑(3): FSubstandard, FImprove, FFRecMon | 锁定可见(12) | 隐藏(5): ID, F, FName, FUnits, FInvtmMoney
+  5. 经营财务
+       动态办理人: 动态用户 ["tUser.ID in(select m.userid from lbmember m ,lbrole r where r.id=m.roleid and r.rolecode='XMGL005'
+       流转: 下一步: 完成→完成→步骤1
+       字段权限[WO_QT04009(editAttribute=0)]: 锁定可见(11) | 隐藏(9): ID, InstID, FOrg, FWorkFlowID, WorkFlowCode, FWorkFlow, FUserName, VER, FSAPLongCode
+         子表权限[WO_QT04009_FFeeMBen(editAttribute=0)]: 可编辑(11): FProject, FYM, FTBackM, FTSaveUser, FBackM, FTMoney, FTAddBen, FBenKey, FSaveUser, FFRecMon, FRemark | 锁定可见(2) | 隐藏(7): ID, FSubstandard, FImprove, F, FName, FUnits, FInvtmMoney
+

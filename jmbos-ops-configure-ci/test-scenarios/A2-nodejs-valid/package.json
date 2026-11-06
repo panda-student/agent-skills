@@ -1,0 +1,1 @@
+"{\n  \"name\": \"test-node-app\",\n  \"version\": \"1.0.0\",\n  \"scripts\": {\n    \"build\": \"vite build\"\n  },\n  \"engines\": {\n    \"node\": \">=18.0.0 <21.0.0\"\n  }\n}"

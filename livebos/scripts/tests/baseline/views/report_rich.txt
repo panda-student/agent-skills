@@ -1,0 +1,15 @@
+======================================================================
+FILE: 效益分析\项目效益台账\V_NoPJBenefit.xml
+  父对象: T_PJBenefit
+  可排序字段(推断,可多值): FName / FIsBenefit / FProNo / FUnits / FBackOnT / FStutas / FBenCheT / FFRecMon / FTargetBack / FAddBenBack / FExpectBack / FPredictSurplus / FTBackT / FInvtmMoney / FTMoney / FTAddBen / FTBenY / FSurplusM / FBack / FProject_copy / FBenKey / FOldUser / FSaveUser / FTSaveUser / FInSituation / FEndSituation / FUTime
+  属性63: true
+  筛选/权限条件(1 条):
+    #1 args: $Login.User, parameter.FProNo, parameter.FUnits
+       FTBackT is null and sysdate>to_date(FTargetBack,'yyyy-MM') and FStutas=1
+       and
+       T_PJBenefit.FProject in(select id from PUB_Project where
+       instr(';'||FProjMng||';'||FProPMO||';'||FProAssistant||';'||FOUser||';'||FOTHERUSER||';0'||';',';'||{0}||';')>0)
+       and ({1} is null or fprono like '%'||{1}||'%')
+       and ({2} is null or funits={2})
+  展示列(30): ID, FProject, FName, FProNo, FUnits, FIsBenefit, FStutas, FBenCheT, FFRecMon, FTargetBack, FAddBenBack, FExpectBack, FPredictSurplus, FTBackT, FBackOnT, FInvtmMoney, FTaxSum, FTMoney, FTAddBen, FTBenY, FSurplusM, FBack, FProject_copy, FBenKey, FOldUser, FSaveUser, FTSaveUser, FInSituation, FEndSituation, FUTime
+

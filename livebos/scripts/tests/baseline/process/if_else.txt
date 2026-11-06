@@ -1,0 +1,19 @@
+======================================================================
+FILE: 1整体管理\流程表单\项目效益收集\WO_QT04009_UILOGIC.lbz
+<process xmlns="http://www.livebos.com/bizlogic/process" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" attribute="0" exitOnStandardFault="false" isHorizontalLayout="false" name="WO_QT04009_UILOGIC" object="WO_QT04009" type="1" xsi:schemaLocation="http://www.livebos.com/bizlogic/process http://www.livebos.com/bizlogic_process.xsd">
+描述: 一人多岗
+----------------------------------------------------------------------
+◆ SEQUENCE 界面处理_刷新字段可选项
+  • [FormUI/resetOption]  (界面处理_刷新字段可选项)  → 改字段: FAppPost=true, FOrg=false
+  • [FormUI/setValue]  (界面处理_更新值)  → 改字段: FAppPost
+  • [FormUI/evalExpression]  (界面处理_重计算表达式)  → 改字段: FOrg=true, FFullName=true
+  ◆ IF 判断申请人是否多岗  | cond: <%@ livebos language='javascript' %>
+O_MASTER.FUser.Fiscompl
+    ◆ SEQUENCE 界面处理_更改字段空值属性
+      • [FormUI/changeNullable]  (界面处理_更改字段空值属性)  → 改字段: FAppPost=false
+      • [FormUI/changeState]  (界面处理_更改输入状态)  → 改字段: FAppPost=true
+    ◆ ELSE Else
+      ◆ SEQUENCE 界面处理_更改字段空值属性
+        • [FormUI/changeNullable]  (界面处理_更改字段空值属性)  → 改字段: FAppPost=true
+        • [FormUI/changeState]  (界面处理_更改输入状态)  → 改字段: FAppPost=4
+

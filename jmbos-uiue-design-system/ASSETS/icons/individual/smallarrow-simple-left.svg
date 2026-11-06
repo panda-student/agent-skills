@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="16px" height="16px" viewBox="0 0 16 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>icon/smallarrow-simple-left</title>
+    <g id="icon/smallarrow-simple-left" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <rect id="矩形" x="0" y="0" width="16" height="16"></rect>
+        <path d="M6.24019985,11.81308 C6.11779985,11.81308 5.99459985,11.76588 5.90099985,11.67228 C5.71299985,11.48588 5.71299985,11.18188 5.90099985,10.99468 L8.89459985,7.99948 L5.90099985,5.00588 C5.71299985,4.81868 5.71299985,4.51468 5.90099985,4.32748 C6.08819985,4.13948 6.39219985,4.13948 6.57939985,4.32748 L9.91299985,7.66028 C10.1001998,7.84748 10.1001998,8.15148 9.91299985,8.33948 L6.57939985,11.67228 C6.48579985,11.76588 6.36259985,11.81308 6.24019985,11.81308 L6.24019985,11.81308 Z" id="icon-arrow-simple-small-down" fill="currentColor" fill-rule="nonzero" transform="translate(7.9067, 7.9998) rotate(-180) translate(-7.9067, -7.9998)"></path>
+    </g>
+</svg>

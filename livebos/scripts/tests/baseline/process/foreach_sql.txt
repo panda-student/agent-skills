@@ -1,0 +1,12 @@
+======================================================================
+FILE: 1整体管理\流程表单\项目效益收集\PM_ImportTest_M.lbz
+<process xmlns="http://www.livebos.com/bizlogic/process" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" attribute="0" exitOnStandardFault="false" isHorizontalLayout="false" method="PM_ImportTest_M" name="PM_ImportTest_M" object="PM_ImportTest" type="0" xsi:schemaLocation="http://www.livebos.com/bizlogic/process http://www.livebos.com/bizlogic_process.xsd">
+描述: 项目月效益回收明细更新-批量修改数据流程
+----------------------------------------------------------------------
+◆ SEQUENCE 数据库组件_SQL查询
+  • [SQL/query]  (数据库组件_SQL查询)  | SQL: select * from PM_ImportTest
+  ◆ FOREACH 迭代
+    ◆ SEQUENCE 数据库组件_执行SQL语句
+      • [SQL/execute]  (数据库组件_执行SQL语句)  | SQL: update WO_QT04009_FFeeMBen set FSubstandard={0},FImprove={1} where FProject={2} ...
+          └ SQL: update WO_QT04009_FFeeMBen set FSubstandard={0},FImprove={1} where FProject={2} and FYM=to_char({3})
+

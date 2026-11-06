@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="16px" height="16px" viewBox="0 0 16 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>icon/tick</title>
+    <g id="icon/tick" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <polygon id="icon-tick" points="0 16 16 16 16 0 0 0"></polygon>
+        <path d="M6.12336,11.67248 L2.53136,8.08048 C2.34416,7.89328 2.34416,7.58928 2.53136,7.40208 C2.71936,7.21488 3.02336,7.21488 3.21056,7.40208 L6.46256,10.65488 L12.78976,4.32768 C12.97776,4.13968 13.28096,4.13968 13.46896,4.32768 C13.65616,4.51488 13.65616,4.81888 13.46896,5.00608 L6.80176,11.67248 C6.71216,11.76368 6.58976,11.81328 6.46256,11.81328 C6.33536,11.81328 6.21296,11.76368 6.12336,11.67248 Z" id="icon-tick" fill="currentColor" fill-rule="nonzero"></path>
+    </g>
+</svg>
