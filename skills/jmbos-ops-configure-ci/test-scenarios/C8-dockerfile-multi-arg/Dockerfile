@@ -1,0 +1,7 @@
+ARG REGISTRY
+ARG GIT_COMMIT_SHA
+ARG BUILD_TARGET_DIR=target
+ARG CUSTOM_VAR=hello
+FROM $REGISTRY/base-int/java/eclipse-temurin-jre:8u482-b08-jammy
+WORKDIR /app
+COPY $BUILD_TARGET_DIR/ .

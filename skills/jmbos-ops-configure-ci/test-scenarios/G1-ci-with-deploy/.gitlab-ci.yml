@@ -1,0 +1,14 @@
+stages:
+  - build
+  - deploy
+
+build_app:
+  stage: build
+  image: "$REGISTRY/base-ext/maven:3.6.3-openjdk-8-slim"
+  script: |
+    mvn clean package -DskipTests
+
+deploy_app:
+  stage: deploy
+  script: |
+    kubectl apply -f deployment.yaml

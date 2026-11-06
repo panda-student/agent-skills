@@ -1,0 +1,84 @@
+{
+  "_comment": "演示样本：4 种 source 审批人类型 + 多规则数组。所有业务值用 <占位符>，导入后人工替换。详见 references/assignee-rules.md",
+  "name": "动态审批人演示流程",
+  "processKey": "dxa_demo",
+  "typeId": "<TYPE_ID>",
+  "typeName": "<SYSTEM_NAME>_<TENANT_ID>",
+  "sysName": "<SYSTEM_ID>",
+  "processVersion": 1,
+  "createBy": "<USER_ID>",
+  "createOrgId": "<ORG_DIM_ID>",
+  "updateBy": "<USER_ID>",
+  "variables": [
+    { "name": "部门负责人变量", "key": "deptManagerUser", "type": "string", "isRequired": false },
+    { "name": "采购人员变量", "key": "purchaseUser", "type": "string", "isRequired": false },
+    { "name": "发起人账号", "key": "startUserAccount", "type": "string", "isRequired": false },
+    { "name": "金额", "key": "amount", "type": "double", "defaultVal": 0.0, "isRequired": true }
+  ],
+  "nodes": [
+    { "id": "StartEvent1", "type": "startEvent", "name": "开始" },
+
+    { "id": "UserTask1", "type": "userTask", "name": "申请人填写",
+      "_comment": "source=start：发起人（默认，无需 assignee）" },
+
+    { "id": "UserTask2", "type": "userTask", "name": "部门主管审批",
+      "_comment": "source=var：从流程变量取审批人（最常用）",
+      "assignee": {
+        "source": "var",
+        "varName": "deptManagerUser",
+        "userValType": "account",
+        "executorType": "user",
+        "desc": "[变量]部门负责人",
+        "logicCal": "or"
+      } },
+
+    { "id": "UserTask3", "type": "userTask", "name": "采购工程师审批",
+      "assignee": {
+        "source": "var",
+        "varName": "purchaseUser",
+        "desc": "[变量]采购人员"
+      } },
+
+    { "id": "UserTask4", "type": "userTask", "name": "总经理审批",
+      "_comment": "source=hrScript：人员脚本-按发起人的汇报关系取人（role=S1 总经理）",
+      "assignee": {
+        "source": "hrScript",
+        "role": "S1",
+        "userVar": "startUserAccount",
+        "orgDim": "<ORG_DIM_ID>",
+        "logicCal": "or"
+      } },
+
+    { "id": "UserTask5", "type": "userTask", "name": "分管副总裁审批",
+      "_comment": "多规则数组：S6-1 或 S6-2（两个汇报关系，取其一即可）",
+      "assignee": [
+        { "source": "hrScript", "role": "S6-1", "userVar": "startUserAccount", "orgDim": "<ORG_DIM_ID>", "logicCal": "or" },
+        { "source": "hrScript", "role": "S6-2", "userVar": "startUserAccount", "orgDim": "<ORG_DIM_ID>", "logicCal": "or" }
+      ] },
+
+    { "id": "UserTask6", "type": "userTask", "name": "总裁审批",
+      "_comment": "source=spec：指定用户（会签场景加 logicCal=and）",
+      "assignee": {
+        "source": "spec",
+        "userName": "<USER_NAME>",
+        "userId": "<USER_ID>",
+        "account": "<ACCOUNT>",
+        "logicCal": "or"
+      } },
+
+    { "id": "UserTask7", "type": "userTask", "name": "财务备案",
+      "_comment": "未配 assignee：默认 source=start（发起人）" },
+
+    { "id": "EndEvent1", "type": "endEvent", "name": "结束" }
+  ],
+  "edges": [
+    { "id": "f1", "source": "StartEvent1", "target": "UserTask1" },
+    { "id": "f2", "source": "UserTask1", "target": "UserTask2" },
+    { "id": "f3", "source": "UserTask2", "target": "UserTask3" },
+    { "id": "f4", "source": "UserTask3", "target": "UserTask4" },
+    { "id": "f5", "source": "UserTask4", "target": "UserTask5" },
+    { "id": "f6", "source": "UserTask5", "target": "UserTask6" },
+    { "id": "f7", "source": "UserTask6", "target": "UserTask7" },
+    { "id": "f8", "source": "UserTask7", "target": "EndEvent1" }
+  ]
+}

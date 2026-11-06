@@ -1,6 +1,6 @@
 ---
 name: learn
-description: 会话复盘技能，分析经验教训，固化到对应全局技能/项目规约文档，支持自身迭代优化
+description: 会话复盘技能，分析经验教训，固化到项目规则（项目特有）/记忆 Memory（跨项目），支持自身迭代优化
 user-invocable: true
 allowed-tools:
   - Read
@@ -16,11 +16,12 @@ allowed-tools:
 
 **固化必须找到对应载体，不能依赖记忆文件**
 
-- 全局通用经验 → 找到对应的全局技能 → 更新 SKILL.md / reference.md / examples.md
-- 项目级开发约束/规约 → 找到项目的 AGENTS.md（及 docs/rules 等关联文档） → 更新规约文档
-- 记忆文件仅用于跨会话上下文，不承载固化知识
-- 固化目标一律**按职责/功能定位，禁止写死具体技能名**（技能随迭代随时替换）
-- **learn技能本身也可被迭代**（通过 `/learn 更新learn技能`）
+- **归属裁决：经验只有两个沉淀去向**
+  - **项目特有**（仅本项目仓库/业务/环境相关的约束、规则、接口、踩坑）→ **项目规则**：项目仓库 AGENTS.md + docs/rules/ 关联文档，进入项目自动生效
+  - **跨项目复用**（方法、流程、判断逻辑、通用工具经验）→ **Memory**（用户级记忆，如 user_profile.md）
+- **不存在「固化到全局技能」**：全局技能只是既有的方法工具（被调用、被显式指令修改），不作为经验沉淀目标
+- 固化目标按归属落位，不写死具体技能名
+- **learn技能本身也可被迭代**（通过 `/learn 更新learn技能`，显式指令驱动走 skill-builder）
 
 ---
 
@@ -91,13 +92,13 @@ allowed-tools:
 
 **经验分类提取**：
 
-**业务知识类**（固化为全局业务领域技能，按功能关键词定位，勿写死技能名）：
+**业务知识类**（项目特有 → 项目规则；跨项目通用领域知识 → Memory）：
 - 业务规则：字段联动规则、数据校验规则、计算逻辑
 - 字段含义：特定流程字段的业务含义、用途
 - 审批流程：审批节点、审批条件、流程约束
 - 业务约束：金额限制、条件判断、必填规则
 
-**技术架构类**（固化为全局技术架构技能，按功能关键词定位，勿写死技能名）：
+**技术架构类**（项目特有 → 项目规则；跨项目架构经验 → Memory）：
 - 前端组件：Vue组件结构、渲染机制、插件开发
 - 后端服务：Java服务类、数据访问层、业务逻辑层
 
@@ -122,50 +123,48 @@ allowed-tools:
 - 权限与领域规则：注解、拦截器、白名单等
 
 **共性经验识别**：
-- 多个技能都可能遇到的问题（如编码问题、连接问题）
+- 跨场景/跨任务都可能遇到的问题（如编码问题、连接问题）
 - 可复用的基础设施逻辑（如数据库连接、API调用）
-- 跨技能的最佳实践
+- 跨项目的最佳实践
 
 **处理方式**：
 ```
-共性经验 → 抽取为独立共享技能 → 各依赖技能引用
-单一技能经验 → 固化到对应技能文件
+项目特有经验 → 项目规则（AGENTS.md/docs/rules）
+跨项目通用经验 → Memory（用户级记忆）
 ```
 
 **定位方法**：
-1. 先判断经验归属：全局通用经验 → 全局技能；项目级开发约束 → 项目 AGENTS.md
-2. 全局技能按职责/功能推断（业务领域 / 技术架构 / 流程 / 命令…），不依赖具体技能名
-3. 用 Glob 搜索技能目录：`C:\Users\JOMOO\.agents\skills\*\SKILL.md`
-4. 用 Grep 搜索技能描述关键词
-5. 项目规约 → 在项目仓库定位 AGENTS.md 及 docs/rules/ 关联文档
-6. 确认载体存在后再固化
+1. 先判断经验归属：项目特有 → 项目规则（AGENTS.md/docs/rules）；跨项目复用 → Memory
+2. 项目特有 → 在项目仓库定位 AGENTS.md 及 docs/rules/ 关联文档
+3. 跨项目 → 定位 Memory 目录（路径见文末），确认条目归属文件
+4. 确认载体存在后再固化
 
 **经验分类与固化目标**：
 
 | 经验类型 | 固化目标 | 文件 |
 |---------|---------|------|
-| **业务知识** | **全局技能**（业务/流程领域，按功能定位） | SKILL.md（流程业务章节） |
-| **技术架构** | **全局技能**（技术/架构实现，按功能定位） | reference.md（技术实现章节） |
-| 流程优化 | 对应技能 | SKILL.md（流程模板章节） |
-| 新发现 | 对应技能 | reference.md |
-| 命令经验 | 对应技能 | examples.md |
-| **共性经验** | **新建共享技能** | 新技能 SKILL.md |
+| **业务知识** | **项目特有 → 项目规则（默认）；跨项目领域 → Memory** | AGENTS.md/docs/rules 或 Memory |
+| **技术架构** | 同上 | 同上 |
+| 流程优化 | 项目特有交付流程 → 项目规则；跨项目通用流程 → Memory | AGENTS.md/docs/rules 或 Memory |
+| 新发现 | 项目特有 → 项目规则；跨项目通用 → Memory | AGENTS.md/docs/rules 或 Memory |
+| 命令经验 | 项目特有环境/端点 → 项目规则；跨项目通用 → Memory | AGENTS.md/docs/rules 或 Memory |
+| **共性经验** | **项目内共性 → 项目规则；跨项目共性 → Memory** | AGENTS.md/docs/rules 或 Memory |
 | **项目规约** | **项目 AGENTS.md 及 docs/rules 关联文档** | AGENTS.md + docs/rules/ |
 | 技能迭代请求 | learn技能 | SKILL.md（直接更新） |
 
-> 固化目标一律按职责/功能描述，**禁止写死具体技能名**（如 jpm-business/jpm-architecture）。定位不到对应技能时提示新建。
+> 经验只有两个沉淀去向（项目规则 / Memory），**禁止固化到全局技能**；固化目标按归属落位，不写死具体技能名。
 
 **共性经验示例**：
 
-| 共性问题 | 共享技能名 | 适用场景（功能描述） |
-|---------|-----------|---------------------|
-| Windows subprocess编码 | windows-encoding | 需要调用外部程序且输出含中文 |
-| 数据库连接配置 | db-connection | 需要连接Oracle数据库 |
-| ES查询语法 | es-query-patterns | 需要查询Elasticsearch |
+| 共性问题 | 归属裁决 | 固化位置 |
+|---------|---------|---------|
+| Windows subprocess编码 | 跨项目通用 | Memory |
+| 数据库连接配置（本项目 Oracle） | 项目特有 | docs/rules 对应规约文档 |
+| ES查询语法（本项目索引约定） | 项目特有 | docs/rules 对应规约文档 |
 
-**找不到对应技能时**：
-- 提示用户："未找到对应技能，是否新建？"
-- 用户确认后调用 `/skill-builder create`
+**经验找不到沉淀载体时**：
+- 按归属落位即可，无需新建技能：项目特有 → 项目规则；跨项目 → Memory
+- 仅当用户显式要求把方法封装为技能时，才调用 `/skill-builder create`
 
 ---
 
@@ -210,7 +209,7 @@ allowed-tools:
 ```
 【验证通过，待固化】(N项)
 
-- 技能名：XXX（路径：skills/XXX/SKILL.md）
+- 固化目标：项目规则（AGENTS.md/docs/rules/…）或 Memory（…）
   - 固化内容：XXX
   - 验证方式：<实际执行的命令/操作>
 是否全部固化？(Y/n/逐项确认)
@@ -218,20 +217,21 @@ allowed-tools:
 【业务知识】(N项)
 - 流程类型：XXX（entityType）
   - 业务内容：<字段含义/业务规则/审批流程>
+  - 归属：项目特有 → 项目规则 / 跨项目 → Memory
   - 验证方式：<接口查询/代码确认>
-是否固化（定位对应业务领域全局技能）？(Y/n)
+是否固化？(Y/n)
 
 【技术架构】(N项)
 - 技术内容：<前端组件/后端服务/数据访问>
+  - 归属：项目特有 → 项目规则 / 跨项目 → Memory
   - 验证方式：<代码确认/接口测试>
-是否固化（定位对应技术架构全局技能）？(Y/n)
+是否固化？(Y/n)
 
-【共性经验 - 抽取共享技能】(N项)
+【共性经验】(N项)
 - 共性问题：XXX
-  - 新技能名：XXX
-  - 适用场景：需要<功能描述>时
+  - 归属：项目特有 → 项目规则 / 跨项目 → Memory
   - 验证方式：<实际执行的命令/操作>
-是否抽取为共享技能？(Y/n)
+是否固化？(Y/n)
 
 【项目规约 - 固化到项目 AGENTS.md】(N项)
 - 规约内容：<开发硬约束/领域数据约定/权限规则>
@@ -254,31 +254,28 @@ allowed-tools:
 
 **⚠️ 固化强制规则**：
 
-**所有固化操作必须通过 skill-builder 执行，禁止直接 Edit/Write 任何技能文件**
+**技能文件（全局技能）只随用户显式迭代指令通过 skill-builder 修改；经验固化由 learn 直接处理对应载体**
 
-| 动作 | 执行方式 | 禁止操作 |
-|------|---------|---------|
-| **业务知识固化** | 调用 skill-builder | ❌ 禁止 Edit/Write |
-| 固化到技能 | 调用 skill-builder | ❌ 禁止 Edit/Write |
-| 共性经验抽取 | 调用 skill-builder | ❌ 禁止 Edit/Write |
-| 新建技能 | 调用 skill-builder | ❌ 禁止 Edit/Write |
-| **learn自身迭代** | **调用 skill-builder** | ❌ 禁止 Edit/Write |
-| **固化到项目规约** | **learn 直接处理** | 编辑项目 AGENTS.md / docs/rules 关联文档 |
-| 记录 Memory | learn 直接处理 | 写入 memory 目录 |
+| 动作 | 执行方式 |
+|------|---------|
+| **固化到项目规则** | **learn 直接编辑**项目 AGENTS.md / docs/rules 关联文档 |
+| **固化到 Memory** | **learn 直接写入** memory 目录 |
+| 新建/修改技能（仅用户显式指令） | 调用 skill-builder，禁止直接 Edit/Write |
+| **learn自身迭代** | **调用 skill-builder**，禁止直接 Edit/Write |
 
 **固化原则**：
 ```
-learn 分析 + 定位技能 → 调用 Skill(skill="skill-builder") → skill-builder 执行更新
+经验固化：learn 按归属直接写入项目规则 / Memory，不经过技能文件
 
-固化到技能：Skill(skill="skill-builder", args="update <技能名> --add <内容>")
 learn自身迭代：Skill(skill="skill-builder", args="update learn --fix <内容>")
+用户显式要求新建/修改技能：Skill(skill="skill-builder", args="update <技能名> --add <内容>")
 ```
 
-**共性经验抽取流程**：
+**共性经验固化流程**：
 ```
 1. 识别共性经验（如 Windows编码问题）
-2. 创建共享技能（如 windows-encoding）
-3. 描述适用场景（功能导向，不列具体技能名）
+2. 归属裁决：项目特有 → 项目规则；跨项目 → Memory
+3. 记录现象、解决方案与适用场景
 ```
 
 ---
@@ -286,20 +283,35 @@ learn自身迭代：Skill(skill="skill-builder", args="update learn --fix <内�
 ### 下一轮 PDCA
 
 固化完成后，为下次复盘做准备：
-- 检查是否有技能需要补充 examples.md
+- 检查项目规则 / Memory 中的经验是否有重复或过时条目
 - 记录本次复盘的改进点，下次继续优化
+
+### 固化落地：随代码提交推送（禁止写完悬空）
+
+- **固化写入项目仓库（AGENTS.md/docs/rules）的文档，必须随本次任务的合并推送一并 commit+push**——「要推送代码的时候就要处理」，不允许固化完留在工作区悬空
+- 在 pms-dev-sop 中 learn 位于「合并推送」之前，正是为保证固化产出随代码一起落地
+- 终验/闭环期发现的新经验需要补充固化时，固化后同样立即提交推送，不得留到会话结束
+- Memory 写入不涉及 git，无需提交
 
 ---
 
 ## 技能定位示例
 
-**场景**：entity-client 使用经验
+**场景**：接口字段取数经验（项目特有）
 
 ```
-1. 推断技能名：entity-client
-2. 搜索文件：Glob skills/*/SKILL.md
-3. 确认路径：C:\Users\JOMOO\.agents\skills\entity-client\SKILL.md ✓
-4. 固化目标确认 → 调用 /skill-builder update entity-client
+1. 归属裁决：仅本项目业务 → 项目规则
+2. 定位载体：Glob 项目仓库 docs/rules/*.md
+3. 确认路径：<项目>/docs/rules/xxx.md ✓
+4. learn 直接编辑写入
+```
+
+**场景**：通用命令经验（跨项目）
+
+```
+1. 归属裁决：跨项目复用 → Memory
+2. 定位载体：用户级记忆（user_profile.md）
+3. learn 直接写入
 ```
 
 **场景**：用户请求迭代learn技能
@@ -313,7 +325,7 @@ learn自身迭代：Skill(skill="skill-builder", args="update learn --fix <内�
 
 ## 固化格式模板
 
-业务知识（写入业务领域全局技能 SKILL.md）：
+业务知识（项目特有写入项目规则；跨项目写入 Memory）：
 ```markdown
 ## <流程名称>（<entityType>）
 
@@ -331,7 +343,7 @@ learn自身迭代：Skill(skill="skill-builder", args="update learn --fix <内�
 - <审批条件>
 ```
 
-技术架构（写入技术架构全局技能 reference.md）：
+技术架构（项目特有写入项目规则；跨项目写入 Memory）：
 ```markdown
 ## 技术实现
 
@@ -341,7 +353,7 @@ learn自身迭代：Skill(skill="skill-builder", args="update learn --fix <内�
 **注意事项**：<避坑提醒>
 ```
 
-流程优化（写入 SKILL.md）：
+流程优化（项目特有写入 docs/rules 规约文档；跨项目写入 Memory）：
 ```markdown
 ## 最优执行流程
 
@@ -359,7 +371,7 @@ learn自身迭代：Skill(skill="skill-builder", args="update learn --fix <内�
 - 容易出错的步骤及应对
 ```
 
-新发现（写入 reference.md）：
+新发现（项目特有写入 AGENTS.md/docs/rules；跨项目写入 Memory）：
 ```markdown
 ## 新发现
 
@@ -369,7 +381,7 @@ learn自身迭代：Skill(skill="skill-builder", args="update learn --fix <内�
 **示例**：<实际使用案例>
 ```
 
-命令经验（写入 examples.md）：
+命令经验（项目特有环境/端点写入项目规则；跨项目通用写入 Memory）：
 ```markdown
 ## 命令执行经验
 
@@ -379,27 +391,14 @@ learn自身迭代：Skill(skill="skill-builder", args="update learn --fix <内�
 **解决**：<成功参数和注意事项>
 ```
 
-共性经验（新建共享技能 SKILL.md）：
+共性经验（项目特有写入项目规则；跨项目写入 Memory）：
 ```markdown
----
-name: <共享技能名>
-description: <共性问题解决方案，按功能场景引用>
----
+## 共性经验：<问题名称>
 
-## 适用场景
-
-当需要 <功能描述> 时使用此技能：
-- <场景条件1>
-- <场景条件2>
-
-## 解决方案
-
-<标准化的解决方法>
-
-## 引用方式
-
-其他技能根据功能需求引用：
-- 需要<功能>时 → 参考 [[<共享技能名>]]
+**归属**：项目特有 / 跨项目通用
+**现象**：<问题描述>
+**解决**：<标准化的解决方法>
+**适用**：<适用场景说明>
 ```
 
 项目规约（写入项目 AGENTS.md / docs/rules/xxx.md）：

@@ -94,6 +94,7 @@
 - `table.searchType=3`（列头筛选模式）下，BosTable 对每列在 `queryDom.dom` 里找**同 prop 的查询条件**：匹配 → `filters=[{data:''}]` + `filterDom=查询条件配置` → 列头漏斗；失配 → `filters=null` → 无漏斗。源码关键：`e.filter(u => u.prop == s.prop)`，`r.length>0 ? (s.filters=s.filters||[{data:""}], s.filterDom=r[0]) : s.filters=null`
 - 推论：**列改绑翻译名字段（prop 改成 xxxName）会丢失列头筛选**——翻译名与查询条件（绑码值 prop）必然失配。列显中文与列头筛选在 searchType=3 下不能同时靠改绑实现
 - 两全恢复模式（同「效益是否异常」列）：后端该字段 `@DictField replace=true` 出参原位翻译中文 + 列 prop 保持绑码值字段（与查询条件一致）。筛选面板渲染 filterDom（查询条件的字典下拉），选中后发码值查询，链路自洽
+- 反向修法（列 prop 正确、queryDom 绑错时，2026-10-30 实证）：项目变更页申请人列 prop=creatorId，queryDom 原为 creatorName → 申请人列无漏斗；把 queryDom 该项 prop 直接改成 creatorId（列 prop 不动）即恢复漏斗，且筛选值按 creatorId 提交、后端按工号/姓名反查匹配
 - 顶部查询区筛选（queryDom）不受列 prop 影响，始终可用；丢失的只是列头漏斗入口
 
 **业务列表接口 host（与菜单接口不同）**
@@ -106,9 +107,11 @@
 
 - **structure ≤30000 字符**：必须用压缩 `JSON.stringify(structure)`——美化格式（`null, 2`）32074 字符报「页面JSON结构长度不能超过30000」，压缩后 18749 通过
   - **环境差异（2026-10-22 实证）**：**UAT 强制校验，test 无此限制**——同一结构 test 保存成功、UAT 报错；UAT 库里存量超限结构（如 30799/34761 字符）是当初经 test→UAT 同步路径写入绕过了校验
+  - **读回的是美化 JSON，压缩即缩至 6 折（2026-10-30 实证）**：`menu-structure/get` 返回 `data.structure` 为带缩进的美化字符串（30739 字符），`JSON.parse` 后 `JSON.stringify` 压成 17989 字符——先压缩再比对 30000 阈值，多数页面**无需 strip 空值**即可过关，别看到 3 万+ 就直接上瘦身逻辑
   - **超限瘦身：递归 strip 空值字段**（null/''/[] 剔除，缺省等价于空值不影响运行时渲染）——实证未按期回收项目页 30799→22874、台账页 34757→25534，主因是 queryDom 内大量 null/空值字段；strip 后保存、运行时同步、UI 列渲染均验证正常。strip 逻辑：对象递归遍历，值为 null/''/空数组/空对象则删键；数组逐项 strip 后过滤 undefined
 - **接口返回 500 多半是 menuId 无效，不是环境故障**：无效 id 服务端抛 500 而非 404（2026-10-20 误判实录：测试环境 menu-structure 一直返回 500，真实原因是 menuId 取成了 2114297529，实际为 2114297929；改正后测试环境读写全通、测试→UAT 发布也走得通）→ 先核实 menuId 再下结论，**禁止据此断言「某环境只能手工改」**
 - **测试→UAT 发布会整体覆盖结构**：sync-master 发布菜单会把测试侧页面结构整体覆盖 UAT → UAT 上的结构修改必须同步改测试环境，否则下次发布会回滚
+  - **账号环境隔离会卡住「顺手同步 test」（2026-10-30 实证）**：`pms_frontend/e2e/.env.local` 通常只配 UAT 账号（test-pms 与 UAT 登录账号不同），想在同一轮里直存 test 侧结构会卡在登录失败（`code:12003 登录账号或密码不正确`）——UAT 直存后把「test 侧待同步」作为遗留风险明确上报，不要静默留下回滚隐患
 - **坑：test→UAT 发布 success 但结构未落地（2026-10-22 实证，根因未明）**：对存量页面只改结构后按目录发布（dataIds=[目录id]）与 dataIds=[0] 两次均 batch success，但 UAT auth 侧结构回读与页面运行时均仍旧绑定，也无重复菜单产生——**结构级修改不要依赖 test→UAT 发布路径，直接在 UAT 侧 menu-structure/save 直存**（直存超限时用上述 strip 瘦身）；直存后必须 auth get 回读 + app-system getStructure 运行时复核 + 真实页面 UI 终验
 
 ## 按钮配置（btnStructure）——按钮渲染的真正数据源（2026-10-21 实测定版）

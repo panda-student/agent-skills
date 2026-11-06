@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="16px" height="16px" viewBox="0 0 16 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>icon/smallarrow-simple-right</title>
+    <g id="icon/smallarrow-simple-right" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <polygon id="icon-arrow-simple-small-down" points="-1.77635684e-15 16 16 16 16 0 -1.77635684e-15 0"></polygon>
+        <path d="M6.42680015,11.81308 C6.30440015,11.81308 6.18120015,11.76588 6.08760015,11.67228 C5.89960015,11.48588 5.89960015,11.18188 6.08760015,10.99468 L9.08120015,7.99948 L6.08760015,5.00588 C5.89960015,4.81868 5.89960015,4.51468 6.08760015,4.32748 C6.27480015,4.13948 6.57880015,4.13948 6.76600015,4.32748 L10.0996002,7.66028 C10.2868002,7.84748 10.2868002,8.15148 10.0996002,8.33948 L6.76600015,11.67228 C6.67240015,11.76588 6.54920015,11.81308 6.42680015,11.81308 L6.42680015,11.81308 Z" id="icon-arrow-simple-small-down" fill="currentColor" fill-rule="nonzero" transform="translate(8.0933, 7.9998) rotate(-360) translate(-8.0933, -7.9998)"></path>
+    </g>
+</svg>

@@ -1,0 +1,170 @@
+{
+  "_comment": "样品采购申请流程 RD04009 — 按真实导出包逆向重建。审批人配置忠实还原（var/hrScript/spec/start 4种类型）。",
+  "name": "样品采购申请流程",
+  "processKey": "RD04009",
+  "typeId": "2041686026392825856",
+  "typeName": "竞品管理系统_100836290",
+  "sysName": "100836993",
+  "processVersion": 1,
+  "globalFormUrl": "{host}/sampleAssetManagement/competitiveProcurement/procurementFrom?iframe=1&amp;id={pk}&amp;nisbos_auth_token={nisbos_auth_token}&amp;targetSystemId=100836993&amp;isEdit=[isEdit]",
+  "variables": [
+    { "name": "jpmType", "key": "jpmType", "type": "string", "isRequired": false },
+    { "name": "demanderUserId", "key": "demanderUserId", "type": "string", "isRequired": false },
+    { "name": "purchaseUserAsk", "key": "purchaseUserAsk", "type": "string", "isRequired": false },
+    { "name": "receiver", "key": "receiver", "type": "string", "isRequired": false },
+    { "name": "financial", "key": "financial", "type": "string", "isRequired": false },
+    { "name": "selfMadeDepartmentManager", "key": "selfMadeDepartmentManager", "type": "string", "isRequired": false },
+    { "name": "askPriceGateWay", "key": "askPriceGateWay", "type": "string", "isRequired": false },
+    { "name": "technologyCenterUser", "key": "technologyCenterUser", "type": "string", "isRequired": false },
+    { "name": "purchaseUser", "key": "purchaseUser", "type": "string", "isRequired": false },
+    { "name": "splitOrder", "key": "splitOrder", "type": "string", "isRequired": false },
+    { "name": "style", "key": "style", "type": "string", "isRequired": false },
+    { "name": "unit", "key": "unit", "type": "string", "isRequired": false },
+    { "name": "aiOrgCount", "key": "aiOrgCount", "type": "string", "isRequired": false },
+    { "name": "buyStyle", "key": "buyStyle", "type": "string", "isRequired": false },
+    { "name": "purchaseShower", "key": "purchaseShower", "type": "string", "isRequired": false },
+    { "name": "faseValueCostUser", "key": "faseValueCostUser", "type": "string", "isRequired": false },
+    { "name": "costUser", "key": "costUser", "type": "string", "isRequired": false },
+    { "name": "financeGateWay", "key": "financeGateWay", "type": "string", "isRequired": false },
+    { "name": "purchaseShowerGateWay", "key": "purchaseShowerGateWay", "type": "string", "isRequired": false },
+    { "name": "faceValueGateWay", "key": "faceValueGateWay", "type": "string", "isRequired": false },
+    { "name": "采购主管", "key": "purdirector", "type": "string", "isRequired": false },
+    { "name": "费用归属网关", "key": "costUserGateWay", "type": "string", "isRequired": false },
+    { "name": "供应链总监/总经理", "key": "generalManager", "type": "string", "isRequired": false },
+    { "name": "采购主管网关", "key": "purdirectorGateWay", "type": "string", "isRequired": false },
+    { "name": "内控网关", "key": "internalControlGateway", "type": "string", "isRequired": false },
+    { "name": "需求单位分管副总裁节网关", "key": "demanderGeneralManagerGateway", "type": "string", "isRequired": false }
+  ],
+  "nodes": [
+    { "id": "StartEvent1", "type": "startEvent", "name": "开始1" },
+
+    { "id": "UserTask1", "type": "userTask", "name": "申请人",
+      "assignee": [
+        { "source": "start" },
+        { "source": "hrScript", "role": "Z1", "userVar": "startorAccount", "orgDim": "jomoo-zuhu_EG", "scriptId": "13", "logicCal": "or" }
+      ] },
+
+    { "id": "UserTask2", "type": "userTask", "name": "部门主管",
+      "assignee": { "source": "hrScript", "role": "Z1", "userVar": "startorAccount", "orgDim": "jomoo-zuhu_EG", "scriptId": "1559561472816123904", "logicCal": "or" } },
+
+    { "id": "UserTask3", "type": "userTask", "name": "采购工程师(询报价)",
+      "assignee": { "source": "var", "varName": "purchaseUserAsk", "userValType": "account", "executorType": "user", "desc": "[变量]purchaseUserAsk", "logicCal": "or" } },
+
+    { "id": "UserTask4", "type": "userTask", "name": "财务",
+      "assignee": { "source": "var", "varName": "financial", "userValType": "account", "executorType": "user", "desc": "[变量]financial", "logicCal": "or" } },
+
+    { "id": "UserTask5", "type": "userTask", "name": "费用归属负责人",
+      "assignee": { "source": "var", "varName": "costUser", "userValType": "account", "executorType": "user", "desc": "[变量]costUser", "logicCal": "or" } },
+
+    { "id": "UserTask6", "type": "userTask", "name": "采购主管",
+      "assignee": { "source": "var", "varName": "purdirector", "userValType": "account", "executorType": "user", "desc": "[变量]采购主管", "logicCal": "or" } },
+
+    { "id": "UserTask7", "type": "userTask", "name": "供应链总监/总经理",
+      "assignee": { "source": "var", "varName": "generalManager", "userValType": "account", "executorType": "user", "desc": "[变量]供应链总监/总经理", "logicCal": "or" } },
+
+    { "id": "UserTask8", "type": "userTask", "name": "需求单位总经理",
+      "assignee": { "source": "hrScript", "role": "S1", "userVar": "demanderUserId", "orgDim": "jomoo-zuhu_EG", "scriptId": "1559561472816123904", "logicCal": "or" } },
+
+    { "id": "UserTask9", "type": "userTask", "name": "需求单位分管副总裁",
+      "assignee": [
+        { "source": "hrScript", "role": "S6-1", "userVar": "demanderUserId", "orgDim": "jomoo-zuhu_EG", "scriptId": "1559561472816123904", "logicCal": "or" },
+        { "source": "hrScript", "role": "S6-2", "userVar": "demanderUserId", "orgDim": "jomoo-zuhu_EG", "scriptId": "1559561472816123904", "logicCal": "or" }
+      ] },
+
+    { "id": "UserTask10", "type": "userTask", "name": "内控" },
+
+    { "id": "UserTask11", "type": "userTask", "name": "总裁",
+      "assignee": { "source": "spec", "userName": "林孝发", "userId": "1547140380591726592", "account": "00000001", "logicCal": "or" } },
+
+    { "id": "UserTask12", "type": "userTask", "name": "采购工程师(执行制样)",
+      "assignee": { "source": "var", "varName": "purchaseUser", "userValType": "account", "executorType": "user", "desc": "[变量]purchaseUser", "logicCal": "or" } },
+
+    { "id": "UserTask13", "type": "userTask", "name": "样品接收人",
+      "assignee": { "source": "var", "varName": "receiver", "userValType": "account", "executorType": "user", "desc": "[变量]receiver", "logicCal": "or" } },
+
+    { "id": "UserTask14", "type": "userTask", "name": "采购工程师确认",
+      "assignee": { "source": "var", "varName": "purchaseUserAsk", "userValType": "account", "executorType": "user", "desc": "[变量]purchaseUserAsk", "logicCal": "or" } },
+
+    { "id": "UserTask15", "type": "userTask", "name": "申请人确认",
+      "assignee": { "source": "start" } },
+
+    { "id": "UserTask16", "type": "userTask", "name": "总经理",
+      "assignee": { "source": "hrScript", "role": "S1", "userVar": "demanderUserId", "orgDim": "jomoo-zuhu_EG", "scriptId": "1559561472816123904", "logicCal": "or" } },
+
+    { "id": "UserTask17", "type": "userTask", "name": "自制件部门主管",
+      "assignee": { "source": "var", "varName": "selfMadeDepartmentManager", "userValType": "account", "executorType": "user", "desc": "[变量]selfMadeDepartmentManager", "logicCal": "or" } },
+
+    { "id": "UserTask18", "type": "userTask", "name": "费用归属负责人(颜值)",
+      "assignee": { "source": "var", "varName": "faseValueCostUser", "userValType": "account", "executorType": "user", "desc": "[变量]faseValueCostUser", "logicCal": "or" } },
+
+    { "id": "UserTask21", "type": "userTask", "name": "技术支持中心",
+      "assignee": { "source": "var", "varName": "technologyCenterUser", "userValType": "account", "executorType": "user", "desc": "[变量]technologyCenterUser", "logicCal": "or" } },
+
+    { "id": "UserTask22", "type": "userTask", "name": "采购执行(花洒)环节",
+      "assignee": { "source": "var", "varName": "purchaseShower", "userValType": "account", "executorType": "user", "desc": "[变量]purchaseShower", "logicCal": "or" } },
+
+    { "id": "EndEvent1", "type": "endEvent", "name": "结束1" },
+
+    { "id": "XORGateway1", "type": "exclusiveGateway", "name": "分支1" },
+    { "id": "XORGateway2", "type": "exclusiveGateway", "name": "分支2" },
+    { "id": "XORGateway3", "type": "exclusiveGateway", "name": "分支3" },
+    { "id": "XORGateway6", "type": "exclusiveGateway", "name": "分支6" },
+    { "id": "XORGateway7", "type": "exclusiveGateway", "name": "分支7" },
+    { "id": "XORGateway8", "type": "exclusiveGateway", "name": "分支8" },
+    { "id": "XORGateway9", "type": "exclusiveGateway", "name": "分支9" },
+    { "id": "XORGateway10", "type": "exclusiveGateway", "name": "分支10" },
+    { "id": "XORGateway11", "type": "exclusiveGateway", "name": "分支11" },
+    { "id": "XORGateway12", "type": "exclusiveGateway", "name": "分支12" },
+    { "id": "XORGateway13", "type": "exclusiveGateway", "name": "分支13" }
+  ],
+  "edges": [
+    { "id": "f1", "source": "StartEvent1", "target": "UserTask1" },
+    { "id": "f2", "source": "UserTask1", "target": "XORGateway1" },
+    { "id": "f3", "source": "XORGateway1", "target": "UserTask2", "name": "默认", "condition": "1<3" },
+    { "id": "f4", "source": "XORGateway1", "target": "UserTask12", "name": "拆单", "condition": "splitOrder == \"2\"" },
+    { "id": "f4b", "source": "XORGateway1", "target": "UserTask15", "name": "申请人确认", "condition": "style == \"1\" && jpmType == \"1\"" },
+    { "id": "f5", "source": "UserTask2", "target": "XORGateway2" },
+    { "id": "f6", "source": "XORGateway2", "target": "UserTask3", "name": "默认", "condition": "1<3" },
+    { "id": "f7", "source": "XORGateway2", "target": "UserTask16", "name": "AI组织", "condition": "aiOrgCount != \"0\"" },
+    { "id": "f8", "source": "XORGateway2", "target": "UserTask17", "name": "自制件", "condition": "unit == \"五金事业部合金厂\" && buyStyle == \"品类自制件\"" },
+    { "id": "f9", "source": "UserTask16", "target": "UserTask3" },
+    { "id": "f10", "source": "UserTask17", "target": "UserTask3" },
+    { "id": "f11", "source": "UserTask3", "target": "XORGateway6" },
+    { "id": "f12", "source": "XORGateway6", "target": "UserTask4", "name": "默认", "condition": "1<3" },
+    { "id": "f13", "source": "XORGateway6", "target": "UserTask21", "name": "技术支持", "condition": "askPriceGateWay == \"技术支持中心\"" },
+    { "id": "f14", "source": "XORGateway6", "target": "UserTask22", "name": "花洒", "condition": "askPriceGateWay == \"采购执行(花洒)环节\"" },
+    { "id": "f15", "source": "XORGateway6", "target": "UserTask12", "name": "执行制样", "condition": "askPriceGateWay == \"采购工程师(执行制样)\"" },
+    { "id": "f16", "source": "UserTask21", "target": "UserTask4" },
+    { "id": "f17", "source": "UserTask22", "target": "XORGateway9" },
+    { "id": "f18", "source": "XORGateway9", "target": "UserTask4", "name": "默认", "condition": "1<3" },
+    { "id": "f19", "source": "XORGateway9", "target": "UserTask12", "name": "执行制样", "condition": "purchaseShowerGateWay == \"采购工程师(执行制样)\"" },
+    { "id": "f20", "source": "UserTask4", "target": "XORGateway3" },
+    { "id": "f21", "source": "XORGateway3", "target": "UserTask5", "name": "默认", "condition": "1<3" },
+    { "id": "f22", "source": "XORGateway3", "target": "UserTask18", "name": "颜值", "condition": "financeGateWay == \"费用归属负责人(颜值)\"" },
+    { "id": "f23", "source": "UserTask18", "target": "XORGateway7" },
+    { "id": "f24", "source": "XORGateway7", "target": "UserTask6", "name": "默认", "condition": "1<3" },
+    { "id": "f25", "source": "XORGateway7", "target": "UserTask12", "name": "执行制样", "condition": "faceValueGateWay == \"采购工程师(执行制样)\"" },
+    { "id": "f26", "source": "UserTask5", "target": "XORGateway10" },
+    { "id": "f27", "source": "XORGateway10", "target": "UserTask6", "name": "默认", "condition": "1<3" },
+    { "id": "f28", "source": "XORGateway10", "target": "UserTask12", "name": "执行制样", "condition": "costUserGateWay ==\"采购工程师(执行制样)\"" },
+    { "id": "f29", "source": "UserTask6", "target": "XORGateway11" },
+    { "id": "f30", "source": "XORGateway11", "target": "UserTask7", "name": "默认", "condition": "1<3" },
+    { "id": "f31", "source": "XORGateway11", "target": "UserTask8", "name": "需求单位总经理", "condition": "purdirectorGateWay==\"需求单位总经理\"" },
+    { "id": "f32", "source": "XORGateway11", "target": "UserTask12", "name": "执行制样", "condition": "purdirectorGateWay==\"采购工程师(执行制样)\"" },
+    { "id": "f33", "source": "UserTask7", "target": "UserTask8" },
+    { "id": "f34", "source": "UserTask8", "target": "XORGateway8" },
+    { "id": "f35", "source": "XORGateway8", "target": "UserTask9", "name": "默认", "condition": "1<3" },
+    { "id": "f36", "source": "XORGateway8", "target": "UserTask12", "name": "执行制样", "condition": "demanderGeneralManagerGateway ==\"采购工程师(执行制样)\"" },
+    { "id": "f37", "source": "UserTask9", "target": "UserTask10" },
+    { "id": "f38", "source": "UserTask10", "target": "XORGateway12" },
+    { "id": "f39", "source": "XORGateway12", "target": "UserTask11", "name": "默认", "condition": "1<3" },
+    { "id": "f40", "source": "XORGateway12", "target": "UserTask12", "name": "执行制样", "condition": "internalControlGateway == \"采购工程师(执行制样)\"" },
+    { "id": "f41", "source": "UserTask11", "target": "UserTask12" },
+    { "id": "f42", "source": "UserTask12", "target": "UserTask13" },
+    { "id": "f43", "source": "UserTask13", "target": "UserTask14" },
+    { "id": "f44", "source": "UserTask14", "target": "EndEvent1" },
+    { "id": "f45", "source": "UserTask15", "target": "XORGateway13" },
+    { "id": "f46", "source": "XORGateway13", "target": "UserTask2", "name": "默认", "condition": "1<3" },
+    { "id": "f47", "source": "XORGateway13", "target": "UserTask12", "name": "拆单", "condition": "splitOrder == \"2\"" }
+  ]
+}
