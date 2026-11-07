@@ -235,6 +235,20 @@ export function setCondition(flow, { from, to, expr, name }) {
   return `连线 ${from}→${to} 已更新（cond=${expr ?? '不变'} name=${name ?? '不变'}）`;
 }
 
+// ---------- 删连线（按 from→to 定位） ----------
+export function removeEdge(flow, { from, to }) {
+  const e = edgeBetween(flow.def, from, to) || die(`连线 ${from}→${to} 不存在`);
+  flow.def.childShapes = flow.def.childShapes.filter(s => s.resourceId !== e.resourceId);
+  for (const s of flow.def.childShapes) {
+    if (s.outgoing) s.outgoing = s.outgoing.filter(o => o.resourceId !== e.resourceId);
+  }
+  const seq = findSeqFlow(flow.bpmn, e.resourceId);
+  if (seq) flow.bpmn = flow.bpmn.replace(seq[0] + '\n    ', '').replace(seq[0], '');
+  const edge = findEdgeXml(flow.bpmn, e.resourceId);
+  if (edge) flow.bpmn = flow.bpmn.replace(edge[0] + '\n      ', '').replace(edge[0], '');
+  return `连线 ${from}→${to} 已删除`;
+}
+
 // ---------- 改审批人 ----------
 export function setAssignee(flow, nd, { key, assigneeArgs, logicCal }) {
   const node = nodeById(flow.def, key) || die(`节点 ${key} 不存在`);

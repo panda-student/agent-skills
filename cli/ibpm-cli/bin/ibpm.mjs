@@ -14,7 +14,7 @@ import { ssoLogin, ssoSetup, hasSsoCredentials } from '../src/ssologin.mjs';
 import { ensureAuth, listDefs, defGet, exportZip } from '../src/api.mjs';
 import { unzipToTemp, parseFlowXml, parseNodeDispose, renderShow } from '../src/show.mjs';
 import { readFlow, writeFlow, parseVars } from '../src/flowxml.mjs';
-import { renderNodes, addNode, addEdge, setCondition, setAssignee, removeNode, varAdd, varRemove } from '../src/surgery.mjs';
+import { renderNodes, addNode, addEdge, removeEdge, setCondition, setAssignee, removeNode, varAdd, varRemove } from '../src/surgery.mjs';
 import { checkout, loadWorkspace, flowDirOf, discard, pack } from '../src/workspace.mjs';
 import { ensureGrf, ensureGrfInZip } from '../src/grf.mjs';
 import { approvalQuery, approvalSave, contract, opinions, readNodeStates } from '../src/approval.mjs';
@@ -56,6 +56,7 @@ function usage() {
   ibpm add-node <key> --name 名称 --after 参照节点 [--branch] [--sign] [--spec 张磊/00133543 | --var varName | --hrScript S1 | --orgReport 组织名,编码]
                                    （--sign 直接创建会签节点 SignTask，取人规则落 ext:signNode，避免设计器改类型丢规则）
   ibpm connect <from> <to> [--name 名称] [--cond 条件表达式]
+  ibpm remove-edge <from> <to>
   ibpm set-condition <from> <to> [--expr 条件] [--name 名称]
   ibpm set-assignee <key> --spec 张磊/00133543 | --var varName | --hrScript S1 | --orgReport 组织名,编码 [--logicCal and]
                                    （会签节点自动写入 ext:signNode 的 extPlugins）
@@ -276,6 +277,18 @@ async function main() {
       const defKey = getFlag('--flow', '-f') || (() => { console.error('缺少 --flow <defKey>'); process.exit(1); })();
       const ctx = loadEditable(defKey, envName);
       const msg = addEdge(ctx.flow, { from, to, name: getFlag('--name') || '', cond: getFlag('--cond') || '' });
+      ctx.save();
+      console.log('✓', msg);
+      return;
+    }
+
+    case 'remove-edge': {
+      const envName = argEnv();
+      const from = positional(1), to = positional(2);
+      if (!from || !to) { console.error('用法: ibpm remove-edge <from> <to>'); process.exit(1); }
+      const defKey = getFlag('--flow', '-f') || (() => { console.error('缺少 --flow <defKey>'); process.exit(1); })();
+      const ctx = loadEditable(defKey, envName);
+      const msg = removeEdge(ctx.flow, { from, to });
       ctx.save();
       console.log('✓', msg);
       return;

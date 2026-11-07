@@ -62,6 +62,7 @@ ibpm checkout QT04001                              # 导出当前主版本到工
 ibpm add-node T_Xxx --flow QT04001 --name 项目专员 --after T_需求单位总经理 --var projectSpecialist
 ibpm add-node T_Sign --flow QT04001 --name 会签任务 --after T_Xxx --var coSignPersonnel --sign  # 直接创建会签节点
 ibpm connect T_A T_B --flow QT04001 --name 标签 --cond "amount>=200000"
+ibpm remove-edge T_A T_B --flow QT04001           # 删除连线（网关合并/重构必用，先删边再删节点）
 ibpm set-condition T_A T_B --flow QT04001 --expr "planChange=='Y'" --name 是
 ibpm set-assignee T_Xxx --flow QT04001 --spec 张磊/00133543 --logicCal and
 ibpm set-assignee SignTask1 --flow QT04001 --var coSignPersonnel  # 会签节点自动写入 ext:signNode（无需手工补 XML）
@@ -113,6 +114,7 @@ ibpm cc QT04001 --carry-from QT04001v5   # 从指定源版本承接规则（新�
 - **verify 未 0 失败，禁止 import**——校验失败按输出逐项修复（布局锚点/ID 关联/审批人同步），禁止带病上线
 - **导入即新增版本**：同 defKey 导入自动 version+1 并成为主版本，在途实例锁定旧版本不受影响；上线顺序类变更（新流程变量依赖后端发版）须提醒用户
 - **编辑必须走 checkout 工作区**，禁止直接改线上（无此命令，也不提供 webDefSave）
+- **删除网关/节点前先 `remove-edge` 清理连线**：`remove-node --reconnect` 会把全部前驱×后继互连，删网关会多出错误分支；正确顺序是删边 → 删节点 → 补新边
 - 重大结构变更后建议用户在设计器目检画布，并发起测试单走通全链路
 - 新增流程变量供条件使用时，变量必须先 `var-add`（或已存在），网关出边条件才可引用
 - varKey 不能自编，必须 `ibpm contract` 查平台确认——自编语义化 key 会导致 vars 传递失效、测试返工

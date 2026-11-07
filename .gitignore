@@ -1,6 +1,8 @@
 .trae/
 /.idea/
+# 依赖目录：各 CLI / 技能内嵌 node_modules 一律不入库
 node_modules/
+**/node_modules/
 skills/weekly-report/config/
 .openidea/
 .skill-lock.json

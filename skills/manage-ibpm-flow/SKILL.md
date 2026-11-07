@@ -61,6 +61,7 @@ ibpm checkout QT04001                              # 导出当前主版本到工
 # —— 以下编辑命令都带 --flow <defKey>，作用于工作区，不影响线上 ——
 ibpm add-node T_Xxx --flow QT04001 --name 项目专员 --after T_需求单位总经理 --var projectSpecialist
 ibpm connect T_A T_B --flow QT04001 --name 标签 --cond "amount>=200000"
+ibpm remove-edge T_A T_B --flow QT04001           # 删除连线（网关合并/重构必用，先删边再删节点）
 ibpm set-condition T_A T_B --flow QT04001 --expr "planChange=='Y'" --name 是
 ibpm set-assignee T_Xxx --flow QT04001 --spec 张磊/00133543 --logicCal and
 ibpm remove-node T_Xxx --flow QT04001 --reconnect  # 自动接驳前后继
