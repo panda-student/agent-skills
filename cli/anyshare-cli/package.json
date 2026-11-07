@@ -1,0 +1,16 @@
+{
+  "name": "anyshare-cli",
+  "version": "0.1.0",
+  "description": "AnyShare 文档云命令行工具：libs/ls/token，token 自动刷新（浏览器静默 SSO 回路 + 无头 UCenter 链）",
+  "type": "module",
+  "bin": {
+    "anyshare": "./bin/anyshare.mjs"
+  },
+  "dependencies": {
+    "jomoo-auth-cli": "file:../jomoo-auth-cli"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "private": true
+}

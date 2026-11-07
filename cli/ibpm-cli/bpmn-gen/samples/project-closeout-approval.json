@@ -1,0 +1,116 @@
+{
+  "name": "项目结案审批流程",
+  "processKey": "xmja",
+  "typeId": "2077307621480931328",
+  "typeName": "项目管理系统_100836348",
+  "sysName": "100836348",
+  "processVersion": 1,
+  "createBy": "1547142466930810880",
+  "createOrgId": "jomoo-zuhu_810_10020990",
+  "updateBy": "1547142466930810880",
+  "variables": [
+    { "name": "项目投资金额", "key": "projectAmount", "type": "double", "defaultVal": 0.0, "isRequired": true },
+    { "name": "项目一级类型", "key": "projectType1", "type": "string", "isRequired": true },
+    { "name": "项目二级类型", "key": "projectType2", "type": "string", "isRequired": false },
+    { "name": "是否涉及EHS", "key": "isEHS", "type": "string", "isRequired": false },
+    { "name": "业务财务主管是否为空", "key": "financeMgrEmpty", "type": "string", "isRequired": false }
+  ],
+  "nodes": [
+    { "id": "StartEvent1", "type": "startEvent", "name": "开始" },
+
+    { "id": "TaskApply", "type": "userTask", "name": "项目结案申请" },
+
+    { "id": "TaskDept", "type": "userTask", "name": "立项单位审批" },
+
+    { "id": "GW_DIGITAL", "type": "exclusiveGateway", "name": "是否营销数字化" },
+
+    { "id": "TaskDigital", "type": "userTask", "name": "营销数字化" },
+
+    { "id": "TaskSpecialist", "type": "userTask", "name": "项目专员" },
+
+    { "id": "TaskFinancePM", "type": "userTask", "name": "业务财务/项目经理/IT项目经理" },
+
+    { "id": "GW_EHS", "type": "exclusiveGateway", "name": "是否涉及EHS" },
+
+    { "id": "TaskEHS", "type": "userTask", "name": "集团环安" },
+
+    { "id": "TaskSign", "type": "userTask", "name": "会签人员审核" },
+
+    { "id": "GW_FINANCEMGR", "type": "exclusiveGateway", "name": "业务财务主管是否为空" },
+
+    { "id": "TaskFinanceMgr", "type": "userTask", "name": "业务财务主管" },
+
+    { "id": "TaskOpFinance", "type": "userTask", "name": "经营财务" },
+
+    { "id": "GW_PMO", "type": "exclusiveGateway", "name": "PMO类型判断" },
+
+    { "id": "TaskMfgPMO", "type": "userTask", "name": "制造PMO" },
+
+    { "id": "TaskDigPMO", "type": "userTask", "name": "数字化或经管PMO" },
+
+    { "id": "TaskDigPMOMgr", "type": "userTask", "name": "数字化或经管PMO总经理" },
+
+    { "id": "TaskViceGM", "type": "userTask", "name": "立项单位副总经理" },
+
+    { "id": "TaskGM", "type": "userTask", "name": "立项单位总经理" },
+
+    { "id": "TaskVP", "type": "userTask", "name": "立项单位分管副总裁/执行总裁并行会签" },
+
+    { "id": "GW_AMOUNT", "type": "exclusiveGateway", "name": "项目投资金额判断" },
+
+    { "id": "TaskFinanceGM", "type": "userTask", "name": "财务总经理" },
+
+    { "id": "TaskFinanceVP", "type": "userTask", "name": "财务副总裁" },
+
+    { "id": "TaskPresident", "type": "userTask", "name": "总裁",
+      "assignee": { "source": "spec", "userName": "林孝发", "userId": "1", "account": "00000001" } },
+
+    { "id": "EndEvent1", "type": "endEvent", "name": "结束" }
+  ],
+  "edges": [
+    { "id": "f1", "source": "StartEvent1", "target": "TaskApply" },
+    { "id": "f2", "source": "TaskApply", "target": "TaskDept" },
+    { "id": "f3", "source": "TaskDept", "target": "GW_DIGITAL" },
+
+    { "id": "f4", "source": "GW_DIGITAL", "target": "TaskDigital", "name": "是营销数字化", "condition": "projectType2=='营销数字化'" },
+    { "id": "f5", "source": "TaskDigital", "target": "TaskSign" },
+
+    { "id": "f6", "source": "GW_DIGITAL", "target": "TaskSpecialist", "name": "非营销数字化", "condition": "projectType2!='营销数字化'" },
+    { "id": "f7", "source": "TaskSpecialist", "target": "TaskFinancePM" },
+    { "id": "f8", "source": "TaskFinancePM", "target": "GW_EHS" },
+
+    { "id": "f9", "source": "GW_EHS", "target": "TaskEHS", "name": "涉及EHS", "condition": "isEHS=='是'" },
+    { "id": "f10", "source": "TaskEHS", "target": "TaskSign" },
+
+    { "id": "f11", "source": "GW_EHS", "target": "TaskSign", "name": "不涉及EHS", "condition": "isEHS!='是'" },
+
+    { "id": "f12", "source": "TaskSign", "target": "GW_FINANCEMGR" },
+
+    { "id": "f13", "source": "GW_FINANCEMGR", "target": "TaskFinanceMgr", "name": "不为空", "condition": "financeMgrEmpty!='是'" },
+    { "id": "f14", "source": "TaskFinanceMgr", "target": "TaskOpFinance" },
+
+    { "id": "f15", "source": "GW_FINANCEMGR", "target": "TaskOpFinance", "name": "为空则跳过", "condition": "financeMgrEmpty=='是'" },
+
+    { "id": "f16", "source": "TaskOpFinance", "target": "GW_PMO" },
+
+    { "id": "f17", "source": "GW_PMO", "target": "TaskMfgPMO", "name": "生产制造/战略投资", "condition": "projectType1=='生产制造项目'||projectType1=='战略投资项目'" },
+    { "id": "f18", "source": "TaskMfgPMO", "target": "TaskViceGM" },
+
+    { "id": "f19", "source": "GW_PMO", "target": "TaskDigPMO", "name": "经管/数字化且<100万", "condition": "(projectType1=='经营管理项目'||projectType1=='数字化项目')&&projectAmount<1000000" },
+    { "id": "f20", "source": "TaskDigPMO", "target": "TaskViceGM" },
+
+    { "id": "f21", "source": "GW_PMO", "target": "TaskDigPMOMgr", "name": "经管/数字化且≥100万", "condition": "(projectType1=='经营管理项目'||projectType1=='数字化项目')&&projectAmount>=1000000" },
+    { "id": "f22", "source": "TaskDigPMOMgr", "target": "TaskViceGM" },
+
+    { "id": "f23", "source": "TaskViceGM", "target": "TaskGM" },
+    { "id": "f24", "source": "TaskGM", "target": "TaskVP" },
+    { "id": "f25", "source": "TaskVP", "target": "GW_AMOUNT" },
+
+    { "id": "f26", "source": "GW_AMOUNT", "target": "EndEvent1", "name": "投资金额<100万", "condition": "projectAmount<1000000" },
+
+    { "id": "f27", "source": "GW_AMOUNT", "target": "TaskFinanceGM", "name": "投资金额≥100万", "condition": "projectAmount>=1000000" },
+    { "id": "f28", "source": "TaskFinanceGM", "target": "TaskFinanceVP" },
+    { "id": "f29", "source": "TaskFinanceVP", "target": "TaskPresident" },
+    { "id": "f30", "source": "TaskPresident", "target": "EndEvent1" }
+  ]
+}

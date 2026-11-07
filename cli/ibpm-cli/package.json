@@ -1,0 +1,16 @@
+{
+  "name": "ibpm-cli",
+  "version": "0.1.0",
+  "description": "宏天 IBPM 流程定义命令行工具：查（list/show/nodes/vars/export）、增改（checkout 工作区语义编辑 + create 生成）、token 自动登录",
+  "type": "module",
+  "bin": {
+    "ibpm": "./bin/ibpm.mjs"
+  },
+  "dependencies": {
+    "jomoo-auth-cli": "file:../jomoo-auth-cli"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "private": true
+}

@@ -1,0 +1,42 @@
+{
+  "name": "发票报销流程",
+  "processKey": "fxbx",
+  "typeId": "2077307621480931328",
+  "typeName": "财务管理系统_100836348",
+  "sysName": "100836348",
+  "processVersion": 1,
+  "createBy": "1547142466930810880",
+  "createOrgId": "jomoo-zuhu_810_10020990",
+  "updateBy": "1547142466930810880",
+  "variables": [
+    { "name": "报销金额", "key": "amount", "type": "double", "defaultVal": 0.0, "isRequired": true },
+    { "name": "报销类型", "key": "type", "type": "string", "isRequired": false }
+  ],
+  "nodes": [
+    { "id": "StartEvent1", "type": "startEvent", "name": "开始" },
+    { "id": "UserTask1", "type": "userTask", "name": "填写报销单" },
+    { "id": "XORGateway1", "type": "exclusiveGateway", "name": "金额判断" },
+    { "id": "UserTask2", "type": "userTask", "name": "部门经理审批" },
+    { "id": "UserTask3", "type": "userTask", "name": "财务经理审批" },
+    { "id": "XORGateway2", "type": "exclusiveGateway", "name": "报销类型判断" },
+    { "id": "UserTask4", "type": "userTask", "name": "差旅费用审核" },
+    { "id": "UserTask5", "type": "userTask", "name": "业务招待审核" },
+    { "id": "XORGateway3", "type": "exclusiveGateway", "name": "类型汇合" },
+    { "id": "UserTask6", "type": "userTask", "name": "出纳付款" },
+    { "id": "EndEvent1", "type": "endEvent", "name": "结束" }
+  ],
+  "edges": [
+    { "id": "flow1", "source": "StartEvent1", "target": "UserTask1" },
+    { "id": "flow2", "source": "UserTask1", "target": "XORGateway1" },
+    { "id": "flow3", "source": "XORGateway1", "target": "UserTask2", "name": "<5000", "condition": "amount<5000" },
+    { "id": "flow4", "source": "XORGateway1", "target": "UserTask3", "name": ">=5000", "condition": "amount>=5000" },
+    { "id": "flow5", "source": "UserTask2", "target": "XORGateway2" },
+    { "id": "flow6", "source": "UserTask3", "target": "XORGateway2" },
+    { "id": "flow7", "source": "XORGateway2", "target": "UserTask4", "name": "差旅", "condition": "type=='travel'" },
+    { "id": "flow8", "source": "XORGateway2", "target": "UserTask5", "name": "招待", "condition": "type=='hospitality'" },
+    { "id": "flow9", "source": "UserTask4", "target": "XORGateway3" },
+    { "id": "flow10", "source": "UserTask5", "target": "XORGateway3" },
+    { "id": "flow11", "source": "XORGateway3", "target": "UserTask6" },
+    { "id": "flow12", "source": "UserTask6", "target": "EndEvent1" }
+  ]
+}

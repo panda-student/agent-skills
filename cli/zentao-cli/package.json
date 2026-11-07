@@ -1,0 +1,17 @@
+{
+  "name": "zentao-cli",
+  "version": "1.2.0",
+  "description": "禅道 JSON API 命令行工具 — 登录/查询/创建Story与Task/工时填写与任务关闭（ESM）",
+  "type": "module",
+  "bin": {
+    "zentao": "bin/zentao.mjs"
+  },
+  "files": [
+    "bin",
+    "src"
+  ],
+  "private": true,
+  "engines": {
+    "node": ">=14"
+  }
+}
