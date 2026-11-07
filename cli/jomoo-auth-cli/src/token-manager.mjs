@@ -8,6 +8,11 @@ import { captureTokenByCdp } from './cdp-edge.mjs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
+// 统一 SSO Profile：所有需要登录的 CLI 共用同一个浏览器 profile，账号只需在里面维护一次。
+// 沿用 anyshare-cli 现有目录，避免迁移已有会话；可用 JOMOO_AUTH_PROFILE_DIR 覆盖。
+export const SHARED_PROFILE_DIR = process.env.JOMOO_AUTH_PROFILE_DIR
+  || join(homedir(), '.anyshare-cli', 'edge-sso-profile');
+
 export function createTokenManager(options) {
   const {
     appName,
@@ -22,6 +27,7 @@ export function createTokenManager(options) {
     loginPageRe = null,
     cdpPort = 9223,
     maxWaitMs = 180_000,
+    profileDir = SHARED_PROFILE_DIR,
   } = options;
 
   function currentToken() {
@@ -56,7 +62,7 @@ export function createTokenManager(options) {
   async function tryCdpBrowser() {
     return captureTokenByCdp({
       baseUrl, launchUrl, validateToken,
-      profileDir: join(homedir(), '.' + appName, 'edge-sso-profile'),
+      profileDir,
       cookieTokenRe: cookieTokenRe || undefined,
       loginPageRe: loginPageRe || undefined,
       cdpPort, maxWaitMs,
