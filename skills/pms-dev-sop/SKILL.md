@@ -40,11 +40,11 @@ description: PMS 项目开发交付 SOP：受理分诊 → 前期确认 → 方�
 |---|---|
 | 任务受理 | 本文件「任务受理」（调度层内置） |
 | 确认+方案 | `verify-issue`（核实/排查/梳理/方案素材）+ `grill-me`（决策树拍板） |
-| 实施 | `worktree`（建树/预检/依赖复用/证书）+ `test-driven-development`（前端单测 `vitest`）；PMS 工程约束走项目规则（AGENTS.md 按需索引） |
-| 代码评审 | `TRAE-code-review`（fast path 仅此）+ `code-organization-review`（标准路径并行）；PMS 重点核查项/拦截检查走项目规则 |
+| 实施 | git worktree（建树/预检/依赖复用/证书）+ `test-driven-development`（前端单测 `vitest`）；PMS 工程约束走项目规则（AGENTS.md 按需索引） |
+| 代码评审 | `simplify`（fast path 单维快检 / 标准路径四维并行）；PMS 重点核查项/拦截检查走项目规则 |
 | 编译+冒烟 | `yaak-ops`（命令细节 `use-yaak`）；PMS mvn 纪律/冒烟规则走项目规则 |
 | 复盘固化 | `learn`（踩坑草稿正式固化，产出随合并推送一并提交） |
-| 合并推送 | `worktree`「合并推送」章节（单一来源）；PMS 提交信息约定走项目规则 |
+| 合并推送 | git worktree 合并推送流程（单一来源）；PMS 提交信息约定走项目规则 |
 | uat→dev 同步 | `cherry-pick`（单一来源） |
 | UAT 终验 | `e2e-ops`（验证方法论/证据）+ `gitlab-operate`/`rancher-ops`（部署生效确认）；PMS 交付约定走项目规则 |
 | 禅道闭环 | `jpm-zentao-operate` |
@@ -59,7 +59,7 @@ description: PMS 项目开发交付 SOP：受理分诊 → 前期确认 → 方�
 ## 分级执行（小改动 fast path）
 
 - 适用：缺陷修复、预计改动 ≤5 个文件、不涉表结构/公共层/新增接口/前端交互形态变化；任一不满足或拿不准 → 标准路径，不脑补
-- 差异（同一套阶段契约下的组合变体）：同类排查限深（Grep 同字段/同 SQL 片段两轮内收敛）、方案单选给推荐、TDD 单测试类收口、评审仅 TRAE-code-review
+- 差异（同一套阶段契约下的组合变体）：同类排查限深（Grep 同字段/同 SQL 片段两轮内收敛）、方案单选给推荐、TDD 单测试类收口、评审仅 `simplify` 快检
 - **不减免**：合并推送、uat→dev 同步、合并前拦截检查、UAT 终验、禅道闭环；用户可随时要求切回标准路径
 
 ## 等待期并行清单（dist build 起 → 终验开始，禁止空等）
@@ -71,16 +71,16 @@ description: PMS 项目开发交付 SOP：受理分诊 → 前期确认 → 方�
   - learn 复盘草稿：实施期记录踩坑与流程断点要点；合并推送前正式固化并随代码提交推送（终验/闭环期新经验在收尾前补固化并提交）
   - 树内临时文件清理复查：工作区与下载目录复查无遗留
   - 衔接下一任务受理：下一任务的任务受理与前期确认可与当前任务交付并行，互不阻塞
-- **push 后追加**：uat→dev 同步（不依赖 CI，push 完成即执行，走 `cherry-pick`）；删除 worktree（已合并且已推送即回收，走 `worktree` 技能）
+- **push 后追加**：uat→dev 同步（不依赖 CI，push 完成即执行，走 `cherry-pick`）；删除 worktree（已合并且已推送即回收，按 git worktree 流程）
 
 ## 硬约束（全流程红线）
 
 - 任务类型不确定直接问用户；禅道编号不追问：发链接即有单号，未发即无单号
 - 实施前决策包（确认结论 + 方案）必须经用户拍板，禁止自动跳闸；拍板前禁止动代码
 - 缺陷确认属实必须横向排查同类问题，清单交用户拍板处理范围，禁止只修单点收尾
-- 实施必建 worktree（`worktree` 技能），全部改动树内；强制 TDD，豁免须经用户确认
+- 实施必建 git worktree，全部改动树内；强制 TDD，豁免须经用户确认
 - 评审未通过不提交；推送后必须删除已合并 worktree，禁止遗留
 - 提交只发生在 uat，dev 只作镜像；uat→dev 全量同步只走 cherry-pick，禁止 merge 整个 uat；同步完切回 uat
-- 工具红线：数据库一律 `dbx-database`（dbx MCP）；凭据一律本地密码管理器 MCP（mcp_vault_*），禁止硬编码；接口操作一律 `yaak-ops`（SOP 层，命令细节落 `use-yaak`），禁止终端 curl
+- 工具红线：数据库一律 `dbx MCP`（mcp__dbx__*）；凭据一律本地密码管理器 MCP（mcp_vault_*），禁止硬编码；接口操作一律 `yaak-ops`（SOP 层，命令细节落 `use-yaak`），禁止终端 curl
 - 「验证通过」以 UAT 部署后终验为准且逐项出示证据，无证据按未验证处理；本地冒烟不作通过依据
 - 规格书单元格删除线 = 需求作废，不得作为必填/校验依据；字段物理删列须目标环境新镜像生效后执行

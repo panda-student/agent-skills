@@ -76,7 +76,7 @@ test -f .git/CHERRY_PICK_HEAD && echo "进行中(异常)" || echo "已完成"
 git log --oneline -N              # 确认顺序与内容
 git status --short                # 工作区应干净（排除未跟踪IDE文件）
 ```
-⚠️ cherry-pick 只改本地，执行 `git push` 前按 `worktree` 技能「合并推送」闸门清点待推提交（`git log origin/<目标分支>..<目标分支> --oneline`），确认只含本次同步相关提交；发现其他任务的提交 → 停下问用户（一起推 / 摘除重排），禁止静默推送。
+⚠️ cherry-pick 只改本地，执行 `git push` 前按 git worktree 合并推送闸门清点待推提交（`git log origin/<目标分支>..<目标分支> --oneline`），确认只含本次同步相关提交；发现其他任务的提交 → 停下问用户（一起推 / 摘除重排），禁止静默推送。
 
 ## dev↔uat 双向同步（高频场景）
 
@@ -99,7 +99,7 @@ git log origin/<source> --not origin/<target> --oneline --no-merges --reverse
 git checkout <target> && git pull   # 切换前确认工作区干净，有未提交改动先与用户确认处理方式
 ```
 若目标分支恰为当前分支，跳过切换但仍需 `git pull` 对齐最新。
-⚠️ `checkout` 报目标分支已被 worktree 占用时，禁止强拆他人树：按 `worktree` 技能路径约定新建临时树挂载目标分支（`git worktree add <标准路径>\<target> <target>`），在树内完成 pull + cherry-pick + push 后按 worktree 技能回收临时树。
+⚠️ `checkout` 报目标分支已被 worktree 占用时，禁止强拆他人树：按项目约定的标准路径新建临时树挂载目标分支（`git worktree add <标准路径>\<target> <target>`），在树内完成 pull + cherry-pick + push 后回收临时树。
 
 ### 差异4：双线演进同名功能，先做文件级终态对比（2026-10-26 实证）
 dev 与 uat 曾**各自独立实现同一功能**（同名 API 文件、同名页面）时，`git cherry` 因 patch-id 不同把大量等价提交标 `+`，逐条 pick 必然冲突（add/add、content 冲突泥潭）。正确姿势：

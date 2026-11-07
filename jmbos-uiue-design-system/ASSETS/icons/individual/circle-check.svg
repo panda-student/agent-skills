@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="16px" height="16px" viewBox="0 0 16 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <title>icon/circle-check</title>
-    <g id="icon/circle-check" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <polygon id="icon-circle-check" points="0 16 16 16 16 0 0 0"></polygon>
-        <path d="M8,1.6 C4.4656,1.6 1.6,4.4656 1.6,8 C1.6,11.5344 4.4656,14.4 8,14.4 C11.5344,14.4 14.4,11.5344 14.4,8 C14.4,4.4656 11.5344,1.6 8,1.6 L8,1.6 Z M8,2.56 C11,2.56 13.44,5 13.44,8 C13.44,11 11,13.44 8,13.44 C5,13.44 2.56,11 2.56,8 C2.56,5 5,2.56 8,2.56 Z M11.29376,5.7408 C11.10656,5.5528 10.80256,5.5528 10.61456,5.7408 L7.11456,9.2408 L5.38496,7.512 C5.19776,7.324 4.89376,7.324 4.70576,7.512 C4.51856,7.6992 4.51856,8.0032 4.70576,8.1904 L6.77536,10.2592 C6.86896,10.3528 6.99216,10.4 7.11456,10.4 C7.23696,10.4 7.36016,10.3528 7.45376,10.2592 L11.29376,6.4192 C11.48096,6.232 11.48096,5.928 11.29376,5.7408 Z" id="icon-circle-check" fill="currentColor" fill-rule="nonzero"></path>
-    </g>
-</svg>

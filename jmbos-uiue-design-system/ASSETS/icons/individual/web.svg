@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="16px" height="16px" viewBox="0 0 16 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <title>icon/web</title>
-    <g id="icon/web" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <rect id="矩形" x="0" y="0" width="16" height="16"></rect>
-        <path d="M13.04,2 C13.57019,2 14,2.42981 14,2.96 L14,13.04 C14,13.57019 13.57019,14 13.04,14 L2.96,14 C2.42981,14 2,13.57019 2,13.04 L2,2.96 C2,2.42981 2.42981,2 2.96,2 L13.04,2 Z M13.04,5.734985 L2.96,5.734985 L2.96,13.04 L13.04,13.04 L13.04,5.734985 Z M4.76,2.96 L2.96,2.96 L2.96,4.774985 L4.76,4.774985 L4.76,2.96 Z M13.04,2.96 L5.72,2.96 L5.72,4.774985 L13.04,4.774985 L13.04,2.96 Z" id="形状" fill="currentColor"></path>
-    </g>
-</svg>

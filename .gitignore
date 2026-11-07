@@ -1,2 +1,6 @@
 .trae/
 /.idea/
+node_modules/
+skills/weekly-report/config/
+.openidea/
+.skill-lock.json

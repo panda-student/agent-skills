@@ -44,7 +44,7 @@ description: Jomoo Rancher 容器平台操作指南——通过 rancher MCP 查�
 ## Token 管理与轮换
 
 - Token 过期症状：MCP 工具调用报 401/Unauthorized
-- 轮换流程：浏览器登录 Rancher → 头像 → Account and API Keys → 创建新 Key（No Scope，90 天）→ 更新 `C:\Users\JOMOO\AppData\Roaming\Trae CN\User\mcp.json` 的 `RANCHER_MCP_RANCHER_TOKEN` → 更新 vault 条目（凭据写入走 credential-secure-inject，禁止明文过对话）→ 重启 Trae 或刷新 MCP
+- 轮换流程：浏览器登录 Rancher → 头像 → Account and API Keys → 创建新 Key（No Scope，90 天）→ 更新 `C:\Users\JOMOO\AppData\Roaming\Trae CN\User\mcp.json` 的 `RANCHER_MCP_RANCHER_TOKEN` → 更新 vault 条目（凭据写入走本地密码管理器 MCP `mcp_vault_*`，禁止明文过对话）→ 重启 Trae 或刷新 MCP
 - 旧 token 惰性清理：Account and API Keys 列表删除失效条目
 
 ## 浏览器兜底路径（仅 MCP 覆盖不了时）

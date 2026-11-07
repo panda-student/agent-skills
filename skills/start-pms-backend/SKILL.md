@@ -134,8 +134,8 @@ curl -s -X POST "http://127.0.0.1:8098/pms/project/benefit/month/page" \
 
 启动后端 + 前端 vite dev（`pms_frontend` 的 proxy 已指向 `localhost:8098`；注意本机常见**既有 vite 实例跑在 7153**，重复启动会落到 7154——先 `netstat -ano | Select-String ":7153"` 查复用，多余实例按端口找 PID taskkill 清理）：
 
-1. **UI 操作**：浏览器（Trae 桥接已登录态）打开 `https://localhost:7153/<目标页面路由>`，纯 UI 勾选表格行 → 点导出按钮
-2. **网络层裁决**：`browser_network_requests` 过滤 export 请求——验证请求体 `{ids:[...]}` 与响应 200；`browser_console_messages` 里拦截器 log 含完整响应头，`content-disposition` 文件名应含日期后缀
+1. **UI 操作**：`agent-browser open https://localhost:7153/<目标页面路由>`（复用已登录态），纯 UI 勾选表格行 → 点导出按钮
+2. **网络层裁决**：`agent-browser network requests --filter export` 验证请求体 `{ids:[...]}` 与响应 200；`agent-browser console` 里拦截器 log 含完整响应头，`content-disposition` 文件名应含日期后缀
 3. **下载产物**：文件落在**用户实际下载目录**（如 `D:\JOMOO\Downloads`，非系统默认 `%USERPROFILE%\Downloads`）——校验文件名「业务名称+yyyyMMdd.xlsx」
 4. **内容核对**：xlsx 复制改 `.zip` 后 `Expand-Archive` 解压，直读 `xl/worksheets/sheet1.xml` 核对数据行与勾选过滤（EasyExcel 内联字符串 `t="inlineStr"` **不走 sharedStrings.xml**；数值带 `.0` 后缀，contains 判断用无小数前缀）
 5. **陷阱**：`downloadFileBlob` 的成功 toast 会因内部 `this.$message` TypeError 静默失败（console 报 `Unhandled Promise rejection`）——**toast 不出现不代表下载失败**，以下载目录文件与网络请求为准；表格勾选状态裁决用 vxe-table 组件的 `getCheckboxRecords()` 只读核实，勿凭截图视觉（勾选框 hover/半选渲染易误读）
@@ -255,7 +255,7 @@ const token = `${b64url(JSON.stringify({alg:'HS256',typ:'JWT'}))}.${b64url(JSON.
 
 - **密码来源**：统一从 vault 取（见「登录链路三跳与账号配置」），UAT 网关登录密码注入落盘在 `pms_frontend/e2e/.env.local`（gitignore）；yaak dev 环境变量里的 `usePwd`（Welcome1）**不是** UAT 网关密码，用它登录会静默失败（loginNew 200 但不写 token cookie、页面不跳转、无任何提示）
 - **登录成功标志**：cookie 出现 `nisbos_auth_token` / `nisbos_refresh_token`，URL 跳出 /login；仅写入 `url`/`systemId` cookie 不算登录成功
-- **登录按钮点击无效时**：原生 browser_click 无反应（不触发 loginNew）→ JS 派发 mousedown/mouseup/click 事件序列可触发（实例：2026-10-23 效益排序验证）
+- **登录按钮点击无效时**：原生 `agent-browser click` 无反应（不触发 loginNew）→ 用 `agent-browser eval` 派发 mousedown/mouseup/click 事件序列可触发（实例：2026-10-23 效益排序验证）
 
 ### 既有实例新旧判别（重启前必做）
 

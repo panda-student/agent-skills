@@ -88,8 +88,8 @@ UI 模式还需目标环境已登录（本地 dev 登录走 test 平台账号，
 - 「父菜单」树选择下拉面板 a11y 快照过大，自动化会连续多轮在同一交互截断：
   - **禁止对面板整体 snapshot**
   - 先在输入框过滤缩小面板（且必须先选所属应用）
-  - 节点用 browser_evaluate 定位并派发真实鼠标事件（mousedown→mouseup→click）点击——等效人工点击，非字段赋值
+  - 节点用 `agent-browser eval` 定位并派发真实鼠标事件（mousedown→mouseup→click）点击——等效人工点击，非字段赋值
 - 保存后路由仍 404：先整页刷新重载动态路由再访问
 - wujie 微前端 iframe blob 沙箱：主文档 hook XHR 抓不到页面请求、页面内 fetch API 域名会挂起——接口操作改 Node 直调（详见 [reference.md](./reference.md) 踩坑记录）
-- browser_evaluate 多语句脚本包 IIFE 并 return；显式传 viewId（字符串类型），否则操作「最后交互 tab」
+- `agent-browser eval` 多语句脚本包 IIFE 并 return；显式传 viewId（字符串类型），否则操作「最后交互 tab」
 - bosui 组件注入技巧（vue-treeselect 三连同步、隐藏 dropdown item 点击、textarea 原型 setter、BosDialogAdd 调 `vm.handleSubmit()`）→ [reference.md](./reference.md)

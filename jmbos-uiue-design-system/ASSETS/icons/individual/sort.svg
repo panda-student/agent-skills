@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="16px" height="16px" viewBox="0 0 16 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <title>icon/sort</title>
-    <g id="icon/sort" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <rect id="矩形" x="0" y="0" width="16" height="16"></rect>
-        <path d="M11.693701,6.27186708 L8.07864938,2.08978087 C7.97517348,1.97007304 7.77592733,1.97007304 7.67135062,2.08978087 L4.05629896,6.27186708 C3.92200045,6.42781672 4.04308927,6.65625 4.25994834,6.65625 L11.4900517,6.65625 C11.7069107,6.65625 11.8279995,6.42781672 11.693701,6.27186708 Z" id="Path" fill="currentColor" fill-rule="nonzero"></path>
-        <path d="M11.693701,13.4906171 L8.07864938,9.30853087 C7.97517348,9.18882304 7.77592733,9.18882304 7.67135062,9.30853087 L4.05629896,13.4906171 C3.92200045,13.6465667 4.04308927,13.875 4.25994834,13.875 L11.4900517,13.875 C11.7069107,13.875 11.8279995,13.6465667 11.693701,13.4906171 Z" id="Path" fill="currentColor" fill-rule="nonzero" transform="translate(7.875, 11.5469) scale(1, -1) translate(-7.875, -11.5469)"></path>
-    </g>
-</svg>

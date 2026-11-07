@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="16px" height="16px" viewBox="0 0 16 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <title>icon/chevron-right</title>
-    <g id="icon/chevron-right" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <polygon id="icon-chevron-left" points="-8.8817842e-16 16 16 16 16 -1.77635684e-15 -8.8817842e-16 -1.77635684e-15"></polygon>
-        <path d="M2.57573593,5.07573593 C2.78401555,4.86745631 3.10732483,4.84431413 3.3411666,5.00630939 L3.42426407,5.07573593 L8,9.651 L12.5757359,5.07573593 C12.7840156,4.86745631 13.1073248,4.84431413 13.3411666,5.00630939 L13.4242641,5.07573593 C13.6325437,5.28401555 13.6556859,5.60732483 13.4936906,5.8411666 L13.4242641,5.92426407 L8.42426407,10.9242641 C8.21598445,11.1325437 7.89267517,11.1556859 7.6588334,10.9936906 L7.57573593,10.9242641 L2.57573593,5.92426407 C2.34142136,5.68994949 2.34142136,5.31005051 2.57573593,5.07573593 Z" id="路径-8" fill="currentColor" fill-rule="nonzero" transform="translate(8, 8) rotate(-90) translate(-8, -8)"></path>
-    </g>
-</svg>

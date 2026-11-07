@@ -28,11 +28,11 @@ token 过期时任何命令都会提示 exit code 2，重新登录即可（有�
 
 1. **全自动（已录入凭据时）**：`ibpm login -e uat`。若存在 `~/.ibpm-cli/sso-credentials.json` 则走纯 HTTP SSO 链路（loginByCode → tokenByCode → 换 JWT），零浏览器零人工。
    录入凭据（2026-10-27 实测打通，AI 可直接完成，无需用户动手）：先 Write 骨架文件 `{"uat":{"account":"00071763","password":"{{credential}}"}}`，再调 vault `write_credential`：`credentialId=<UCenter条目id>`, `field='secret'`, `target={type:'file', path:'C:\\Users\\JOMOO\\.ibpm-cli\\sso-credentials.json', mode:'replace'}`——**不要传 template 参数**（会 INVALID_INPUT），replace 模式默认替换文件中的 `{{credential}}` 占位符，返回 `file_written` 即成功。校验只看结构（account 值 + password 长度），禁止输出密码。注意：sso-setup 录入弹窗在 AI toolhost 会话里不可见（已实证），勿再尝试。
-2. **浏览器工具 + 单次 handoff（推荐，2026-10-27 实测打通）**：
+2. **agent-browser + 人工接管登录（推荐，2026-10-27 实测打通）**：
    - 后台起回传服务：`ibpm login -e uat --port 49777`（`--port` 固定回传端口）
-   - 浏览器工具打开 `https://test-ibpm.jomoo.com/mvue/flowDesign` → 302 到账号中心登录页
-   - 自动填账号，然后 `browser_waiting_for_user_interaction` handoff 给用户输密码点登录（vault capture_fill_target 对此 Edge 窗口 field 定位失败，勿重试浪费时间）
-   - 登录跳转回 mvue 后，对**原 tab**（handoff 后须用 `browser_tabs list` 重新拿 tabId，sessionStorage 按 tab 隔离）执行 evaluate：`location.href='http://127.0.0.1:49777/?t='+JSON.parse(sessionStorage.currentUser).token` —— token 全程不进 AI 上下文
+   - `agent-browser open https://test-ibpm.jomoo.com/mvue/flowDesign` → 302 到账号中心登录页
+   - 自动填账号（`agent-browser fill`），然后交用户手动输密码并点登录（agent-browser 无 handoff 工具，等用户操作完成后再继续；vault capture_fill_target 对此 Edge 窗口 field 定位失败，勿重试浪费时间）
+   - 登录跳转回 mvue 后，对**原 tab**（须用 `agent-browser tab list` 确认当前 tab，sessionStorage 按 tab 隔离）执行 `agent-browser eval`：`location.href='http://127.0.0.1:49777/?t='+JSON.parse(sessionStorage.currentUser).token` —— token 全程不进 AI 上下文
    - catch 服务收到即自动写配置并退出；`ibpm whoami` 验证
 3. **兜底**：直接 `ibpm login`（默认流程，用户 F12 粘贴回传脚本，180 秒超时可重试）。
 

@@ -40,10 +40,4 @@ allowed-tools:
 - 用户明确说"直接做""不用确认"时——尊重指令，跳过澄清。
 - 纯查询/只读探查（不产生变更）——查完直接汇报。
 
-## 与 brainstorming 的区分
-
-- `brainstorming`：把模糊想法产出完整设计 spec 的创意流程（提 2-3 方案、写设计文档、转 writing-plans）。
-- `grill-me`：针对用户已给出的计划，用逐个追问把细节和决策对齐的提问方法论，更轻、更通用，不强制产出 spec。
-- 两者可叠加：brainstorming 的提问环节可按 grill-me 的方式来。
-
 详细方法、正反例、决策树提问法详解见 [reference.md](./reference.md)。
