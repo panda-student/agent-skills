@@ -23,7 +23,12 @@ description: 通过 anyshare CLI 操作爱数 AnyShare 文档云（wendang.jomoo
   1. 配置 token 试活；
   2. 已配凭据 → 无头 UCenter 链（`loginByCode` → `/sso` 回跳，链路未实测打通，失败静默回落）；
   3. 先扫 Edge leveldb（机会性复用日常浏览器的残留 token，命中即免开浏览器）；
-  4. 仍失败 → 唤起**专用 Profile Edge**（`~/.anyshare-cli/edge-sso-profile`，与日常浏览器隔离）打开**首页**触发静默 SSO 回路自动换发，CDP（9223 端口）轮询捕获 Authorization cookie（180s 超时）。会话有效时零交互；**检测到登录页时自动弹置顶系统提示框提醒人工介入**（终端输出易被忽略，实测反馈）。首次使用在窗口登录一次后会话持久化，之后永久自动。
+  4. 仍失败 → 唤起**专用 Profile Edge**（`~/.anyshare-cli/edge-sso-profile`，与日常浏览器隔离）打开**首页**触发静默 SSO 回路自动换发，CDP 轮询捕获 Authorization cookie（静默 180s）。会话有效时零交互；**检测到登录页时自动弹置顶系统提示框提醒人工介入**（终端输出易被忽略，实测反馈），此时等待延长到 10 分钟、**只提示一次**，且超时后**保留登录窗口**（不会关掉用户正在操作的页面）。首次使用在窗口登录一次后会话持久化，之后永久自动。
+  - 判定顺序：**先读页面 cookie，再判登录页**。登录完成后 SPA 可能仍停在 `/anyshare/zh-cn?redirect=...` 形态，若先按 URL 判登录页就会永远不读 token——这正是「已经登录了一直弹窗不推进」的根因（2026-11-07 修复）。
+  - 感知方式：**事件驱动为主**。连浏览器级 CDP 端点开 `Target.setDiscoverTargets`，登录回跳/新标签页的 `Target.*` 事件一到立即检查（实测事件后 ~120ms 捕获，而非等轮询周期）；另有 5 秒兜底轮询应对漏事件/不支持浏览器级 CDP 的情况。
+  - 收尾：捕获成功后用 CDP `Browser.close` 关闭自己拉起的浏览器（Edge 启动器会交棒给新进程，按 spawn 的 pid 杀会留下整棵树，故再用调试端口反查属主兜底）。
+  - CDP 端口：首选 9223，**被其他程序占用会自动顺延**到下一个空闲端口；实际端口写入 `profile/.cdp-port.json`，后续调用（含共用同一 profile 的其他 CLI）先探活再挂载——浏览器已在运行就**复用，不再 spawn 新窗口**。
+  - 并发保护：进程内单飞 + 应用级锁 `~/.<app>/refresh.lock` + profile 级锁 `<profile>/.browser.lock`。多个 `anyshare sync` 进程/并发下载同时 401 时，只有抢到锁的进程开浏览器，其余等它换好的 token。需要人工登录时不写失败冷却，下一条命令直接挂载保留的窗口读 token。
 
 ## 命令速查
 
@@ -80,6 +85,7 @@ anyshare logout               # 清除本地 token
 - **同步/比对只看更新时间，不看文件大小**（2026-11-05 用户拍板）：云端列表接口的 KB 显示值与本地字节比对不可靠（舍入误差），且同大小可能内容已变——判定「是否需要下载」的唯一依据是云端 `modified_at` vs 本地 mtime；大小只用于下载后完整性校验。
 - **技能脚本路径不要写死 `C:\Users\JOMOO\...`**（2026-11-07 换机踩坑）：换机后该路径不存在，脚本静默全失败。统一用 `$HOME\.agents\skills\...`。
 - **登录页是 `?redirect=` 形态，不含 login 字样**（2026-11-07 实测）：未登录时 SPA 落在 `/anyshare/zh-cn?redirect=%2Fzh-cn%2Fhomepage`，旧正则 `\/login|\/signin|oauth2\/(login|auth)` 匹配不到 → 不弹「请登录」置顶提示 → 无人介入，静默等满 180s 报「CDP 静默回路: 超时未捕获到有效 token」。已在 `cli/jomoo-auth-cli/src/cdp-edge.mjs` 的 `DEFAULT_LOGIN_PAGE_RE` 补 `[?&]redirect=` 规则。
+- **一次同步弹出一堆登录窗口**（2026-11-07 已修，`cli/jomoo-auth-cli`）：根因是三件事叠加——① 刷新链无单飞/无锁，sync 的 10 个目录各是一个进程、单个进程内还有 4 路并发下载，每个 401 都独立走完刷新链；② `captureTokenByCdp` 无条件 spawn，同 profile 再启动时 Edge 把命令转交给已有实例并立刻退出，于是每调一次多一个窗口，而 `killEdgeTree` 杀的是早已退出的壳进程；③ 端口 9223 被 IDE（openidea）占用时 Edge 起不来调试口，调用方白等又重试。现在：进程内单飞 + `refresh.lock`（应用级）+ `.browser.lock`（profile 级）、CDP 端口探活复用、占用则顺延、无目标页时用 `PUT /json/new` 开标签页而不是开窗口、事件驱动感知登录完成、`Browser.close` 优雅收尾。
 - 换机还原 CLI：`~/.agents/cli/<cli>` 下 `npm install` → `npm link`；npm 对 `file:` 依赖建 Junction，改源码即时生效，无需重装。
 
 ## 已验证 API（可直调）
