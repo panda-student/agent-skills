@@ -11,7 +11,11 @@ import http from 'node:http';
 import { notifyTopmost } from './notify.mjs';
 
 const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
-const DEFAULT_LOGIN_PAGE_RE = /oauth2\/(login|auth)|\/login|\/signin/;
+// 登录页识别（命中则弹「请接管浏览器」置顶提示）。
+// 除显式 login/signin 路径外，必须覆盖 SPA 的「首页重定向登录」形态：
+//   https://wendang.jomoo.com/anyshare/zh-cn?redirect=%2Fzh-cn%2Fhomepage
+// 该形态不含 login 字样，曾导致登录页无人介入、静默等满 180s 超时（2026-11-07 实测）。
+const DEFAULT_LOGIN_PAGE_RE = /oauth2\/(login|auth)|\/login|\/signin|[?&]redirect=/i;
 const DEFAULT_COOKIE_TOKEN_RE = /(?:^|;\s*)Authorization=Bearer\s+([^;\s]+)/;
 
 function findEdgeExe() {

@@ -7,10 +7,10 @@ description: 通过 anyshare CLI 操作爱数 AnyShare 文档云（wendang.jomoo
 
 ## 默认动作（先看这里）
 
-**本技能被直接调用且用户未指定其他操作时，不询问、不确认，立即执行：**
+**本技能被直接调用且用户未指定其他操作时，不询问、不确认，立即执行（项目内任意目录均可，脚本会自动探测项目根）：**
 
 ```powershell
-& "C:\Users\JOMOO\.agents\skills\anyshare-ops\scripts\sync-pms-requirement.ps1"
+& "$HOME\.agents\skills\anyshare-ops\scripts\sync-pms-requirement.ps1"
 ```
 
 执行完向用户汇报各目录同步结果即可。仅当用户明确提出浏览/下载/查 token 等其他操作时，才走下方对应流程。
@@ -18,12 +18,12 @@ description: 通过 anyshare CLI 操作爱数 AnyShare 文档云（wendang.jomoo
 ## 背景（AI 不知道的部分）
 
 - AnyShare 7.0 API 网关：`https://wendang.jomoo.com/api/<服务>/v1/...`，认证 `Authorization: Bearer ory_at_...`（Hydra opaque token，**非 JWT**，无法本地解析 exp，只能靠 API 试活判断有效性）。
-- CLI 已实现并 npm link（源码：`code_workspace/anyshare-cli/`），token 落盘 `~/.anyshare-cli/config.json`；SSO 凭据在 `~/.anyshare-cli/sso-credentials.json`（WinForms 弹窗录入，明文不进终端/对话，输入框为标准 UIA Edit 控件 `AccessibleName=账号/密码`，可被密码管理器注入）。
+- CLI 源码位于 `~/.agents/cli/anyshare-cli/`（同目录 `jomoo-auth-cli`）。**`~/.agents` 本身就是技能仓库根目录**，`skills/` 与 `cli/` 都是仓库内实体目录，`git pull` 即完成同步。换机还原：在该目录 `npm install` 后再 `npm link`，`anyshare` 即可用。token 落盘 `~/.anyshare-cli/config.json`；SSO 凭据在 `~/.anyshare-cli/sso-credentials.json`（WinForms 弹窗录入，明文不进终端/对话，输入框为标准 UIA Edit 控件 `AccessibleName=账号/密码`，可被密码管理器注入）。
 - **token 刷新链**（CLI 401 时全自动，无需人工干预）：
   1. 配置 token 试活；
   2. 已配凭据 → 无头 UCenter 链（`loginByCode` → `/sso` 回跳，链路未实测打通，失败静默回落）；
   3. 先扫 Edge leveldb（机会性复用日常浏览器的残留 token，命中即免开浏览器）；
-  4. 仍失败 → 唤起**专用 Profile Edge**（`%LOCALAPPDATA%\.anyshare-cli\edge-profile`，与日常浏览器隔离）打开**首页**触发静默 SSO 回路自动换发，CDP（9223 端口）轮询捕获 Authorization cookie（180s 超时）。会话有效时零交互；**检测到登录页时自动弹置顶系统提示框提醒人工介入**（终端输出易被忽略，实测反馈）。首次使用在窗口登录一次后会话持久化，之后永久自动。
+  4. 仍失败 → 唤起**专用 Profile Edge**（`~/.anyshare-cli/edge-sso-profile`，与日常浏览器隔离）打开**首页**触发静默 SSO 回路自动换发，CDP（9223 端口）轮询捕获 Authorization cookie（180s 超时）。会话有效时零交互；**检测到登录页时自动弹置顶系统提示框提醒人工介入**（终端输出易被忽略，实测反馈）。首次使用在窗口登录一次后会话持久化，之后永久自动。
 
 ## 命令速查
 
@@ -51,19 +51,21 @@ anyshare logout               # 清除本地 token
 3. **下载文件优先用 CLI**：`anyshare download "库名/目录/文件名.xlsx" "D:\目标目录"`——自动走 metadata → 签名 → 下载，并按云端大小校验。禁止再手拼 curl 调下载接口。
 4. 需要直调其他 API 时：`$tok = anyshare token`，再 `curl -H "Authorization: Bearer $tok" https://wendang.jomoo.com/api/document/v1/...`（注意 PowerShell 5.1 的 curl 引号坑，见 Memory）。
 5. 命令报 401/认证失败时 CLI 已自动刷新重试；若最终报错，让用户在 Edge 里打开 wendang.jomoo.com 登录一次，再重跑命令即可。
-6. **AI 会话注意**：执行 `anyshare login` 或已知会触发浏览器登录链路的命令时，必须同步调用 browser_waiting_for_user_interaction 弹「接管浏览器」提示（写明「请在弹出的专用 Edge 窗口完成登录」），禁止默默后台等待——用户曾因不知道要介入而卡住（2026-11-04 反馈）。
+6. **AI 会话注意**：执行 `anyshare login` 或已知会触发浏览器登录链路的命令时，必须同步调用 browser_waiting_for_user_interaction 弹「接管浏览器」提示（写明「请在弹出的专用 Edge 窗口完成登录」），禁止默默后台等待——用户曾因不知道要介入而卡住（2026-11-04 反馈）。需要自动打开登录页时用 `agent-browser open <url>`。
 
 ## 默认同步约定（PMS 需求文档，2026-11-05 约定）
 
-用户调用本技能说「同步/更新需求文档」时，**直接执行技能自带脚本**（映射与路径已固化在脚本内，无需现场拼命令）：
+用户调用本技能说「同步/更新需求文档」时，**在项目根目录直接执行技能自带脚本**（映射已固化在脚本内，无需现场拼命令）：
 
 ```powershell
-& "C:\Users\JOMOO\.agents\skills\anyshare-ops\scripts\sync-pms-requirement.ps1"
+& "$HOME\.agents\skills\anyshare-ops\scripts\sync-pms-requirement.ps1"
 ```
 
-- 脚本内容：对云端基路径 `九牧集团信息化/48-项目管理系统V1.0/04产品研发&测试/需求规格说明书` 与本地基路径 `d:\IdeaProjects\jomoo-ai-coding\code_workspace\docs\requirement` 的 10 组目录映射（`1-项目规划及变更`→`项目规划及变更`、`2-立项申请`→`项目立项`、`项目变更`→`变更`、`项目效益`→`效益`、`项目权限`→`离职人员预警`、`工程项目采购申请流程`→`工程采购`，其余同名）逐条执行 `anyshare sync`
+- **本地路径以「项目根」为基准**：脚本从当前目录向上探测，优先级为 ①同时含 `docs` 与 `.agents`/`.claude` 的工作区目录（取最外层，故在 `weekreport\pms` 这类子仓库内执行仍归位到 `weekreport`）→ ②最近的 `.git` 版本库根，落地到 `<项目根>\docs\requirement`。探测失败直接 exit 1（**不回退到当前目录**，避免在主目录等位置静默建出错误目录树）。需要指定别处时用 `-LocalBase <绝对路径>` 覆盖；`-ShowRoot` 只打印探测结果、不联网，可用于执行前确认。
+- 脚本内容：对云端基路径 `九牧集团信息化/48-项目管理系统V1.0/04产品研发&测试/需求规格说明书` 与本地基路径 `.\docs\requirement` 的 10 组目录映射（`1-项目规划及变更`→`项目规划及变更`、`2-立项申请`→`项目立项`、`项目变更`→`变更`、`项目效益`→`效益`、`项目权限`→`离职人员预警`、`工程项目采购申请流程`→`工程采购`，其余同名）逐条执行 `anyshare sync`
 - 注意：**禁止 `sync 需求规格说明书` 整库根目录**（云端目录名与本地不一致且含 0-历史，会生成错误结构）；本地 `流程自动化测试\` 无云端对应，保持不动；云端根目录游离旧版 `项目信息_..._V0.1.xlsx` 不会被循环拉取，属正常
 - 稳态表现：无变化时 10 个目录约 3 秒跑完，全部「已是最新 0 下载」；云端有改动时只增量下载变化文件
+- 失败语义：脚本开头校验 `anyshare` 是否可用，缺 CLI 直接 exit 1；任一目录失败会汇总并 exit 1——**看到红色「同步未全部完成」即代表真有目录没同步，不能当成功**
 - 云端目录结构变化（新增/改名子目录）时，先改脚本内 `$map` 再执行
 - **脚本编码硬规则**：`.ps1` 含中文必须存为 **UTF-8 with BOM**（Windows PowerShell 5.1 对无 BOM 文件按 GBK 解析，中文全乱码报解析错误）；用工具改完脚本后若报「意外的标记」，先补 BOM 再跑
 
@@ -76,6 +78,9 @@ anyshare logout               # 清除本地 token
 - Cookies SQLite 被日常 Edge 独占锁（FileShare ReadWrite 与 esentutl /y 均失败），DPAPI 解 key 可行但读不到文件——因此用专用 Profile + CDP，不走 cookie 解密。
 - 不要用剪贴板方案回传 token（页面失焦时 clipboard 全被拒）；不要改 Authorization cookie 做实验（SPA 会陷入 chunk 重载死循环）。
 - **同步/比对只看更新时间，不看文件大小**（2026-11-05 用户拍板）：云端列表接口的 KB 显示值与本地字节比对不可靠（舍入误差），且同大小可能内容已变——判定「是否需要下载」的唯一依据是云端 `modified_at` vs 本地 mtime；大小只用于下载后完整性校验。
+- **技能脚本路径不要写死 `C:\Users\JOMOO\...`**（2026-11-07 换机踩坑）：换机后该路径不存在，脚本静默全失败。统一用 `$HOME\.agents\skills\...`。
+- **登录页是 `?redirect=` 形态，不含 login 字样**（2026-11-07 实测）：未登录时 SPA 落在 `/anyshare/zh-cn?redirect=%2Fzh-cn%2Fhomepage`，旧正则 `\/login|\/signin|oauth2\/(login|auth)` 匹配不到 → 不弹「请登录」置顶提示 → 无人介入，静默等满 180s 报「CDP 静默回路: 超时未捕获到有效 token」。已在 `cli/jomoo-auth-cli/src/cdp-edge.mjs` 的 `DEFAULT_LOGIN_PAGE_RE` 补 `[?&]redirect=` 规则。
+- 换机还原 CLI：`~/.agents/cli/<cli>` 下 `npm install` → `npm link`；npm 对 `file:` 依赖建 Junction，改源码即时生效，无需重装。
 
 ## 已验证 API（可直调）
 
