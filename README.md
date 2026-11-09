@@ -36,8 +36,6 @@
 | [ibpm-ops](skills/ibpm-ops/) | 通过 ibpm-cli 查询/修改宏天 IBPM 流程定义与运行时实例 | [查看](skills/ibpm-ops/SKILL.md) |
 | [manage-ibpm-flow](skills/manage-ibpm-flow/) | 通过 ibpm-cli 查询/修改/新建 IBPM 流程定义 | [查看](skills/manage-ibpm-flow/SKILL.md) |
 | [jpm-gateway](skills/jpm-gateway/) | JPM 系统网关入口与环境规律参考 | [查看](skills/jpm-gateway/SKILL.md) |
-| [dbx-database](skills/dbx-database/) | 通过 dbx MCP 用自然语言执行数据库增删改查 | [查看](skills/dbx-database/SKILL.md) |
-| [exec-pgsql](skills/exec-pgsql/) | PostgreSQL 查询与增删改、建表 | [查看](skills/exec-pgsql/SKILL.md) |
 | [credential-secure-inject](skills/credential-secure-inject/) | 把凭据安全写入本地配置或输入框，AI 不接触明文 | [查看](skills/credential-secure-inject/SKILL.md) |
 
 ### 文档、工时与办公
