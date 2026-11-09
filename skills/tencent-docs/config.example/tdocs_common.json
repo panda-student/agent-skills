@@ -1,6 +1,0 @@
-{
-  "_说明": "token 不在本文件，由 auth-center 管理：~/.auth-center/apps/tencent-docs/config.json；登录用 auth login tencent-docs",
-  "token_source": "腾讯文档 MCP OAuth（auth login tencent-docs；授权码+PKCE，自动 refresh）",
-  "quota": "免费2000次/天，超会20000，超会Plus40000",
-  "sync_targets": []
-}

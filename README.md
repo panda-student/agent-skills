@@ -10,10 +10,8 @@
 |------|------|------|
 | [pms-dev-sop](skills/pms-dev-sop/) | PMS 项目开发交付 SOP：受理分诊 → 方案 → TDD 实施 → 评审 → 合并推送 → 禅道闭环 | [查看](skills/pms-dev-sop/SKILL.md) |
 | [simplify](skills/simplify/) | 代码审查工具，分级策略 + 多维度并行审查（复用/单一职责/质量/性能） | [查看](skills/simplify/SKILL.md) |
-| [test-driven-development](skills/test-driven-development/) | 实现功能或修复 bug 前的 TDD 流程 | [查看](skills/test-driven-development/SKILL.md) |
 | [vitest](skills/vitest/) | 前端 vitest 单测经验（.vue 组件测试配置与依赖隔离） | [查看](skills/vitest/SKILL.md) |
 | [cherry-pick](skills/cherry-pick/) | 按禅道编号挑选特性分支提交同步到当前分支 | [查看](skills/cherry-pick/SKILL.md) |
-| [gh-cli](skills/gh-cli/) | GitHub CLI（gh）仓库、Issue、PR、Actions 参考 | [查看](skills/gh-cli/SKILL.md) |
 | [gitlab-operate](skills/gitlab-operate/) | GitLab CI/CD 流水线触发、轮询、日志查看与按序部署 | [查看](skills/gitlab-operate/SKILL.md) |
 | [start-pms-backend](skills/start-pms-backend/) | 本地正确启动 PMS 后端（pms-service） | [查看](skills/start-pms-backend/SKILL.md) |
 | [pms-menu-config](skills/pms-menu-config/) | JMBOS 平台菜单配置 SOP，使前端新页面的动态路由可访问 | [查看](skills/pms-menu-config/SKILL.md) |
@@ -27,7 +25,6 @@
 |------|------|------|
 | [verify-issue](skills/verify-issue/) | PMS 缺陷受理验证与同类问题排查 | [查看](skills/verify-issue/SKILL.md) |
 | [e2e-ops](skills/e2e-ops/) | 通用 E2E / 自动化验证方法论（分层验证） | [查看](skills/e2e-ops/SKILL.md) |
-| [grill-me](skills/grill-me/) | 动手前用决策树逐个追问，对齐需求与方案 | [查看](skills/grill-me/SKILL.md) |
 | [agent-teams](skills/agent-teams/) | 多 Agent 协作引擎，支持开发、评审、测试、规划等团队协作模式 | [查看](skills/agent-teams/SKILL.md) |
 | [doc-review](skills/doc-review/) | 评审开发前的设计文档（需求、设计、BDD），聚焦高收益检查项 | [查看](skills/doc-review/SKILL.md) |
 | [plan-doc-review](skills/plan-doc-review/) | 从人类能否高效交付的视角评审实施计划，输出 4 维评分卡 | [查看](skills/plan-doc-review/SKILL.md) |
@@ -37,7 +34,6 @@
 | 技能 | 说明 | 文档 |
 |------|------|------|
 | [yaak-ops](skills/yaak-ops/) | 接口任务的执行 SOP 与验证方法（基于 yaak CLI） | [查看](skills/yaak-ops/SKILL.md) |
-| [use-yaak](skills/use-yaak/) | yaak CLI 的使用参考 | [查看](skills/use-yaak/SKILL.md) |
 | [api-ops](skills/api-ops/) | 接口联调相关执行 SOP，统一以 yaak 处理 | [查看](skills/api-ops/SKILL.md) |
 | [api-center-register](skills/api-center-register/) | 九牧 API 中心后台通过浏览器自动化注册接口 | [查看](skills/api-center-register/SKILL.md) |
 | [rancher-ops](skills/rancher-ops/) | Rancher 容器平台：查看 Pod 日志、确认部署是否生效 | [查看](skills/rancher-ops/SKILL.md) |
@@ -57,7 +53,6 @@
 | [daily-report](skills/daily-report/) | 整理标准日报，自动拉取 PMS 三仓库当天提交 | [查看](skills/daily-report/SKILL.md) |
 | [weekly-report](skills/weekly-report/) | 周报/日报/下周计划全流程，并生成禅道工时补录草稿 | [查看](skills/weekly-report/SKILL.md) |
 | [issue-sop](skills/issue-sop/) | 腾讯文档问题跟进 SOP（PMS 内部测试问题表与 UAT 问题清单） | [查看](skills/issue-sop/SKILL.md) |
-| [tencent-docs](skills/tencent-docs/) | 腾讯文档普通表格与智能表格的读取、写入、更新 | [查看](skills/tencent-docs/SKILL.md) |
 | [wecom-unified](skills/wecom-unified/) | 企业微信套件：通讯录、文档、表格、日程、会议、待办、邮件、消息 | [查看](skills/wecom-unified/SKILL.md) |
 | [anyshare-ops](skills/anyshare-ops/) | 通过 anyshare CLI 操作爱数 AnyShare 文档云 | [查看](skills/anyshare-ops/SKILL.md) |
 | [qqmail-ops](skills/qqmail-ops/) | 通过脚本操作 QQ 邮箱：读收件箱、搜索邮件 | [查看](skills/qqmail-ops/SKILL.md) |
