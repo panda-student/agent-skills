@@ -1,0 +1,39 @@
+{
+  "_说明": "PMS 项目问题清单维护的两份腾讯文档。梳理问题时默认扫描两份文档的全部 tab（含隐藏 tab），不能只看 URL 里的 ?tab=。",
+  "default_scope": "all_tabs_all_documents",
+  "note_author": "孙志强",
+  "note_prefix_format": "{author}{date}：",
+  "match_person": "孙志强",
+  "documents": {
+    "internal": {
+      "purpose": "内部团队测试发现的问题",
+      "file_id": "DWFJrek1CamJQbE5H",
+      "header_row": 0,
+      "responsibility_column": "责任人",
+      "status_column": "状态",
+      "tabs": [
+        { "name": "项目规划", "sheet_id": "BB08J2", "hidden": false },
+        { "name": "项目立项", "sheet_id": "8po4fa", "hidden": false },
+        { "name": "项目结项", "sheet_id": "pvgvyf", "hidden": false },
+        { "name": "项目变更", "sheet_id": "f2vetb", "hidden": false },
+        { "name": "项目效益汇总", "sheet_id": "po490u", "hidden": false },
+        { "name": "项目签呈", "sheet_id": "uts13q", "hidden": false },
+        { "name": "工程项目采购申请", "sheet_id": "89uw6x", "hidden": false },
+        { "name": "离职人员预警", "sheet_id": "ulnz5d", "hidden": false }
+      ]
+    },
+    "uat": {
+      "purpose": "UAT 用户测试发现的问题",
+      "file_id": "DSXN5bkRzbGZDR3VU",
+      "header_row": 1,
+      "responsibility_column": "问题处理人",
+      "status_column": "问题处理状态",
+      "tabs": [
+        { "name": "UAT1问题清单(副本1)", "sheet_id": "862xnp", "hidden": false },
+        { "name": "UAT1问题清单", "sheet_id": "BB08J2", "hidden": true },
+        { "name": "UAT2问题清单", "sheet_id": "bs0681", "hidden": false },
+        { "name": "UAT3问题清单", "sheet_id": "spccod", "hidden": false }
+      ]
+    }
+  }
+}
