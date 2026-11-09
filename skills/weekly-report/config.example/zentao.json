@@ -1,7 +1,0 @@
-{
-  "zentao": {
-    "baseUrl": "https://zentao.jomoo.com/zentaopms/www/api.php/v1",
-    "username": "your-account",
-    "password": "{{credential}}"
-  }
-}

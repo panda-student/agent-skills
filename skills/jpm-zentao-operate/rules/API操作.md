@@ -3,7 +3,7 @@
 > **用途**：禅道API认证、CRUD操作、数据查询、创建流程
 > **加载时机**：需要调用禅道API时（主流程步骤4/5）
 
-> **调用方式**：AI 直接发 HTTP 请求（curl / node fetch 等）。凭据从 `%USERPROFILE%\.zentao\config.json` 读取（baseUrl/account/password）。注意：PowerShell 中用 curl 传 JSON body 时引号转义易出错，建议把 body 写入临时 JSON 文件后用 `curl -d "@body.json"`，或改用 node 的 fetch。常规查询/创建/工时操作优先用 `zentao` CLI（见 SKILL.md 命令一览）。
+> **调用方式**：AI 直接发 HTTP 请求（curl / node fetch 等）。认证用 `zentao token` 输出 Token 放 `Token` 头，不要读取/追问账号密码。连接配置 `%USERPROFILE%\.auth-center\apps\zentao-cli\config.json` 只含 baseUrl/account + token 缓存；密码由 auth-center 管理（同目录 `sso-credentials.json`）。注意：PowerShell 中用 curl 传 JSON body 时引号转义易出错，建议把 body 写入临时 JSON 文件后用 `curl -d "@body.json"`，或改用 node 的 fetch。常规查询/创建/工时操作优先用 `zentao` CLI（见 SKILL.md 命令一览）。
 
 ---
 
@@ -213,8 +213,8 @@ body 传 `{}` 即可；仅 `done`/`cancel` 状态可关闭。
 
 ## 调用约定
 
-- **凭据**：从 `%USERPROFILE%\.zentao\config.json` 读取 baseUrl/account/password，不在会话中明文追问
-- **Token 管理**：401 时重新 POST /tokens 获取
+- **认证**：直接用 `zentao token` 输出的 Token 放 `Token` 头；不要读取或追问密码。连接配置 `%USERPROFILE%\.auth-center\apps\zentao-cli\config.json` 只含 baseUrl/account + token 缓存；密码在同目录 `sso-credentials.json`（auth-center 管理）
+- **Token 管理**：401 时重新 `zentao token`；仍失败则 `zentao login` 强制刷新（凭据就绪时自动调 /tokens）
 - **编码**：请求 body 使用 UTF-8；PowerShell 终端显示中文可能乱码，AI 解析 JSON 响应时以数据为准
 - **逐条创建**：批量场景下循环调用单条创建接口（Story 三连 + Task），不要用 batchCreate（无效，见 rules/异常处理.md）
 

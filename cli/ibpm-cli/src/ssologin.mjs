@@ -1,16 +1,22 @@
 // SSO 全自动登录：UCenter OAuth2 授权码链路的纯 HTTP 实现（零浏览器、零人工）
 // 链路（自 IBPM mvue 前端 ssoConfig + jsapp 反推，2026-10-27 实测探活）：
-//   1) UCenter loginByCode（jomoo-auth-cli）→ 授权码 code
-//   2) UCenter tokenByCode（jomoo-auth-cli）→ ssoToken/refreshToken
+//   1) UCenter loginByCode（auth-center）→ 授权码 code
+//   2) UCenter tokenByCode（auth-center）→ ssoToken/refreshToken
 //   3) GET  {ibpm}/uc/sso/auth?ticket=<refreshToken>&code=<ssoToken>&service=<页面URL> → 顶层含 JWT token
 //      （第 3 步为 IBPM 系统特定交换链，保留在本文件）
-// 凭据：~/.ibpm-cli/sso-credentials.json（按环境分层 {uat:{account,password}}），
-//       经 WinForms 弹窗一次性录入（jomoo-auth-cli），明文不进终端/对话
+// 凭据：~/.auth-center/apps/ibpm-cli/sso-credentials.json（按环境分层 {uat:{account,password}}），
+//       经 WinForms 弹窗一次性录入（auth-center），明文不进终端/对话
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
-import { join } from 'node:path';
-import { homedir } from 'node:os';
+import { dirname } from 'node:path';
 import { parseJwt, ENV_PRESETS, saveEnvToken } from './config.mjs';
-import { ucenterLoginByCode, ucenterTokenByCode, createCookieJar, promptAndSaveCredentials } from 'jomoo-auth-cli';
+import {
+  ucenterLoginByCode,
+  ucenterTokenByCode,
+  createCookieJar,
+  promptAndSaveCredentials,
+  credentialsFilePath,
+  ensureAppFile,
+} from 'auth-center';
 
 // UCenter SSO 参数（按环境扩展）；clientSecret/grantType 与 IBPM mvue/sso.js 一致
 const SSO_PRESETS = {
@@ -18,7 +24,8 @@ const SSO_PRESETS = {
 };
 
 const IBPM_APP = 'ibpm-cli';
-const CRED_FILE = join(homedir(), '.ibpm-cli', 'sso-credentials.json');
+const CRED_FILE = credentialsFilePath(IBPM_APP);
+ensureAppFile(IBPM_APP, 'sso-credentials.json'); // 迁移旧 ~/.ibpm-cli/sso-credentials.json
 
 // ---------- 凭据存取（ibpm 多环境分层结构，与 core 平铺结构做适配） ----------
 
@@ -37,7 +44,7 @@ function loadSsoCredentials(envName = 'uat') {
   }
 }
 
-// ---------- 纯 HTTP SSO 链路（1/2 步走 jomoo-auth-cli，第 3 步为 IBPM 特定） ----------
+// ---------- 纯 HTTP SSO 链路（1/2 步走 auth-center，第 3 步为 IBPM 特定） ----------
 
 // ssoToken/refreshToken → IBPM JWT（多形态尝试，取第一个能解析出 exp 的 JWT）
 async function exchangeJwt(baseUrl, tokens, service) {
@@ -99,7 +106,7 @@ export async function ssoLogin(envName = 'uat') {
   return { token, jwt };
 }
 
-// ---------- 凭据录入（jomoo-auth-cli 弹窗 + ibpm 多环境适配） ----------
+// ---------- 凭据录入（auth-center 弹窗 + ibpm 多环境适配） ----------
 
 /** 一次性凭据录入：弹窗收集 → 保存凭据文件（环境分层）→ 立即执行全自动登录验证 */
 export async function ssoSetup(envName = 'uat') {
@@ -116,7 +123,7 @@ export async function ssoSetup(envName = 'uat') {
     } catch { /* 覆盖坏文件 */ }
   }
   all[envName] = cred;
-  mkdirSync(join(homedir(), '.ibpm-cli'), { recursive: true });
+  mkdirSync(dirname(CRED_FILE), { recursive: true });
   writeFileSync(CRED_FILE, JSON.stringify(all, null, 2), 'utf8');
   console.log('✓ 凭据已保存到 ' + CRED_FILE);
 
@@ -124,5 +131,5 @@ export async function ssoSetup(envName = 'uat') {
   const { jwt } = await ssoLogin(envName);
   const exp = new Date(jwt.exp * 1000).toLocaleString('zh-CN');
   console.log(`✓ 全自动登录成功：用户 ${jwt.sub || '?'}，token 有效期至 ${exp}`);
-  console.log('  已写入 ~/.ibpm-cli/config.json。此后 `ibpm login` 无需浏览器与人工操作。');
+  console.log('  已写入 ~/.auth-center/apps/ibpm-cli/config.json。此后 `ibpm login` 无需浏览器与人工操作。');
 }

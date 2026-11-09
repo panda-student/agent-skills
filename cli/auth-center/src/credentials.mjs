@@ -1,22 +1,23 @@
 // 执行层：SSO 凭据安全录入与存取。
-// 凭据经 WinForms 弹窗一次性录入（明文不进终端/对话），落盘 ~/.<appName>/sso-credentials.json。
+// 凭据经 WinForms 弹窗一次性录入（明文不进终端/对话），
+// 落盘 ~/.auth-center/apps/<app>/sso-credentials.json（自动迁移旧路径）。
 // 弹窗用 PowerShell 编码命令执行，绕开引号转义问题（实测坑位）。
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { join } from 'node:path';
-import { homedir } from 'node:os';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, unlinkSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { ensureAppFile, credentialsFilePath } from './paths.mjs';
 
 const DIALOG_ENCODINGS = { encoding: 'utf8' };
 
-function credentialsFilePath(appName) {
-  return join(homedir(), '.' + appName, 'sso-credentials.json');
-}
-
 export { credentialsFilePath };
+
+function credentialsPath(appName) {
+  return ensureAppFile(appName, 'sso-credentials.json');
+}
 
 /** 读取已保存凭据 {account, password}；无文件或结构不完整返回 null */
 export function loadCredentials(appName) {
-  const path = credentialsFilePath(appName);
+  const path = credentialsPath(appName);
   if (!existsSync(path)) return null;
   try {
     const cred = JSON.parse(readFileSync(path, 'utf8'));
@@ -29,9 +30,14 @@ export function loadCredentials(appName) {
 
 /** 保存凭据文件（目录自动创建） */
 export function saveCredentials(appName, cred) {
-  const path = credentialsFilePath(appName);
-  mkdirSync(join(path, '..'), { recursive: true });
+  const path = credentialsPath(appName);
+  mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, JSON.stringify(cred, null, 2), 'utf8');
+}
+
+/** 删除凭据文件（切换账号/重置凭据时使用） */
+export function clearCredentials(appName) {
+  try { unlinkSync(credentialsPath(appName)); } catch { /* 文件不存在 */ }
 }
 
 // WinForms 录入窗体脚本：账号框 + 密码框（掩码），OK 输出 JSON 到 stdout，取消输出 {}

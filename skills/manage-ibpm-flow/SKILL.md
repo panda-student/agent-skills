@@ -24,9 +24,9 @@ token 过期时任何命令都会提示 exit code 2，重新登录即可（有�
 
 ## 登录 / token 获取
 
-按优先级依次尝试，落库目标都是 `~/.ibpm-cli/config.json`：
+按优先级依次尝试，落库目标都是 `~/.auth-center/apps/ibpm-cli/config.json`：
 
-1. **全自动（已录入凭据时）**：`ibpm login -e uat`。若存在 `~/.ibpm-cli/sso-credentials.json` 则走纯 HTTP SSO 链路（loginByCode → tokenByCode → 换 JWT），零浏览器零人工。
+1. **全自动（已录入凭据时）**：`ibpm login -e uat`。若存在 `~/.auth-center/apps/ibpm-cli/sso-credentials.json` 则走纯 HTTP SSO 链路（loginByCode → tokenByCode → 换 JWT），零浏览器零人工。
    录入凭据（2026-10-27 实测打通，AI 可直接完成，无需用户动手）：先 Write 骨架文件 `{"uat":{"account":"00071763","password":"{{credential}}"}}`，再调 vault `write_credential`：`credentialId=<UCenter条目id>`, `field='secret'`, `target={type:'file', path:'C:\\Users\\JOMOO\\.ibpm-cli\\sso-credentials.json', mode:'replace'}`——**不要传 template 参数**（会 INVALID_INPUT），replace 模式默认替换文件中的 `{{credential}}` 占位符，返回 `file_written` 即成功。校验只看结构（account 值 + password 长度），禁止输出密码。注意：sso-setup 录入弹窗在 AI toolhost 会话里不可见（已实证），勿再尝试。
 2. **浏览器工具 + 单次 handoff（推荐，2026-10-27 实测打通）**：
    - 后台起回传服务：`ibpm login -e uat --port 49777`（`--port` 固定回传端口）

@@ -4,16 +4,14 @@
 import { configFilePath, loadAppConfig, saveAppConfig } from './config-store.mjs';
 import { loadCredentials, promptAndSaveCredentials } from './credentials.mjs';
 import { scanEdgeTokens } from './browser-token.mjs';
-import { captureTokenByCdp } from './cdp-edge.mjs';
+import { captureTokenByCdp, SHARED_PROFILE_DIR } from './cdp-edge.mjs';
 import { createRefreshLock, sleep } from './refresh-lock.mjs';
 import { mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 // 统一 SSO Profile：所有需要登录的 CLI 共用同一个浏览器 profile，账号只需在里面维护一次。
-// 沿用 anyshare-cli 现有目录，避免迁移已有会话；可用 JOMOO_AUTH_PROFILE_DIR 覆盖。
-export const SHARED_PROFILE_DIR = process.env.JOMOO_AUTH_PROFILE_DIR
-  || join(homedir(), '.anyshare-cli', 'edge-sso-profile');
+// 目录由 cdp-edge.mjs 统一定义并导出（~/.auth-center/edge-profile）。
+export { SHARED_PROFILE_DIR };
 
 export function createTokenManager(options) {
   const {
@@ -27,10 +25,13 @@ export function createTokenManager(options) {
     loadCredentials: loadCred = null,
     cookieTokenRe = null,
     loginPageRe = null,
+    cookieSource = 'document', // 'cdp' 读取 HttpOnly cookie
     cdpPort = 9223,
     maxWaitMs = 180_000,
     manualLoginWaitMs = 600_000, // 检测到登录页后额外等待人工登录的时长
     profileDir = SHARED_PROFILE_DIR,
+    browserFallback = true, // 无 cookie token 的系统（如禅道 API token）可关闭 leveldb/CDP 兜底
+    leveldbScan = true, // 禅道等 API token 系统可单独关闭 leveldb 扫描，保留 CDP
   } = options;
 
   // 刷新互斥：进程内单飞（inflightRefresh）+ 跨进程文件锁（refreshLock）
@@ -103,6 +104,7 @@ export function createTokenManager(options) {
       profileDir,
       cookieTokenRe: cookieTokenRe || undefined,
       loginPageRe: loginPageRe || undefined,
+      cookieSource,
       cdpPort, maxWaitMs, manualLoginWaitMs, onManualLoginRequired,
     });
   }
@@ -237,15 +239,19 @@ export function createTokenManager(options) {
       if (headless) { saveToken(headless, 'headless-sso'); return headless; }
     } catch (error) { failures.push(`无头链: ${error.message}`); }
 
-    try {
-      const scanned = await tryLeveldbScan();
-      if (scanned) { saveToken(scanned, 'leveldb-scan'); return scanned; }
-    } catch (error) { failures.push(`leveldb 扫描: ${error.message}`); }
+    if (browserFallback) {
+      if (leveldbScan) {
+        try {
+          const scanned = await tryLeveldbScan();
+          if (scanned) { saveToken(scanned, 'leveldb-scan'); return scanned; }
+        } catch (error) { failures.push(`leveldb 扫描: ${error.message}`); }
+      }
 
-    try {
-      const captured = await captureUnderLock(failures);
-      if (captured) return captured;
-    } catch (error) { failures.push(`CDP 静默回路: ${error.message}`); }
+      try {
+        const captured = await captureUnderLock(failures);
+        if (captured) return captured;
+      } catch (error) { failures.push(`CDP 静默回路: ${error.message}`); }
+    }
 
     throw new Error(`${label} token 获取失败（${failures.join('；') || '所有途径均未尝试'}）`);
   }
@@ -258,11 +264,13 @@ export function createTokenManager(options) {
       if (headless) { saveToken(headless, 'headless-sso'); return headless; }
     } catch (error) { failures.push(`无头链: ${error.message}`); }
 
-    try {
-      // 显式登录（用户主动执行 anyshare login）不受失败冷却限制
-      const captured = await captureUnderLock(failures, { bypassCooldown: true });
-      if (captured) return captured;
-    } catch (error) { failures.push(`CDP 静默回路: ${error.message}`); }
+    if (browserFallback) {
+      try {
+        // 显式登录（用户主动执行 login）不受失败冷却限制
+        const captured = await captureUnderLock(failures, { bypassCooldown: true });
+        if (captured) return captured;
+      } catch (error) { failures.push(`CDP 静默回路: ${error.message}`); }
+    }
 
     throw new Error(`${label} 登录失败（${failures.join('；') || '未配置任何登录途径'}）`);
   }

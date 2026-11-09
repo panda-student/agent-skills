@@ -1,8 +1,8 @@
 // 业务层：anyshare token 生命周期。通用编排（读配置→试活→无头→leveldb→CDP→落盘）
-// 全部在 jomoo-auth-cli 的 createTokenManager，本文件只注入 anyshare 系统特定部分：
+// 全部在 auth-center 的 createTokenManager，本文件只注入 anyshare 系统特定部分：
 //   - validateToken：试活端点（文档库列表）
 //   - headlessLogin / 凭据存取：/sso 回跳交换链（headless-sso.mjs）
-import { createTokenManager } from 'jomoo-auth-cli';
+import { createTokenManager } from 'auth-center';
 import { BASE_URL, ENDPOINTS } from './endpoints.mjs';
 import { hasSsoCredentials, headlessSsoLogin, loadSsoCredentials } from './headless-sso.mjs';
 

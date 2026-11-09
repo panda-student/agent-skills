@@ -3,9 +3,9 @@
 // 轮询 CDP 抓 document.cookie 中的 token；落到登录页则弹置顶提示等用户登录一次。
 // CDP 通道自实现最小 WebSocket 客户端（握手 + 文本帧收发），零第三方依赖。
 import { execFileSync, spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import crypto from 'node:crypto';
 import http from 'node:http';
 import net from 'node:net';
@@ -13,6 +13,29 @@ import { notifyTopmost } from './notify.mjs';
 import { sleep } from './refresh-lock.mjs';
 
 const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
+
+// 统一 Profile：所有登录 CLI 共用同一个 Edge 用户目录，账号只需维护一次。
+// 可用 AUTH_CENTER_PROFILE_DIR 覆盖；旧 anyshare profile 首次使用时自动迁移。
+function resolveSharedProfileDir() {
+  const envDir = process.env.AUTH_CENTER_PROFILE_DIR
+    || process.env.UNIFIED_AUTH_PROFILE_DIR
+    || process.env.JOMOO_AUTH_PROFILE_DIR;
+  if (envDir) return envDir;
+  const newDir = join(homedir(), '.auth-center', 'edge-profile');
+  const oldDir = join(homedir(), '.anyshare-cli', 'edge-sso-profile');
+  if (!existsSync(newDir) && existsSync(oldDir)) {
+    try {
+      mkdirSync(dirname(newDir), { recursive: true });
+      renameSync(oldDir, newDir);
+      return newDir;
+    } catch {
+      return oldDir; // 旧 profile 被占用时先继续用旧目录
+    }
+  }
+  return newDir;
+}
+
+export const SHARED_PROFILE_DIR = resolveSharedProfileDir();
 // 登录页识别（命中则弹「请接管浏览器」置顶提示）。
 // 除显式 login/signin 路径外，必须覆盖 SPA 的「首页重定向登录」形态：
 //   https://wendang.jomoo.com/anyshare/zh-cn?redirect=%2Fzh-cn%2Fhomepage
@@ -28,6 +51,20 @@ function findEdgeExe() {
     if (existsSync(candidate)) return candidate;
   }
   return null;
+}
+
+export function openInSharedProfile(url) {
+  const edge = findEdgeExe();
+  if (!edge) throw new Error('未找到 Edge，无法打开登录页');
+  mkdirSync(SHARED_PROFILE_DIR, { recursive: true });
+  const child = spawn(edge, [
+    `--user-data-dir=${SHARED_PROFILE_DIR}`,
+    '--no-first-run',
+    '--no-default-browser-check',
+    '--new-window',
+    url,
+  ], { stdio: 'ignore', detached: true });
+  child.unref();
 }
 
 /** CDP 的 JSON HTTP 调用（新版 Chrome/Edge 的 /json/new 只接受 PUT） */
@@ -208,10 +245,38 @@ async function evaluateCookie(wsUrl) {
       params: { expression: 'document.cookie', returnByValue: true },
     }));
     for (;;) {
-      const reply = JSON.parse(await wsRecv(socket));
+      let reply;
+      try { reply = JSON.parse(await wsRecv(socket)); } catch { continue; }
       if (reply.id !== 1) continue;
       const value = reply.result && reply.result.result && reply.result.result.value;
       return typeof value === 'string' ? value : '';
+    }
+  } finally {
+    socket.destroy();
+  }
+}
+
+/**
+ * 读取浏览器 cookie（含 HttpOnly）。
+ * 部分系统的认证 cookie 是 HttpOnly（如禅道 zentaosid），document.cookie 读不到，
+ * 必须走 CDP Network.getAllCookies。
+ */
+async function evaluateCookiesByCdp(wsUrl) {
+  const socket = await wsConnect(wsUrl);
+  try {
+    wsSend(socket, JSON.stringify({ id: 1, method: 'Network.enable' }));
+    for (;;) {
+      let reply;
+      try { reply = JSON.parse(await wsRecv(socket)); } catch { continue; }
+      if (reply.id === 1) break;
+    }
+    wsSend(socket, JSON.stringify({ id: 2, method: 'Network.getAllCookies' }));
+    for (;;) {
+      let reply;
+      try { reply = JSON.parse(await wsRecv(socket)); } catch { continue; }
+      if (reply.id !== 2) continue;
+      const cookies = (reply.result && reply.result.cookies) || [];
+      return cookies.map(c => `${c.name}=${c.value}`).join('; ');
     }
   } finally {
     socket.destroy();
@@ -352,9 +417,10 @@ function killPortOwner(port) {
 export async function captureTokenByCdp(options) {
   const {
     baseUrl, launchUrl, validateToken,
-    profileDir = join(homedir(), '.jomoo-auth-cli', 'edge-sso-profile'),
+    profileDir = SHARED_PROFILE_DIR,
     cookieTokenRe = DEFAULT_COOKIE_TOKEN_RE,
     loginPageRe = DEFAULT_LOGIN_PAGE_RE,
+    cookieSource = 'document', // 'document' | 'cdp'（cdp 可读 HttpOnly cookie）
     cdpPort = 9223,
     maxWaitMs = 180_000,
     // 检测到登录页（需要人工介入）后额外等待的时长
@@ -436,7 +502,7 @@ export async function captureTokenByCdp(options) {
       if (eventDue || pollDue) {
         eventPending = false;
         lastScanAt = Date.now();
-        const scan = await scanTargets({ cdpBase, baseUrl, cookieTokenRe, loginPageRe, validateToken });
+        const scan = await scanTargets({ cdpBase, baseUrl, cookieTokenRe, loginPageRe, cookieSource, validateToken });
         if (scan.token) { capturedToken = scan.token; break; }
         if (scan.sawLoginPage && !manualLoginSeen) {
           manualLoginSeen = true;
@@ -480,7 +546,7 @@ export async function captureTokenByCdp(options) {
  * 扫一遍目标页：读 cookie → 校验 → 返回 token；同时报告是否见到登录页/目标页。
  * 判定顺序固定为「先 cookie 后 URL」：登录完成后 SPA 可能仍停在 `?redirect=` 形态。
  */
-async function scanTargets({ cdpBase, baseUrl, cookieTokenRe, loginPageRe, validateToken }) {
+async function scanTargets({ cdpBase, baseUrl, cookieTokenRe, loginPageRe, cookieSource, validateToken }) {
   let targets = [];
   try { targets = await httpGetJson(`${cdpBase}/json/list`); } catch { targets = []; }
   let matchedPage = false;
@@ -494,7 +560,11 @@ async function scanTargets({ cdpBase, baseUrl, cookieTokenRe, loginPageRe, valid
     if (href !== baseUrl && !href.startsWith(baseUrl + '/')) continue;
     matchedPage = true;
     let cookie = '';
-    try { cookie = await evaluateCookie(target.webSocketDebuggerUrl); } catch { continue; }
+    try {
+      cookie = cookieSource === 'cdp'
+        ? await evaluateCookiesByCdp(target.webSocketDebuggerUrl)
+        : await evaluateCookie(target.webSocketDebuggerUrl);
+    } catch { continue; }
     const match = cookie.match(cookieTokenRe);
     const candidate = match ? match[1] : null;
     if (candidate && await validateToken(candidate)) return { token: candidate, matchedPage, sawLoginPage };

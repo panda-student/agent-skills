@@ -1,15 +1,15 @@
 /**
  * 类型定义 — 全项目共享的 JSDoc typedef
  *
- * 说明：本项目为纯 JS 零依赖 ESM（.mjs），类型用 JSDoc 表达（编辑器开启 JS 类型检查即可获得完整提示）。
+ * 说明：本项目为 ESM（.mjs），认证依赖 auth-center；类型用 JSDoc 表达（编辑器开启 JS 类型检查即可获得完整提示）。
  * 其他文件通过 `@param {import('../types.mjs').NormalizedTask}` 等方式引用。
  */
 
 /**
- * 禅道 CLI 配置（%USERPROFILE%\.zentao\config.json）
+ * 禅道 CLI 配置（~/.auth-center/apps/zentao-cli/config.json）
  * @typedef {Object} ZenTaoConfig
  * @property {string} 说明
- * @property {{baseUrl: string, account: string, password: string}} auth
+ * @property {{baseUrl: string, account: string}} auth 账号密码由 auth-center 管理，不在配置中
  * @property {string} defaultAssignee
  */
 

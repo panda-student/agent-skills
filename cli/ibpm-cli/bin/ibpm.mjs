@@ -21,6 +21,11 @@ import { approvalQuery, approvalSave, contract, opinions, readNodeStates } from 
 import { extractFormValue, extractGlobalRestfuls, buildFormObj, buildDefSetting, nodeProps, saveDefConf, stashDefConfFromZip, loadDefConfStash } from '../src/defconf.mjs';
 import { readProcNotify, saveProcNotify, renderProcNotify, carryOverProcNotify, stashProcNotify, loadProcNotifyStash } from '../src/procnotify.mjs';
 
+// Windows 下优先使用系统 bsdtar：Git Bash 的 GNU tar 会把 "C:" 当作远程主机
+if (process.platform === 'win32') {
+  process.env.PATH = 'C:\\Windows\\System32;' + process.env.PATH;
+}
+
 const args = process.argv.slice(2);
 const cmd = args[0];
 const GEN_PIPELINE = process.env.IBPM_GEN_PIPELINE
@@ -39,7 +44,7 @@ function usage() {
 
 查:
   ibpm login [-e uat] [--manual]   登录并保存 token（已配凭据时全自动 SSO 直连；--manual 强制浏览器手动流程）
-  ibpm sso-setup [-e uat]          一次性弹窗录入 SSO 凭据（存 ~/.ibpm-cli/sso-credentials.json），启用全自动登录
+  ibpm sso-setup [-e uat]          一次性弹窗录入 SSO 凭据（存 ~/.auth-center/apps/ibpm-cli/sso-credentials.json），启用全自动登录
   ibpm whoami [-e uat]             token 状态
   ibpm list [关键词] [-e uat]       流程列表
   ibpm show <defKey> [-e uat]      流程画像（节点/连线/审批人/条件）
@@ -154,7 +159,7 @@ async function main() {
           const { jwt } = await ssoLogin(envName);
           const exp = new Date(jwt.exp * 1000).toLocaleString('zh-CN');
           console.log(`\n✓ 全自动登录成功（SSO 直连）：用户 ${jwt.sub || '?'}，token 有效期至 ${exp}`);
-          console.log('  已写入 ~/.ibpm-cli/config.json');
+          console.log('  已写入 ~/.auth-center/apps/ibpm-cli/config.json');
           return;
         } catch (err) {
           console.log(`✗ 全自动登录失败：${err.message}`);

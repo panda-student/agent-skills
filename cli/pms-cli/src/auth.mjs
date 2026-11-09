@@ -1,6 +1,6 @@
-// PMS 认证适配层：只提供系统特定项，生命周期交给 jomoo-auth-cli。
+// PMS 认证适配层：只提供系统特定项，生命周期交给 auth-center。
 // 统一 SSO Profile 由认证库默认提供（所有登录 CLI 共用一个 Edge profile）。
-import { createTokenManager, SHARED_PROFILE_DIR } from 'jomoo-auth-cli';
+import { createTokenManager, SHARED_PROFILE_DIR } from 'auth-center';
 
 function decodeJwt(token) {
   try {

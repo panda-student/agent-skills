@@ -1,12 +1,12 @@
 // 执行层：anyshare 无头登录链（系统特定交换链；未实测打通，失败返回 null 回落浏览器链路）
-// 链路（推测自 thirdauth 配置 + jomoo-auth-cli 已验证的 UCenter 端点形态）：
-//   1) UCenter loginByCode（jomoo-auth-cli）→ 授权码 code
+// 链路（推测自 thirdauth 配置 + auth-center 已验证的 UCenter 端点形态）：
+//   1) UCenter loginByCode（auth-center）→ 授权码 code
 //   2) GET  {BASE}/sso?code=<code>&state=aishu → 跟随重定向，cookie jar 收集，
 //      由 wendang 后端用其 clientSecret 向 UCenter 换票并建立 Hydra 会话
 //   3) 从重定向链 / 响应体 / cookie 中提取 ory_at token
-// 凭据：~/.anyshare-cli/sso-credentials.json（jomoo-auth-cli 弹窗一次性录入）
+// 凭据：~/.auth-center/apps/anyshare-cli/sso-credentials.json（auth-center 弹窗一次性录入）
 import { UCENTER_LOGIN_BY_CODE, SSO_CALLBACK } from './endpoints.mjs';
-import { ucenterLoginByCode, createCookieJar, extractToken, loadCredentials } from 'jomoo-auth-cli';
+import { ucenterLoginByCode, createCookieJar, extractToken, loadCredentials } from 'auth-center';
 
 const ANYSHARE_APP = 'anyshare-cli';
 
@@ -63,7 +63,7 @@ export async function headlessSsoLogin(cred) {
 
 /** 凭据录入 + 无头登录验证（anyshare cred-setup 命令实现）。返回 token 或 null */
 export async function ssoSetup() {
-  const { promptAndSaveCredentials } = await import('jomoo-auth-cli');
+  const { promptAndSaveCredentials } = await import('auth-center');
   const cred = await promptAndSaveCredentials(ANYSHARE_APP, { windowTitle: 'AnyShare SSO 凭据录入' });
 
   console.log('\n[anyshare] 验证无头登录...');

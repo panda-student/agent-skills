@@ -1,0 +1,23 @@
+{
+  "doc": {
+    "_说明": "周报文档三表标识（AI 按 SKILL.md SOP 读取；改表结构只改这里）",
+    "file_id": "DV29JTWhIR2F5SHBx",
+    "file_url": "https://docs.qq.com/smartsheet/DV29JTWhIR2F5SHBx",
+    "sheets": {
+      "daily": {
+        "sheet_id": "ss_3n8xi6",
+        "text_field": "工作内容",
+        "view_id": "vOj1HV",
+        "view_name": "SZQ"
+      },
+      "weekly": {
+        "sheet_id": "trhuGh",
+        "text_field": "问题处理"
+      },
+      "next": {
+        "sheet_id": "tfR4dX",
+        "text_field": "下周工作计划"
+      }
+    }
+  }
+}

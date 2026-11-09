@@ -1,7 +1,7 @@
-// 配置层：~/.anyshare-cli/config.json（token 明文落盘，个人机使用，勿提交 git）
+// 配置层：~/.auth-center/apps/anyshare-cli/config.json（token 明文落盘，个人机使用，勿提交 git）
 // 结构：{ token, tokenSavedAt, tokenSource, subscriberId }
-// 文件读写下沉到 jomoo-auth-cli，本文件只承载 anyshare 的配置结构语义
-import { saveAppConfig, loadAppConfig, configFilePath as coreConfigFilePath } from 'jomoo-auth-cli';
+// 文件读写下沉到 auth-center，本文件只承载 anyshare 的配置结构语义
+import { saveAppConfig, loadAppConfig, configFilePath as coreConfigFilePath } from 'auth-center';
 
 const APP = 'anyshare-cli';
 

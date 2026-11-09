@@ -6,7 +6,8 @@
  *
  * 分层结构（src/，全部 ESM .mjs）：
  *   types.mjs             类型定义（JSDoc typedefs）
- *   config.mjs            配置加载/写入（%USERPROFILE%\.zentao\config.json）
+ *   config.mjs            配置加载/写入（~/.auth-center/apps/zentao-cli/config.json，不含密码）
+ *   auth.mjs              认证：auth-center 凭据 + token 生命周期（禅道 /tokens 交换）
  *   utils/                工具类：flags 参数解析 / 日期 / 数值 / JSON 输出
  *   protocol/             通信协议：http-client（HTTP 客户端）+ endpoints（接口定义）
  *   auth.mjs              认证：Token 获取、当前用户
@@ -44,11 +45,24 @@ function printHelp() {
 zentao CLI v${VERSION} — 禅道 JSON API 命令行工具
 
 用法:
-  zentao setup --base-url <API地址> --account <账号> --password <密码> [--assignee <默认指派人>]
-      配置禅道账号信息（写入 %USERPROFILE%\\.zentao\\config.json；也支持 setup '<json>' 或 setup <json文件路径>）
+  zentao setup --base-url <API地址> --account <账号> [--assignee <默认指派人>]
+      配置禅道账号信息（写入 ~/.auth-center/apps/zentao-cli/config.json；不含密码）
+      也支持 setup '<json>' 或 setup <json文件路径>
+
+  zentao setup --credentials
+      弹窗录入禅道账号密码（保存到 ~/.auth-center/apps/zentao-cli/sso-credentials.json，明文不进终端）
 
   zentao login
-      登录并获取所有产品(ID+名称)和执行(ID+名称)
+      强制登录并获取所有产品(ID+名称)和执行(ID+名称)
+
+  zentao whoami
+      查看缓存 token 状态（不触发刷新）
+
+  zentao token
+      输出当前可用 token（脚本/直接 HTTP 调用用，不打印账号密码）
+
+  zentao logout
+      清除缓存 token（保留配置与凭据）
 
   zentao preview <json文件路径>
       预览创建内容，输出中文字段的完整清单
@@ -141,6 +155,10 @@ async function main() {
 
         case 'setup': {
             const flags = parseFlags(rest);
+            if (flags.credentials) {
+                await account.cmdSetupCredentials();
+                break;
+            }
             let input = null;
             if (flags.baseUrl || flags.account || flags.password) {
                 input = { baseUrl: flags.baseUrl, account: flags.account, password: flags.password, assignee: flags.assignee };
@@ -148,8 +166,8 @@ async function main() {
                 const first = firstPositional(rest);
                 if (first) input = readJsonArg(first);
             }
-            if (!input || !input.baseUrl || !input.account || !input.password) {
-                usageError('setup 需要 baseUrl/account/password。用法: zentao setup --base-url <API地址> --account <账号> --password <密码> [--assignee <默认指派人>]');
+            if (!input || !input.baseUrl || !input.account) {
+                usageError('setup 需要 baseUrl/account。用法: zentao setup --base-url <API地址> --account <账号> [--assignee <默认指派人>]；凭据用 zentao setup --credentials');
             }
             await account.cmdSetup(input);
             break;
@@ -157,6 +175,18 @@ async function main() {
 
         case 'login':
             await account.cmdLogin();
+            break;
+
+        case 'whoami':
+            await account.cmdWhoami();
+            break;
+
+        case 'token':
+            await account.cmdToken();
+            break;
+
+        case 'logout':
+            await account.cmdLogout();
             break;
 
         case 'fetch-data':

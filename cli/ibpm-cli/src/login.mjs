@@ -152,9 +152,9 @@ export async function login(envName = 'uat', opts = {}) {
       saveEnvToken(envName, token);
       const exp = new Date(jwt.exp * 1000).toLocaleString('zh-CN');
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      res.end(`<meta charset="utf-8"><h2>✓ ibpm-cli 登录成功</h2><p>用户: ${jwt.sub || '?'}，token 有效期至 ${exp}，已写入 ~/.ibpm-cli/config.json</p><p>可以关闭此页并回到终端。</p>`);
+      res.end(`<meta charset="utf-8"><h2>✓ ibpm-cli 登录成功</h2><p>用户: ${jwt.sub || '?'}，token 有效期至 ${exp}，已写入 ~/.auth-center/apps/ibpm-cli/config.json</p><p>可以关闭此页并回到终端。</p>`);
       console.log(`\n✓ 登录成功：用户 ${jwt.sub || '?'}，token 有效期至 ${exp}`);
-      console.log(`  已写入 ~/.ibpm-cli/config.json（env: ${envName}）`);
+      console.log(`  已写入 ~/.auth-center/apps/ibpm-cli/config.json（env: ${envName}）`);
       if (timer) clearTimeout(timer);   // 关键：清 timer，否则进程挂满 180s 才退出
       res.on('finish', () => { server.close(); resolve(token); });
     });

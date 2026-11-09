@@ -2,17 +2,12 @@
 
 持续追加。格式：问题 → 根因 → 解法。
 
-## 最终定案：腾讯文档官方 MCP 直写（2026-10-23 第四轮收敛）
-- **结论：官方 MCP `smartsheet.*` API 直写记录是唯一正解**——无焦点/定位/分组/canvas 问题，5 秒写完三表。
-- **MCP 端点**：`https://docs.qq.com/openapi/mcp`，stateless JSON-RPC（无 session header）；Token 从 https://docs.qq.com/open/auth/mcp.html 页面「复制」按钮获取（登录态浏览器自动化点一下即可），存 `.config/tdocs_mcp.token`。
-- **写入值格式（tools/list 的 inputSchema 不含细节，靠 400001 报错信息反推）**：
-  - dateTime → `string_value` = 毫秒时间戳字符串（+08:00 零点）
-  - singleSelect/select → `option_value:{items:[{id,text}]}`，option 必须已存在（动态 list_fields 建 text→id 映射，不要硬编码）
-  - number → `number_value` 整数
-  - text → `text_value:{items:[{text, type:"text"}]}`，**type 必填**否则 400001
-- **字段/视图元数据**：`list_tables` 拿 sheet_id（日报 ss_3n8xi6 / 周报汇总 trhuGh / 下周计划 tfR4dX）；`list_fields` 的 singleSelect options 含 id；`list_records` 的 view_id 影响行序（SZQ 视图 vOj1HV）。
+## 最终定案：腾讯文档 API 直写（2026-10-23 第四轮收敛）
+- **结论：API 直写记录是周报三表的唯一正解**——无焦点/定位/分组/canvas 问题，5 秒写完三表；现统一经 `tencent-docs` 本地 CLI 执行。
+- **通用操作**（端点、token、字段值格式、选项映射、分页、写后校验）统一见 `tencent-docs`；本节只保留周报三表的业务元数据与落位经验。
+- **周报三表元数据**：`list_tables` 拿 sheet_id（日报 ss_3n8xi6 / 周报汇总 trhuGh / 下周计划 tfR4dX）；`list_fields` 的 singleSelect options 含 id；`list_records` 的 view_id 影响行序（SZQ 视图 vOj1HV）。
 - **记录落位**：add_records 追加到表尾，日期分组自动归位（游离区问题不存在）；delete_records 按 record_id 删，配合 list_records 可做任意清理。
-- **防重**：add 前若用户手填过同周数据会重复 → dedup 脚本按 日期+成员+内容 分组保留最后编辑时间最早的一条。
+- **防重**：add 前若用户手填过同周数据会重复 → AI 拉全量记录，按 日期+成员+内容 分组，保留最后编辑时间最早的一条，其余删除。
 
 ## 浏览器自动化路线的完整失败史（已废弃，备查）
 - agent-browser 粘贴（AI 驱动）：能成功但 15-20 次工具调用 5-8 分钟，AI 推理往返是硬成本。
@@ -20,17 +15,15 @@
 - PowerShell 批处理（fill.ps1）：`find text "添加一行"` 点到屏幕外负坐标的隐藏同名元素（DOM 有 4 个）；改 eval 定位可见按钮坐标点击，加行成功但空行落在**分组外游离区**，粘贴报「类型不符」；snapshot+click @ref 日报成功但周报汇总仍落游离区。
 - canvas 渲染根因：表体/「总计」不可 DOM 读取，焦点状态只能靠截图人眼判断——固定序列脚本无法闭环验证，这是放弃脚本路线的根本原因。
 
-## PowerShell 5.1 与外部程序互操作（反复踩坑）
-- 内嵌双引号被剥离（`'{"a":"b"}'` 传成 `{a:b}`）→ JSON 参数一律写临时文件（UTF8 **无 BOM**）传路径。
-- 中文命令行参数按 GBK 编码传出 → JS 正则中文匹配失败 → JS 内中文一律 `\uXXXX` 转义。
-- 读外部程序 UTF8 输出（agent-browser snapshot 等）前必须 `[Console]::OutputEncoding = [Text.Encoding]::UTF8`，否则按 GBK 解码乱码无法匹配。
-- `Set-Clipboard` 收 UTF8 内容：`Get-Content -Raw -Encoding UTF8 <file> | Set-Clipboard`。
+## PowerShell / Node 互操作
 
-## 禅道 API
-- **`GET /tasks` 返回重复且不全**：改用 `GET /executions/{executionId}/tasks?limit=200` 过滤 `assignedTo.account`。
-- **zentao_tasks.js 分页截断**：`page > 50` 提前退出导致大执行集漏任务 → 怀疑遗漏时全量翻页核对。
+通用坑（内嵌引号被剥离、中文 GBK 编码、临时 JSON、UTF-8 输出解码）统一见 `tencent-docs`；周报 SOP 按该约定执行。
+
+## 禅道 API（现由 zentao CLI 封装，以下保留供排障）
+- **`GET /tasks` 返回重复且不全**：改用 `GET /executions/{executionId}/tasks?limit=200` 过滤 `assignedTo.account`；现直接用 `zentao my-tasks <执行ID>`。
+- **任务列表分页可能截断**：早年脚本 `page > 50` 提前退出导致大执行集漏任务 → 怀疑遗漏时对照禅道页面核对。
 - **任务详情 `desc` 可能为空**：需求范围要看 `storyTitle`，或让用户从禅道页面补描述。
-- **Token 认证**：`POST /api.php/v1/tokens` body `{account,password}` → header `Token: <token>`。自签证书需 `rejectUnauthorized:false`。
+- **Token 认证**：`POST /api.php/v1/tokens` body `{account,password}` → header `Token: <token>`。自签证书需 `rejectUnauthorized:false`。现由 zentao CLI 经 auth-center 完成（凭据 `~/.auth-center/apps/zentao-cli/sso-credentials.json`，token 缓存 `~/.auth-center/apps/zentao-cli/config.json`）。
 - **eval/JS 传中文**：Node 侧 HTTPS 无问题；但 agent-browser `eval --stdin` 传中文会编码损坏 → 用 base64 编码 JS（`eval -b`）或 `String.fromCharCode`。
 - **tokens 接口间歇性失败**：连续快速调用会返回空对象/无效 token（服务端限流）。→ 拿 token 后校验存在性，失败 sleep 2~3s 重试（最多 5~8 次）；批量调用每步 sleep 300~500ms。
 
@@ -45,7 +38,9 @@
 - **预计工时偏小**：任务实际消耗可能超 estimate（如 24987 est24 实际 32h）。API 改不了 estimate → 需用户在页面手动调预计，或接受"超预计"状态。
 - **过期任务收尾顺序**：deadline < 今天且未完成的任务 → 先列清单让用户调整 deadline（PUT 生效）→ 再补工时完成。
 
-## 腾讯文档（无官方 API/CLI/MCP，个人版开放平台需企业审批）
+## 腾讯文档浏览器自动化历史（已废弃，备查）
+
+- 当前统一用 `tencent-docs` 本地 CLI；通用操作见 `tencent-docs`。以下为早期 canvas/浏览器方案的历史坑，仅备查。
 - **智能表格是 canvas 渲染**：snapshot 拿不到单元格，只有编辑器 text。操作靠：鼠标坐标点击 / 名称框（左上角，坐标约 (133,65)，跳转偶尔不生效）/ 键盘导航。
 - **视口与截图比例**：`agent-browser` 截图宽 992，实际视口 1912×922，比例 ≈1.9274。坐标换算错会点到邻列（曾把 L94 点成 M88 公式格）。先 `eval "window.innerWidth"` 确认。
 - **粘贴多行 TSV 会弹"拆分字段"确认框**：点"确定"才能按 `\t` 拆列。
@@ -86,4 +81,4 @@
 - **日报条数=实际工作日数**：非固定 5 条，调休补班要算，节假日不上。
 - **归属不确定时**：查任务 story 标题 + 本周提交关键词双向印证；用户一句口述（如"下周计划是验证测试用例自动化"）优先于推断。
 - **进度评估口径**：对照**仓库整体实现情况**（uat 全量代码），不是本周提交增量；只评非 100% 行；用 Explore 代理出证据报告。
-- **收尾清理临时文件**：shots\、log_*.txt、zentao_tasks.json、临时 js；保留 drafts\、.config\、skill、pms 仓库。
+- **收尾清理临时文件**：shots\、log_*.txt、zentao_*.json、临时 js；保留 drafts\、.config\、skill、pms 仓库。

@@ -7,7 +7,7 @@
     "anyshare": "./bin/anyshare.mjs"
   },
   "dependencies": {
-    "jomoo-auth-cli": "file:../jomoo-auth-cli"
+    "auth-center": "file:../auth-center"
   },
   "engines": {
     "node": ">=18"

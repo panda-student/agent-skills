@@ -7,7 +7,7 @@
     "pms": "./bin/pms.mjs"
   },
   "dependencies": {
-    "jomoo-auth-cli": "file:../jomoo-auth-cli"
+    "auth-center": "file:../auth-center"
   },
   "private": true,
   "engines": {

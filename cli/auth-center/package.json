@@ -1,0 +1,21 @@
+{
+  "name": "auth-center",
+  "version": "1.0.0",
+  "description": "统一登录与 token 生命周期库：单一 Edge Profile + 凭据管理 + CDP 捕获/静默刷新，支持 Jomoo 域 SSO 与腾讯文档等外部 token；业务 CLI 注入 validateToken/headlessLogin 即可接入",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "bin": {
+    "auth": "bin/auth.mjs"
+  },
+  "files": [
+    "bin",
+    "src"
+  ],
+  "engines": {
+    "node": ">=18"
+  }
+}

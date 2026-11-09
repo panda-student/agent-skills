@@ -15,19 +15,22 @@ description: 禅道系统操作技能。引导使用 zentao CLI（禅道 JSON AP
 
 ## 前置检查（首次使用/环境异常时）
 
-- 运行 `zentao --version` 验证 CLI 可用；不可用说明未安装 → 进入 CLI 源码目录（见"相关资源"）执行 `npm install -g .`，装好后重试
-- 配置缺失或不完整时按"配置文件"节引导 setup
+- 运行 `zentao --version` 验证 CLI 可用；不可用说明未安装 → 进入 CLI 源码目录 `~/.agents/cli/zentao-cli`（见"相关资源"）执行 `npm install -g .`，装好后重试
+- 配置缺失或不完整时按"配置文件"节引导 setup；凭据状态用 `zentao whoami` 查（missing/expired 时执行 `zentao login`）
 
 ## 核心工具：zentao CLI
 
-`zentao` 命令（npm 全局安装，独立于本技能）— 封装禅道 API 调用（Token 管理、UTF-8 编码、激活→指派流程、链接生成、工时硬规则校验）。任何禅道账号 + 任何产品/执行均可使用，**不含文档解析功能**。
+`zentao` 命令（npm 全局安装，独立于本技能）— 封装禅道 API 调用（auth-center 统一凭据与 Token 生命周期、UTF-8 编码、激活→指派流程、链接生成、工时硬规则校验）。任何禅道账号 + 任何产品/执行均可使用，**不含文档解析功能**。
 
 ### 命令一览
 
 | 命令 | 说明 |
 |------|------|
-| `zentao setup --base-url <API地址> --account <账号> --password <密码> [--assignee <默认指派人>]` | 配置禅道账号（首次使用） |
-| `zentao login` | 登录，获取所有产品(ID+名称) + 执行(ID+名称) |
+| `zentao setup --base-url <API地址> --account <账号> [--assignee <默认指派人>]` | 配置禅道连接（首次使用，不含密码） |
+| `zentao setup --credentials` | 弹窗录入账号密码（经 auth-center 存 `~/.auth-center/apps/zentao-cli/sso-credentials.json`，可选；不录入也能走浏览器登录） |
+| `zentao login` | 登录并获取所有产品(ID+名称) + 执行(ID+名称)；缓存有效直接复用，无凭据时拉起共享 Edge 弹窗登录并缓存 token |
+| `zentao whoami` | 查看缓存 token 状态（不触发刷新） |
+| `zentao logout` | 清除缓存 token（保留配置与凭据） |
 | `zentao fetch-data <产品ID> <执行ID>` | 一次获取该产品模块列表 + 全部Story + 该执行全部Task（供AI参考，不展示给用户） |
 | `zentao preview <json路径>` | 预览创建内容，输出中文字段完整清单 |
 | `zentao create <json路径> [test]` | 创建 Story+Tasks（加 test 参数或 `--test` 只建第1条做测试） |
@@ -52,18 +55,32 @@ description: 禅道系统操作技能。引导使用 zentao CLI（禅道 JSON AP
 
 ## 配置文件
 
-`%USERPROFILE%\.zentao\config.json`（用户主目录，与技能解耦；由 `zentao setup` 写入，也可用 Edit 工具直接编辑）：
+统一配置 `~/.auth-center/apps/zentao-cli/config.json`（由 `zentao setup` 写入，也可用 Edit 工具直接编辑）：
 
 ```json
 {
-  "auth": { "baseUrl": "https://zentao.jomoo.com/zentaopms/www/api.php/v1", "account": "", "password": "" },
-  "defaultAssignee": ""
+  "auth": { "baseUrl": "https://zentao.jomoo.com/zentaopms/www/api.php/v1", "account": "" },
+  "defaultAssignee": "",
+  "token": "<浏览器登录/无头登录后缓存的 token>",
+  "tokenSource": "cdp-browser | headless-sso"
 }
 ```
 
-首次使用：用 Read 工具检查该文件，`account`/`password` 为空或文件不存在时，用 AskUserQuestion 询问用户的禅道账号和密码，然后运行 `zentao setup --base-url ... --account ... --password ...` 写入（flags 方式无转义问题）。切换使用者时重新 setup 即可。
+**密码不在该文件**。zentao CLI 已接入 `auth-center`，登录阶梯：
+1. 缓存 token 试活（`my-work-task.json`）。
+2. 已录入凭据时无头调 `/tokens`（可选，不弹窗）。
+3. 无凭据/无缓存时拉起共享 Edge（`~/.auth-center/edge-profile`），用户登录一次，CDP 读取 `HttpOnly` 的 `zentaosid` 并缓存。
+4. 后续命令直接复用缓存 token。
 
-> 公司禅道地址固定；账号密码由各用户交互提供。
+凭据文件（可选）：`~/.auth-center/apps/zentao-cli/sso-credentials.json`（`{"account":"...","password":"..."}`）。
+
+首次使用：
+1. 用 Read 检查连接配置，缺 `baseUrl`/`account` 时运行 `zentao setup --base-url ... --account ... [--assignee ...]`。
+2. 运行 `zentao login`：无凭据时会拉起共享 Edge，在窗口里登录一次即可；有凭据时全自动无头登录。
+3. AI 代填凭据时优先 vault：先写骨架 `{"account":"<账号>","password":"{{credential}}"}` 到 `~/.auth-center/apps/zentao-cli/sso-credentials.json`，再用 vault `write_credential`（`mode=replace`、`placeholder={{credential}}`）注入。
+4. `zentao whoami` 确认状态；`zentao login` 验证能拿到产品/执行清单。
+
+> 公司禅道地址固定；账号密码由各用户提供，密码不写入连接配置。旧路径 `~/.zentao/config.json`、`~/.zentao-cli/` 会自动迁移到统一 apps 目录。
 
 ---
 
@@ -71,7 +88,7 @@ description: 禅道系统操作技能。引导使用 zentao CLI（禅道 JSON AP
 
 ```mermaid
 graph LR
-    A["获取Token<br/>(读配置→POST /tokens)"] --> B["选择产品/执行<br/>(用户交互选择)"]
+    A["获取Token<br/>(缓存试活→凭据刷新→POST /tokens)"] --> B["选择产品/执行<br/>(用户交互选择)"]
     B --> C["获取已有数据<br/>模块+Story+Task<br/>(仅供AI参考)"]
     C --> D["数据准备<br/>(AI在会话中完成<br/>不属本技能)"]
     D --> E["查重+预览确认"]
@@ -142,6 +159,6 @@ graph LR
 ## 相关资源
 
 - 禅道 API 文档：https://zentao.jomoo.com/zentaopms/www/api-docs.html
-- CLI 源码：`d:\IdeaProjects\jomoo-ai-coding\code_workspace\zentao-cli`（`npm install -g .` 全局安装；API 端点速查与未覆盖操作见 rules/API操作.md）
+- CLI 源码：`~/.agents/cli/zentao-cli`（在源码目录执行 `npm install -g .` 全局安装；API 端点速查与未覆盖操作见 rules/API操作.md）
 - 配置文件：`%USERPROFILE%\.zentao\config.json`
 - 所有子规则文件位于本技能目录 `rules/` 下
