@@ -141,7 +141,7 @@ const NODE_PROPERS_DEFAULTS = [
  * 生成节点行为属性块 <ext:propers>（紧跟 ext:buttons 之后，对齐平台导出）
  * @param {object} propers - spec 节点上的属性覆盖（如 { executorIsEmpty: 'jump' }），未声明则不输出
  */
-function buildPropers(propers) {
+export function buildPropers(propers) {
   if (!propers) return '';
   const attrs = NODE_PROPERS_DEFAULTS
     .map(([k, def]) => `${k}="${escapeAttr(propers[k] ?? def)}"`)

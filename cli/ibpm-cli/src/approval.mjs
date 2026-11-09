@@ -20,13 +20,12 @@ async function api(env, path, { method = 'GET', body } = {}) {
 
 export const defGet = (env, defId) => api(env, `/model/flow/def/v1/defGet?defId=${defId}`);
 
-/** 解析 bpmnXml 中每个 ext:userNode 的 allowInterfaceApproval 三态 */
+/** 解析 bpmnXml 中每个 ext:userNode / ext:signNode 的 allowInterfaceApproval 三态 */
 export function readNodeStates(defJson) {
   const xml = defJson.bpmDefData.bpmnXml;
   const map = {};
-  for (const c of xml.split(/<ext:userNode\s/).slice(1)) {
-    const endIdx = c.indexOf('</ext:userNode>');
-    const body = endIdx !== -1 ? c.slice(0, endIdx) : c;
+  for (const m of xml.matchAll(/<ext:(userNode|signNode)\b[\s\S]*?<\/ext:\1>/g)) {
+    const body = m[0];
     const bm = body.match(/bpmnElement="([^"]+)"/);
     const am = body.match(/allowInterfaceApproval="([^"]*)"/);
     if (bm) map[bm[1]] = am ? am[1] : '(无propers)';

@@ -8,6 +8,7 @@ import {
   findVarDefs, parseVars, varDefXml,
 } from './flowxml.mjs';
 import { buildRulesFromArgs, userAssignXml, disposeFields } from './userassign.mjs';
+import { buildPropers } from '../bpmn-gen/src/generate/build-extprocess.mjs';
 
 const die = msg => { throw new Error(msg); };
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -22,23 +23,24 @@ const SIGN_TASK_LISTENERS = {
 };
 
 // defJson shape：在普通 UserTask shape 基础上覆盖为会签形态
+// 默认串行：IBPM openapi complete4instid 多 task 会拒绝，串行可逐个完成并按 account 记真实审批人
 function applySignShape(shape) {
   shape.stencil = { id: 'SignTask' };
   shape.properties.tasklisteners = JSON.parse(JSON.stringify(SIGN_TASK_LISTENERS));
-  shape.properties.multiinstance_type = 'Parallel';
+  shape.properties.multiinstance_type = 'Sequential';
   shape.properties.multiinstance_collection = '${actUserService.getSignUser(execution)}';
   shape.properties.multiinstance_variable = 'assignee';
   shape.properties.multiinstance_condition = '${signComplete.isComplete(execution) }';
 }
 
-// bpmnXml userTask：multi-instance 非顺序会签
+// bpmnXml userTask：multi-instance 串行会签（默认，保真实审批人记账）
 function signTaskXml(key, name) {
   return `<userTask id="${key}" name="${esc(name)}" i18nKey="">\n`
     + `      <extensionElements>\n`
     + `        <activiti:taskListener event="create" delegateExpression="\${taskSignCreateListener}"/>\n`
     + `        <activiti:taskListener event="complete" delegateExpression="\${taskCompleteListener}"/>\n`
     + `      </extensionElements>\n`
-    + `      <multiInstanceLoopCharacteristics isSequential="false" activiti:collection="\${actUserService.getSignUser(execution)}" activiti:elementVariable="assignee">\n`
+    + `      <multiInstanceLoopCharacteristics isSequential="true" activiti:collection="\${actUserService.getSignUser(execution)}" activiti:elementVariable="assignee">\n`
     + `        <completionCondition>\${signComplete.isComplete(execution) }</completionCondition>\n`
     + `      </multiInstanceLoopCharacteristics>\n`
     + `    </userTask>`;
@@ -46,11 +48,14 @@ function signTaskXml(key, name) {
 
 // extProcess signNode：审批人规则必须写在这里，平台导入时据此重建 nodeDispose cacl
 function signNodeXml(key, name, plugins) {
+  // 会签节点默认允许接口审批（自动化/E2E 依赖）；executorIsEmpty=jump 保留“执行人为空自动跳过”
+  const propers = buildPropers({ allowInterfaceApproval: 'true', executorIsEmpty: 'jump' });
   return `<ext:signNode nodeType="common" name="${esc(name)}" bpmnElement="${key}">\n`
     + `        <ext:signSetting>\n`
     + `          <ext:signRule decideType="refuse" voteType="amount" voteAmount="1" followMode="complete"/>\n`
     + `        </ext:signSetting>\n`
     + `        ${plugins}\n`
+    + `        ${propers}\n`
     + `      </ext:signNode>`;
 }
 
