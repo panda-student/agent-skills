@@ -16,8 +16,6 @@
 | [start-pms-backend](skills/start-pms-backend/) | 本地正确启动 PMS 后端（pms-service） | [查看](skills/start-pms-backend/SKILL.md) |
 | [pms-menu-config](skills/pms-menu-config/) | JMBOS 平台菜单配置 SOP，使前端新页面的动态路由可访问 | [查看](skills/pms-menu-config/SKILL.md) |
 | [livebos](skills/livebos/) | 梳理 LiveBOS 工作区中业务对象/流程的逻辑（需显式 `/livebos`） | [查看](skills/livebos/SKILL.md) |
-| [dify-workflow](skills/dify-workflow/) | Dify 工作流开发指南：DSL 结构、Jinja2 模板转换、YAML 序列化 | [查看](skills/dify-workflow/SKILL.md) |
-| [code-organization-review](skills/code-organization-review/) | 按通用代码组织规范对代码差异做组织维度专项评审 | [查看](skills/code-organization-review/SKILL.md) |
 
 ### 问题验证与测试
 
@@ -25,9 +23,6 @@
 |------|------|------|
 | [verify-issue](skills/verify-issue/) | PMS 缺陷受理验证与同类问题排查 | [查看](skills/verify-issue/SKILL.md) |
 | [e2e-ops](skills/e2e-ops/) | 通用 E2E / 自动化验证方法论（分层验证） | [查看](skills/e2e-ops/SKILL.md) |
-| [agent-teams](skills/agent-teams/) | 多 Agent 协作引擎，支持开发、评审、测试、规划等团队协作模式 | [查看](skills/agent-teams/SKILL.md) |
-| [doc-review](skills/doc-review/) | 评审开发前的设计文档（需求、设计、BDD），聚焦高收益检查项 | [查看](skills/doc-review/SKILL.md) |
-| [plan-doc-review](skills/plan-doc-review/) | 从人类能否高效交付的视角评审实施计划，输出 4 维评分卡 | [查看](skills/plan-doc-review/SKILL.md) |
 
 ### 接口与运维
 
@@ -56,7 +51,6 @@
 | [wecom-unified](skills/wecom-unified/) | 企业微信套件：通讯录、文档、表格、日程、会议、待办、邮件、消息 | [查看](skills/wecom-unified/SKILL.md) |
 | [anyshare-ops](skills/anyshare-ops/) | 通过 anyshare CLI 操作爱数 AnyShare 文档云 | [查看](skills/anyshare-ops/SKILL.md) |
 | [qqmail-ops](skills/qqmail-ops/) | 通过脚本操作 QQ 邮箱：读收件箱、搜索邮件 | [查看](skills/qqmail-ops/SKILL.md) |
-| [image-analyzer](skills/image-analyzer/) | 帮助没有视觉能力的模型进行图像理解 | [查看](skills/image-analyzer/SKILL.md) |
 | [wechatide-skill](skills/wechatide-skill/) | 微信开发者工具（WeChat IDE）相关操作 | [查看](skills/wechatide-skill/SKILL.md) |
 | [archify](skills/archify/) | 生成架构、流程、时序、ERD 等可交互的独立 HTML 图 | [查看](skills/archify/SKILL.md) |
 
@@ -74,7 +68,6 @@
 | [learn](skills/learn/) | 会话复盘，把经验教训固化到项目规则或记忆 | [查看](skills/learn/SKILL.md) |
 | [cc-switch-sync](skills/cc-switch-sync/) | 修改技能名称/描述后同步 cc-switch 数据库 | [查看](skills/cc-switch-sync/SKILL.md) |
 | [find-skills](skills/find-skills/) | 帮助发现并安装 agent 技能 | [查看](skills/find-skills/SKILL.md) |
-| [commit](skills/commit/) | 智能分析 Git 工作区变更并分类提交 | [查看](skills/commit/SKILL.md) |
 | [task-wrapup](skills/task-wrapup/) | 开发任务收尾：遗留事项登记、临时文件清理与仓库收口 | [查看](skills/task-wrapup/SKILL.md) |
 | [oss-sop](skills/oss-sop/) | 维护开源仓库并提交上游 PR 的标准作业流程 | [查看](skills/oss-sop/SKILL.md) |
 | [oss-pr](skills/oss-pr/) | 开源 PR/issue 贡献的证据链工作流 | [查看](skills/oss-pr/SKILL.md) |
