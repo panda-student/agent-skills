@@ -35,14 +35,12 @@
 | [nacos-ops](skills/nacos-ops/) | Nacos 注册中心：入口拓扑与服务注册状态排查 | [查看](skills/nacos-ops/SKILL.md) |
 | [ibpm-ops](skills/ibpm-ops/) | 通过 ibpm-cli 查询/修改宏天 IBPM 流程定义与运行时实例 | [查看](skills/ibpm-ops/SKILL.md) |
 | [manage-ibpm-flow](skills/manage-ibpm-flow/) | 通过 ibpm-cli 查询/修改/新建 IBPM 流程定义 | [查看](skills/manage-ibpm-flow/SKILL.md) |
-| [jpm-gateway](skills/jpm-gateway/) | JPM 系统网关入口与环境规律参考 | [查看](skills/jpm-gateway/SKILL.md) |
 | [credential-secure-inject](skills/credential-secure-inject/) | 把凭据安全写入本地配置或输入框，AI 不接触明文 | [查看](skills/credential-secure-inject/SKILL.md) |
 
 ### 文档、工时与办公
 
 | 技能 | 说明 | 文档 |
 |------|------|------|
-| [jpm-zentao-operate](skills/jpm-zentao-operate/) | 禅道系统操作：引导使用 zentao CLI 完成登录、取数与工时等 | [查看](skills/jpm-zentao-operate/SKILL.md) |
 | [daily-report](skills/daily-report/) | 整理标准日报，自动拉取 PMS 三仓库当天提交 | [查看](skills/daily-report/SKILL.md) |
 | [weekly-report](skills/weekly-report/) | 周报/日报/下周计划全流程，并生成禅道工时补录草稿 | [查看](skills/weekly-report/SKILL.md) |
 | [issue-sop](skills/issue-sop/) | 腾讯文档问题跟进 SOP（PMS 内部测试问题表与 UAT 问题清单） | [查看](skills/issue-sop/SKILL.md) |
