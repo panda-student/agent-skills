@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="16px" height="16px" viewBox="0 0 16 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <title>icon/mark-as-selected</title>
-    <g id="icon/mark-as-selected" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <polygon id="icon-mark-as-read" points="0 16 16 16 16 0 0 0"></polygon>
-        <path d="M12,2 C13.1045695,2 14,2.8954305 14,4 L14,12 C14,13.1045695 13.1045695,14 12,14 L4,14 C2.8954305,14 2,13.1045695 2,12 L2,4 C2,2.8954305 2.8954305,2 4,2 L12,2 Z M11.21184,5.79344 C11.02464,5.60624 10.72064,5.60624 10.53264,5.79344 L7.13904,9.18784 L5.46704,7.51584 C5.27904,7.32784 4.97584,7.32784 4.78784,7.51584 C4.60064,7.70304 4.60064,8.00704 4.78784,8.19424 L6.79984,10.20624 C6.89024,10.29584 7.01184,10.34704 7.13904,10.34704 C7.26624,10.34704 7.38864,10.29584 7.47824,10.20624 L11.21184,6.47264 C11.39904,6.28544 11.39904,5.98144 11.21184,5.79344 Z" id="形状结合" fill="currentColor" fill-rule="nonzero"></path>
-    </g>
-</svg>

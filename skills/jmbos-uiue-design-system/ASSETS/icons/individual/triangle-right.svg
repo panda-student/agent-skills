@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="16px" height="16px" viewBox="0 0 16 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <title>icon/triangle-right</title>
-    <g id="icon/triangle-right" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <rect id="Rectangle-3" transform="translate(8, 8) rotate(-270) translate(-8, -8)" x="-1.77635684e-15" y="0" width="16" height="16"></rect>
-        <path d="M4.57659238,9.92236126 C4.51241713,9.92236126 4.45091504,9.89665935 4.40582263,9.85099604 C4.31268821,9.75668251 4.31364407,9.60472592 4.4079576,9.5115915 L7.75798986,6.20339643 C7.75799747,6.20338892 7.75800507,6.20338141 7.75801267,6.2033739 C7.91521433,6.04816247 8.16847519,6.04977586 8.32368662,6.20697752 L11.5885395,9.51374016 C11.6328885,9.55865782 11.6577563,9.61923893 11.6577563,9.68236126 C11.6577563,9.8149096 11.5503046,9.92236126 11.4177563,9.92236126 L4.57659238,9.92236126 Z" id="Rectangle-5" fill="currentColor" fill-rule="nonzero" transform="translate(7.9972, 8.0052) rotate(-270) translate(-7.9972, -8.0052)"></path>
-    </g>
-</svg>
