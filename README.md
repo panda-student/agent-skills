@@ -46,10 +46,8 @@
 | [daily-report](skills/daily-report/) | 整理标准日报，自动拉取 PMS 三仓库当天提交 | [查看](skills/daily-report/SKILL.md) |
 | [weekly-report](skills/weekly-report/) | 周报/日报/下周计划全流程，并生成禅道工时补录草稿 | [查看](skills/weekly-report/SKILL.md) |
 | [issue-sop](skills/issue-sop/) | 腾讯文档问题跟进 SOP（PMS 内部测试问题表与 UAT 问题清单） | [查看](skills/issue-sop/SKILL.md) |
-| [wecom-unified](skills/wecom-unified/) | 企业微信套件：通讯录、文档、表格、日程、会议、待办、邮件、消息 | [查看](skills/wecom-unified/SKILL.md) |
 | [anyshare-ops](skills/anyshare-ops/) | 通过 anyshare CLI 操作爱数 AnyShare 文档云 | [查看](skills/anyshare-ops/SKILL.md) |
 | [qqmail-ops](skills/qqmail-ops/) | 通过脚本操作 QQ 邮箱：读收件箱、搜索邮件 | [查看](skills/qqmail-ops/SKILL.md) |
-| [wechatide-skill](skills/wechatide-skill/) | 微信开发者工具（WeChat IDE）相关操作 | [查看](skills/wechatide-skill/SKILL.md) |
 
 ### 认证
 
