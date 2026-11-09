@@ -20,7 +20,6 @@
 | [livebos](skills/livebos/) | 梳理 LiveBOS 工作区中业务对象/流程的逻辑（需显式 `/livebos`） | [查看](skills/livebos/SKILL.md) |
 | [dify-workflow](skills/dify-workflow/) | Dify 工作流开发指南：DSL 结构、Jinja2 模板转换、YAML 序列化 | [查看](skills/dify-workflow/SKILL.md) |
 | [code-organization-review](skills/code-organization-review/) | 按通用代码组织规范对代码差异做组织维度专项评审 | [查看](skills/code-organization-review/SKILL.md) |
-| [agent-browser](skills/agent-browser/) | 浏览器自动化 CLI：导航、填表、点击、截图、抓取数据 | [查看](skills/agent-browser/SKILL.md) |
 
 ### 问题验证与测试
 
