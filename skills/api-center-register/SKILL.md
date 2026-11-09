@@ -1,6 +1,6 @@
 ---
 name: api-center-register
-description: 在九牧 API 中心管理后台（api-portal-jmbos-uat.jomoo.com）通过浏览器自动化自动注册、补全参数、更新、上架与在线调试接口。当新增接口要对接 API 中心、注册后要调整参数/契约、要上架或要联调验证接口时使用。通过 /api-center-register 触发，或检测到「注册到 API 中心」意图时使用。
+description: 在九牧 API 中心管理后台（api-portal-jmbos-uat.jomoo.com）通过浏览器自动化自动注册、补全参数、更新、上架与在线调试接口；登录统一走 auth-center（auth status api-center / auth login api-center，共享 Edge Profile）。当新增接口要对接 API 中心、注册后要调整参数/契约、要上架、要在线测试验证接口，或 API 中心登录态失效需要重新登录时使用。通过 /api-center-register 触发，或检测到「注册到 API 中心」意图时使用。
 user-invocable: true
 ---
 
@@ -19,13 +19,22 @@ user-invocable: true
 
 1. **先校验浏览器连接与登录态**：列出浏览器标签页找到 API 中心页面；若工具链要求先做连接检查，先完成连接检查再操作。
 2. **禁止用离线抓取的 token/Cookie 裸调后端 API**（会 10001 登录已过期）。一律走浏览器 UI 操作。
-3. 若为登录页：优先按登录配置自动登录（`d:\IdeaProjects\pms\.claude\config\api-center-login.md`，含凭据与表单特征）；配置不存在或登录失败则停下请用户手动登录。
+3. **登录统一走 auth-center**：`auth status api-center` / `auth login api-center`，浏览器使用共享 Edge Profile `~/.auth-center/edge-profile`。auth-center 的 `api-center` app 从该 Profile 捕获 `nisbos_auth_token` cookie 并缓存。登录态轮询规则见 auth-center SKILL「登录态自动检测」；禁止要求用户回复“好了”，禁止新建 Profile 或手工复制 Cookie。
 4. 操作表单属于变更/发布行为，关键动作（新增/上架）执行前向用户说明确认。
 5. 页面任何变更后元素引用即失效，**必须重新取快照获得新引用**再操作。
 6. **Debugger 断连**（JS 执行报 Bridge error）：先激活标签页，再重新导航刷新后重试。
 7. **请求路径字段「创建即锁定」**：新增接口时「请求路径」输入框在编辑抽屉中带 `disabled` 属性，保存后后端直接忽略；创建时必须一次性填入与网关转发、后端 Controller、白名单完全一致的最终路径，**事后想改只能删除接口并重建**，禁止在更新流程中尝试修改请求路径。
 8. **任何保存后必须回读验证**：无论新增还是更新，点「保存」后必须立刻再次点「编辑」从抽屉回读关键字段（尤其请求路径、参数表）与预期 diff，避免 disabled 字段变更被静默丢弃。
 9. **环境切换后订阅必须刷新**（⚠️ 2026-10 结项汇总里程碑断点实案根因）：接口切换环境（如 test→uat）后，已订阅该接口的调用方必须对该接口重新执行上架/下架操作刷新环境绑定，否则调用仍路由到旧环境——实测症状：在线调试返回 code:500「网络繁忙」executionTime=0，下游拿到 data:{} 空，而源系统直连一切正常。口诀：**注册详情里的后端地址改了 ≠ 生效了，订阅关系是独立的，必须重新上下架**。
+
+## 标准 SOP（PMS 接口注册实证，2026-11）
+
+- 登录：`auth status api-center` → `auth login api-center`；登录态轮询规则见 auth-center SKILL「登录态自动检测」。
+- 注册前：确认接口已部署、白名单、服务地址与请求路径。
+- 新增：先选「所属服务」= PMS，再填服务地址/请求地址/请求类型；接口名称保持通用。
+- 契约：请求/响应参数、200/500 状态码、请求/响应/异常示例逐项补全并回读。
+- 验证：保存 → 编辑回读 → 在线测试 → 上架。
+- 详细步骤、实证契约与踩坑：见 [reference.md 第12节](reference.md#12-pms-接口注册-sop-实证2026-11)。
 
 ## 执行流程
 
@@ -41,12 +50,12 @@ user-invocable: true
    │              填基本信息/参数表/状态码/示例报文 → 保存 → 回读验证 → 记录编号
    ├─ 更新      → 点「编辑」→ 全量回显 → 注意请求路径若disabled不要浪费时间改 →
    │              改需要变字段 → 保存 → 回读验证
-   ├─ 上架      → 点「上架」→ 确认弹窗 → 状态变「已上架」
-   ├─ 在线测试  → 行级定位打开面板（禁止全局固定坐标，防开错行）→
+   ├─ 在线测试  → 保存并回读后先在线测试，再上架 → 行级定位打开面板（禁止全局固定坐标，防开错行）→
    │              读预置示例确认开对接口 → ace编辑器填报文 → 点「执行」→
    │              读响应编辑器校验；⚠️每发一个不同报文都要刷新页面重开全新面板
    │              （面板执行一次后组件销毁重建，旧面板二次setValue不进提交模型）→
    │              写接口按「零污染调试序列」执行（改名→重放→还原，详见reference §11）
+   ├─ 上架      → 在线测试通过后点「上架」→ 确认弹窗 → 状态变「已上架」
    └─ 如果走规则C（专用白名单）：Nacos Config 追加 exclude-path-patterns →
                    GET 回读确认写入生效
 5.5 环境实锤      → 涉及DB验证/造数前，先确认域名实际连的库与schema（UAT域名可能
@@ -70,6 +79,9 @@ user-invocable: true
 | 环境实锤（域名实际连哪个库的四步证据链） | [reference.md 坑16](reference.md#6-常见坑) |
 | 从计划文档提取契约 | [reference.md 第5节](reference.md#5-契约提取从计划文档) |
 | 日志排障：Rancher/K8s 直拉 Pod 日志 | [reference.md 第10节](reference.md#10-日志排障rancherk8s-直拉-pod-日志) |
+| 完整注册 SOP（PMS 实证，含契约/踩坑） | [reference.md 第12节](reference.md#12-pms-接口注册-sop-实证2026-11) |
+| API 中心快速通道脚本（list/detail/publish/create/update） | [scripts/api-center-api.mjs](scripts/api-center-api.mjs) |
+| 抓包 API 快速通道（列表/详情/上架/新增/更新） | [reference.md 第13节](reference.md#13-抓包-api-快速通道2026-11-实证) |
 | 常见坑（共 16 条） | [reference.md 第6节](reference.md#6-常见坑) |
 | 完成标准与交付检查（扩展为 8 项） | [reference.md 第7节](reference.md#7-完成标准) |
 | 实际操作案例与脚本 | [examples.md](examples.md) |

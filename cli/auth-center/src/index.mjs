@@ -9,3 +9,4 @@ export { APP_HOME, APPS_DIR, appDir, ensureAppFile, legacyPath } from './paths.m
 export { scanEdgeTokens } from './browser-token.mjs';
 export { captureTokenByCdp } from './cdp-edge.mjs';
 export { notifyTopmost } from './notify.mjs';
+export { parseJwtPayload, isJwtExpired, validateJwtToken } from './jwt.mjs';

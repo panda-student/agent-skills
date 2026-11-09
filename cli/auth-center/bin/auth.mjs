@@ -12,7 +12,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { loadAppConfig, saveAppConfig, APP_HOME } from '../src/index.mjs';
+import { loadAppConfig, saveAppConfig, APP_HOME, createTokenManager, validateJwtToken } from '../src/index.mjs';
 import { openInSharedProfile } from '../src/cdp-edge.mjs';
 
 const VERSION = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
@@ -57,7 +57,43 @@ const APPS = {
         login: tencentDocsLogin,
         status: tencentDocsStatus,
     },
+    'api-center': {
+        label: 'API中心',
+        login: apiCenterLogin,
+        status: apiCenterStatus,
+    },
 };
+
+const API_CENTER_BASE_URL = 'https://api-portal-jmbos-uat.jomoo.com';
+
+const apiCenterTokenManager = createTokenManager({
+    appName: 'api-center',
+    label: 'API中心',
+    baseUrl: API_CENTER_BASE_URL,
+    launchUrl: `${API_CENTER_BASE_URL}/`,
+    validateToken: validateJwtToken,
+    cookieTokenRe: /(?:^|;\s*)nisbos_auth_token=([^;]+)/,
+    cookieSource: 'cdp',
+    loginPageRe: /\/login|\/signin|[?&]redirect=|oauth2\/(login|auth)|^https?:\/\/api-portal-jmbos-uat\.jomoo\.com\/$/i,
+    maxWaitMs: 300_000,
+    manualLoginWaitMs: 300_000,
+    leveldbScan: false,
+});
+
+async function apiCenterLogin() {
+    const token = await apiCenterTokenManager.login();
+    if (!token) throw new Error('API中心登录未完成');
+    console.log('API中心登录成功，token 已缓存');
+}
+
+function apiCenterStatus() {
+    const token = apiCenterTokenManager.currentToken();
+    if (!token) {
+        console.log('未登录');
+        return;
+    }
+    console.log(validateJwtToken(token) ? '已登录' : '已过期');
+}
 
 function configApp(app) {
     return APPS[app].configApp || app;
@@ -337,6 +373,11 @@ async function main() {
                 continue;
             }
             const token = readToken(name);
+            if (name === 'api-center') {
+                const state = token ? (validateJwtToken(token) ? '已缓存 …' : '已过期 …') + token.slice(-6) : '未登录';
+                console.log(`${name}\t${APPS[name].label}\t${state}`);
+                continue;
+            }
             console.log(`${name}\t${APPS[name].label}\t${token ? '已缓存 …' + token.slice(-6) : '未登录'}`);
         }
         return;
@@ -354,6 +395,11 @@ async function main() {
 
     if (command === 'token') {
         if (!app || !APPS[app]) throw new Error(`用法: auth token <${Object.keys(APPS).join('|')}>`);
+        if (app === 'api-center') {
+            const token = await apiCenterTokenManager.refreshToken();
+            process.stdout.write(token);
+            return;
+        }
         if (app === 'tencent-docs') {
             const cfg = loadAppConfig('tencent-docs');
             if (tdocsTokenExpired(cfg) && !(await refreshTdocsToken(cfg))) {

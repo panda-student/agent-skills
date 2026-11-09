@@ -311,3 +311,190 @@ GET https://rancher.jomoo.com/k8s/clusters/<cluster-id>/api/v1/namespaces/<ns>/p
 - ①③ 是两个不同报文，受坑14 约束必须**各开一次全新面板**；②是同报文重放，在①的面板直接再执行即可。
 - 零变更探测（如 mainInfo 传空对象、blank 字段被 Writer 跳过）可用于更早的连通性验证：返回 200 且写 SUCCESS 日志但业务数据不变，适合环境实锤阶段，不替代正式三步序列。
 - 若接口没有可还原字段（如纯新增推送），改用带固定测试前缀的唯一主键，验证后按主键删除测试行，并确认无关联脏数据。
+
+## 12. PMS 接口注册 SOP 实证（2026-11）
+
+> 本节是 2026-11 PMS「合同系统查询流程信息」接口（编号 2947）的完整实操沉淀，可直接作为 PMS 新接口注册模板。
+
+### 12.1 前置
+
+- 确认接口已部署：未部署时先注册，在线测试会 404。
+- UAT PMS 服务地址：`https://api-uat-pms.jomoo.com/`（注意是 `api-uat-pms`，不是前端 `uat-pms`）。
+- 请求路径：`/pms/pms-service/pms/<模块>/<方法>`；网关 `pms-service-api` 规则 `Path=/pms/pms-service/pms/**` + `StripPrefix=2`。
+- 白名单：UAT `gateway.yaml` 已含 `/pms/external/**`；新模块按规则C追加。
+- 快速通道脚本：`scripts/api-center-api.mjs`（list/detail/publish/create/update，token 来自 auth-center；用法见脚本内置 help）。
+
+### 12.2 登录
+
+- 统一走 auth-center：`auth status` → `auth login <app>`。
+- 浏览器使用共享 Edge Profile `~/.auth-center/edge-profile`。
+- 打开登录页后自动轮询登录态（登录页元素消失/URL 跳转/出现用户信息），检测到成功立即继续，不要要求用户回复“好了”。
+
+### 12.3 新增抽屉
+
+- 点「新增」；ref 点击无效时用 JS：
+  ```js
+  [...document.querySelectorAll('button')].filter(b=>b.textContent.replace(/\s/g,'')==='新增').pop().click()
+  ```
+- **先选「所属服务」= PMS**；选完后才渲染 服务地址/请求地址/请求类型/超时/缓存 字段。
+- 接口名称保持通用，不要把具体流程写死。
+- 关键字段：连接超时 2000、读取超时 2000、请求类型 POST、功能类型 读取、接口安全级别 公开接口。
+- 请求地址用 JS 原生 setter 写入并回读，避免 `fill` 把本地路径前缀带进值：
+  ```js
+  const set=(el,v)=>{const s=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set;s.call(el,v);el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));};
+  ```
+
+### 12.4 参数/示例/状态码
+
+- Body 参数逐行新增；说明写示例值，枚举参数列出全部可选值。
+- 返回参数逐行补全；状态码至少 200 成功、500 业务异常。
+- 三个示例用 Ace 编辑器逐个 setValue，并逐个回读：
+  ```js
+  const eds=[...document.querySelectorAll('.bosui-dialog,.el-dialog')].filter(d=>d.getBoundingClientRect().height>0).pop().querySelectorAll('.ace_editor');
+  window.ace.edit(eds[0]).setValue(JSON.stringify(request,null,2),-1);
+  window.ace.edit(eds[1]).setValue(JSON.stringify(response,null,2),-1);
+  window.ace.edit(eds[2]).setValue(JSON.stringify(exception,null,2),-1);
+  ```
+- 多编辑器一次批量 setValue 可能被 Vue 重渲染覆盖，必须逐个 setValue + 逐个读回。
+
+### 12.5 保存 → 回读 → 在线测试 → 上架
+
+- 点「确定」保存，列表出现新行，记录编号。
+- 点「编辑」回读关键字段、参数、示例，确认保存生效。
+- 行操作「在线测试」：面板预置请求示例 → 点「执行」→ 读响应编辑器。
+- 行操作「上架」：确认 message box 遮罩 → 点「确定」→ 状态变「已上架」。
+- 环境切换后已订阅接口必须重新上下架刷新绑定。
+
+### 12.6 PMS 实证契约（编号 2947）
+
+```text
+接口名称：合同系统查询流程信息
+请求路径：/pms/pms-service/pms/external/contract/queryFlowInfo
+服务地址：https://api-uat-pms.jomoo.com/
+请求类型：POST
+功能类型：读取
+安全级别：公开接口
+```
+
+请求：
+
+```json
+{ "flowCode": "XMLX-202611-0054", "ibpmFlowKey": "PM02001" }
+```
+
+响应：
+
+```json
+{
+  "success": true,
+  "message": "操作成功",
+  "code": 0,
+  "data": {
+    "flowCode": "XMLX-202611-0054",
+    "flowTitle": "郑珊珊提交的项目立项XMLX-202611-0054",
+    "instId": "2119680407272566784",
+    "status": "APPROVAL",
+    "statusName": "审批",
+    "applicantCode": "00072862",
+    "applicantName": "郑珊珊",
+    "approvalUrl": "https://test-ibpm.jomoo.com/fvue/inst/2119680407272566784",
+    "applyDate": "2026-11-09",
+    "projectCode": null
+  }
+}
+```
+
+### 12.7 实证踩坑
+
+- **立项流程编号**：合同系统传 `t_wf_project_info.form_no`（如 `XMLX-202611-0054`），不是 `t_wf_project_approval.code`（如 `LX20261109000351`）。
+- **字段命名**：流程编号统一用 `flowCode`，不要用 `flowNo`。
+- **通用接口标题**：不要写死具体流程，参数说明列出全部 flowKey。
+- **表格 DOM 克隆**：请求/响应/状态码表格可能同时渲染固定列副本，行数会翻倍；以实际值为准，不要按行数判断。
+- **上架遮罩**：上架确认是 `.bosui-message-box__wrapper`，必须先确认遮罩存在再点「确定」。
+
+## 13. 抓包 API 快速通道（2026-11 实证）
+
+> 除浏览器 UI 外，API 中心后台的注册/上架接口已抓包，可直接用 `auth token api-center` 的 Bearer token 调后端 API，适合批量/重复操作。
+
+### 13.1 鉴权与基础信息
+
+```text
+Base: https://api-admin-jmbos-uat.jomoo.com/api
+Headers:
+  Authorization: Bearer <auth token api-center>
+  systemid: 100837377
+  Content-Type: application/json
+```
+
+- token 来自 `auth token api-center` 或 `~/.auth-center/apps/api-center/config.json`。
+- 注册页 `dfCode`：`1518912c-8a9f-42df-9f9a-d90b7abf3529`
+- 服务列表 `dfCode`：`aa700187-c63a-4924-a285-e4cb9ba74614`
+
+### 13.2 已抓包端点
+
+| 操作 | Method | Path | Body |
+|---|---|---|---|
+| 列表 | POST | `/api-interface/apiRegisterPage?dfCode=<dfCode>` | `{currentPage,pageSize,dfCode}` |
+| 详情 | GET | `/api-interface/apiInterfaceDetailForUpdate?id=<id>` | - |
+| Body 参数 | POST | `/api-interface-param/getRequestParmsByInterfaceId?id=<id>` | `{id,paramType:1}` |
+| Query 参数 | POST | 同上 | `{id,paramType:2}` |
+| Header 参数 | POST | 同上 | `{id,paramType:3}` |
+| Cookie 参数 | POST | 同上 | `{id,paramType:4}` |
+| 响应参数 | POST | `/api-interface-param/getResponseParmsByInterfaceId?id=<id>` | `{id}` |
+| 状态码 | POST | `/api-interface-status-code/getListByInterfaceId?id=<id>` | `{id,currentPage:1,pageSize:20}` |
+| 新增 | POST | `/api-interface/interfaceRegister` | 完整注册 payload |
+| 更新 | POST | `/api-interface/interfaceRegisterUpdateShelves?dfCode=<dfCode>&id=<id>` | 完整注册 payload + `id` |
+| 上架 | POST | `/api-interface/onShelvesStatus?id=<id>` | `{id}` |
+| 下架 | POST | `/api-interface/offLineStatus?id=<id>` | `{id}` |
+| 复制 | POST | `/api-interface/interfaceCopy?id=<id>` | `{id}` |
+
+### 13.3 快速脚本
+
+`scripts/api-center-api.mjs` 已封装列表/详情/上架/下架/复制/新增/更新：
+
+```bash
+node ~/.agents/skills/api-center-register/scripts/api-center-api.mjs list 1 10
+node ~/.agents/skills/api-center-register/scripts/api-center-api.mjs detail 2947
+node ~/.agents/skills/api-center-register/scripts/api-center-api.mjs publish 2947
+node ~/.agents/skills/api-center-register/scripts/api-center-api.mjs unpublish 2947
+node ~/.agents/skills/api-center-register/scripts/api-center-api.mjs copy 2947
+node ~/.agents/skills/api-center-register/scripts/api-center-api.mjs create payload.json
+node ~/.agents/skills/api-center-register/scripts/api-center-api.mjs update 2947 payload.json
+```
+
+新增 payload 关键字段（实测）：
+
+```json
+{
+  "apiServiceId": "903",
+  "name": "接口名称",
+  "interfaceType": "1",
+  "interfaceTypeName": "HTTP",
+  "requestType": "1",
+  "functionType": "1",
+  "safeLevel": "1",
+  "isNeedCache": "-1",
+  "isHideLogResponse": "0",
+  "serviceAddress": "https://api-uat-pms.jomoo.com/",
+  "requestAddress": "/pms/pms-service/pms/<模块>/<方法>",
+  "connectTimeout": 2000,
+  "readTimeout": 2000,
+  "requestExample": "{}",
+  "responseExample": "{}",
+  "exceptionResponseExample": "{}",
+  "requestBodyParamList": [],
+  "requestQueryParamList": [],
+  "requestHeaderParamList": [],
+  "requestCookieParamList": [],
+  "responseParamList": [],
+  "statusCodeList": []
+}
+```
+
+### 13.4 注意事项
+
+- 更新 payload 是**全量覆盖**：先 `detail` 拉全量，改目标字段再 `update`，不要只传局部字段。
+- `requestAddressGateway`/`url` 可能出现双 `/pms/` 或双斜杠，但列表与在线测试按 `requestAddress` 正常转发；写后必须回读列表确认。
+- 删除端点未抓包，删除仍走 UI 行操作「删除」。
+- 在线测试仍建议走 UI 面板，确认请求/响应与注册示例一致。
+- 脚本与 HAR 含 Bearer token，禁止提交或长期落盘；抓包文件用完立即删除。
