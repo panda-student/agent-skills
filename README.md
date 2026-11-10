@@ -9,7 +9,7 @@
 | 技能 | 说明 | 文档 |
 |------|------|------|
 | [pms-dev-sop](skills/pms-dev-sop/) | PMS 项目开发交付 SOP：受理分诊 → 方案 → TDD 实施 → 评审 → 合并推送 → 禅道闭环 | [查看](skills/pms-dev-sop/SKILL.md) |
-| [simplify](skills/simplify/) | 代码审查工具，分级策略 + 多维度并行审查（复用/单一职责/质量/性能） | [查看](skills/simplify/SKILL.md) |
+| [codescan](skills/codescan/) | 代码审查：codescan CLI 确定性扫描（jscpd/PMD/ESLint/vue-tsc/knip/ast-grep）+ 模型兜底语义判断 | [查看](skills/codescan/SKILL.md) |
 | [vitest](skills/vitest/) | 前端 vitest 单测经验（.vue 组件测试配置与依赖隔离） | [查看](skills/vitest/SKILL.md) |
 | [cherry-pick](skills/cherry-pick/) | 按禅道编号挑选特性分支提交同步到当前分支 | [查看](skills/cherry-pick/SKILL.md) |
 | [gitlab-operate](skills/gitlab-operate/) | GitLab CI/CD 流水线触发、轮询、日志查看与按序部署 | [查看](skills/gitlab-operate/SKILL.md) |
@@ -34,7 +34,6 @@
 | [rancher-ops](skills/rancher-ops/) | Rancher 容器平台：查看 Pod 日志、确认部署是否生效 | [查看](skills/rancher-ops/SKILL.md) |
 | [nacos-ops](skills/nacos-ops/) | Nacos 注册中心：入口拓扑与服务注册状态排查 | [查看](skills/nacos-ops/SKILL.md) |
 | [ibpm-ops](skills/ibpm-ops/) | 通过 ibpm-cli 查询/修改宏天 IBPM 流程定义与运行时实例 | [查看](skills/ibpm-ops/SKILL.md) |
-| [manage-ibpm-flow](skills/manage-ibpm-flow/) | 通过 ibpm-cli 查询/修改/新建 IBPM 流程定义 | [查看](skills/manage-ibpm-flow/SKILL.md) |
 
 ### 文档、工时与办公
 
@@ -102,3 +101,11 @@ git clone https://github.com/panda-student/agent-skills.git ~/.agents
 # 将需要的技能复制到你所用 Agent 的技能目录（以 Claude Code 为例）
 cp -r ~/.agents/skills/<技能名> ~/.claude/skills/
 ```
+
+## 仓库维护
+
+本仓库只同步**自研私有技能**;公共技能(安装器来源)由 `.gitignore` 白名单机制自动排除:
+
+- `scripts/update-gitignore.py` 依据 `.skill-lock.json`(sourceType=github)与 cc-switch 数据库(repo 来源)重建白名单——公共技能默认忽略,新增自研技能后重跑即可
+- `scripts/hooks/pre-commit` 提交前自动重建白名单,忘跑脚本也会被拦下
+- **新机器克隆后执行一次**:`git config core.hooksPath scripts/hooks`

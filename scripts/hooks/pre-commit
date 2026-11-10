@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# 提交前自动重建私有技能白名单,防止公共技能被同步进私有仓库
+cd "$(git rev-parse --show-toplevel)" || exit 1
+python scripts/update-gitignore.py >/dev/null 2>&1 || exit 0  # 脚本异常时不阻塞提交
+if ! git diff --quiet -- .gitignore; then
+  echo "⚠ .gitignore 私有技能白名单已自动更新(有技能增减),请执行 git add .gitignore 后重新提交"
+  exit 1
+fi

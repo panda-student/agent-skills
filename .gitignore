@@ -6,3 +6,36 @@ node_modules/
 skills/weekly-report/config/
 .openidea/
 .skill-lock.json
+
+# >>> skills-private-whitelist(由 scripts/update-gitignore.py 生成,勿手改)
+skills/*
+!skills/anyshare-ops/
+!skills/api-center-register/
+!skills/api-ops/
+!skills/auth-center/
+!skills/cc-switch-sync/
+!skills/cherry-pick/
+!skills/codescan/
+!skills/daily-report/
+!skills/dbx-ops/
+!skills/e2e-ops/
+!skills/gitlab-operate/
+!skills/ibpm-ops/
+!skills/issue-sop/
+!skills/learn/
+!skills/livebos/
+!skills/nacos-ops/
+!skills/oss-sop/
+!skills/pms-dev-sop/
+!skills/pms-menu-config/
+!skills/qqmail-ops/
+!skills/rancher-ops/
+!skills/skill-builder/
+!skills/start-pms-backend/
+!skills/task-wrapup/
+!skills/vault-ops/
+!skills/verify-issue/
+!skills/vitest/
+!skills/weekly-report/
+!skills/yaak-ops/
+# <<< skills-private-whitelist
