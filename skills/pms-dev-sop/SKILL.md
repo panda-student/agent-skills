@@ -81,6 +81,6 @@ description: PMS 项目开发交付 SOP：受理分诊 → 前期确认 → 方�
 - 实施必建 git worktree，全部改动树内；强制 TDD，豁免须经用户确认
 - 评审未通过不提交；推送后必须删除已合并 worktree，禁止遗留
 - 提交只发生在 uat，dev 只作镜像；uat→dev 全量同步只走 cherry-pick，禁止 merge 整个 uat；同步完切回 uat
-- 工具红线：数据库一律 `dbx MCP`（mcp__dbx__*）；凭据一律本地密码管理器 MCP（mcp_vault_*），禁止硬编码；接口操作一律 `yaak-ops`（SOP 层，命令细节落 `use-yaak`），禁止终端 curl
+- 工具红线：数据库一律 `dbx` CLI（见 dbx-ops 技能，MCP 形态已于 2026-11-10 移除）；凭据一律 `vault` CLI（见 vault-ops 技能），禁止硬编码、禁止读仓库配置文件里的密码；接口操作一律 `yaak-ops`（SOP 层，命令细节落 `use-yaak`），禁止终端 curl
 - 「验证通过」以 UAT 部署后终验为准且逐项出示证据，无证据按未验证处理；本地冒烟不作通过依据
 - 规格书单元格删除线 = 需求作废，不得作为必填/校验依据；字段物理删列须目标环境新镜像生效后执行
