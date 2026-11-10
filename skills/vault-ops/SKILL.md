@@ -5,7 +5,7 @@ description: 通过 vault CLI 操作本机凭据密码库（vault.exe）——�
 
 # vault CLI（凭据密码库）
 
-> 封装说明：底层 `D:/vault/vault.exe --mcp` 是纯 MCP 二进制，`vault` 命令是 MCP stdio 客户端 shim。源码 `~/.agents/cli/mcp-shim-cli/`（npm link 装到 /d/nodejs）；ZCode 的 MCP 形态配置已于 2026-11-10 移除，**一律走 CLI**。路径可用环境变量 `VAULT_BIN` 覆盖。
+> 封装说明：底层 `D:/vault/vault.exe --mcp` 是纯 MCP 二进制，`vault` 命令是 MCP stdio 客户端 shim。源码 `~/.agents/cli/vault-cli/`（领域逻辑）+ `~/.agents/cli/mcp-stdio-client/`（公共 MCP 客户端，file: 依赖），`npm install && npm link` 装到 /d/nodejs；ZCode 的 MCP 形态配置已于 2026-11-10 移除，**一律走 CLI**。路径可用环境变量 `VAULT_BIN` 覆盖。
 
 ## 命令速查
 
@@ -43,4 +43,4 @@ description: 通过 vault CLI 操作本机凭据密码库（vault.exe）——�
 - search 输出为 JSON（含结构化信息），jq/python 解析时按 `results[0].entries[]` 取
 - 导出走桌面端人工确认（export_entries 需桌面窗口打开且输入口令），CLI 调用后两分钟无响应需重试
 - 条目 id 是唯一句柄：先 search 后 get/fill，不要凭记忆拼 id
-- 换机还原：`~/.agents/cli/mcp-shim-cli/` 内 `npm link`；凭据数据本体在 `D:/vault/data`（不随仓库走）
+- 换机还原：`~/.agents/cli/vault-cli/` 内 `npm install && npm link`；凭据数据本体在 `D:/vault/data`（不随仓库走）

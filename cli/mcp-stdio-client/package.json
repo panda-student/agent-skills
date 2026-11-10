@@ -1,0 +1,13 @@
+{
+  "name": "mcp-stdio-client",
+  "version": "1.0.0",
+  "description": "最小 MCP stdio 客户端：spawn MCP server 二进制，initialize 握手，tools/list，tools/call（供各域 CLI 以 file: 依赖复用）",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

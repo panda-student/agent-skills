@@ -5,7 +5,7 @@ description: 通过 dbx CLI 操作数据库与 Nacos——查表结构、执行 
 
 # dbx CLI（数据库 / Nacos）
 
-> 封装说明：底层是 DBX 的纯 MCP 二进制（不支持命令行直调），`dbx` 命令是 MCP stdio 客户端 shim。源码 `~/.agents/cli/mcp-shim-cli/`（npm link 装到 /d/nodejs）；ZCode 的 MCP 形态配置已于 2026-11-10 移除，**一律走 CLI**。二进制路径可用环境变量 `DBX_BIN` 覆盖。
+> 封装说明：底层是 DBX 的纯 MCP 二进制（不支持命令行直调），`dbx` 命令是 MCP stdio 客户端 shim。源码 `~/.agents/cli/dbx-cli/`（领域逻辑）+ `~/.agents/cli/mcp-stdio-client/`（公共 MCP 客户端，file: 依赖），`npm install && npm link` 装到 /d/nodejs；ZCode 的 MCP 形态配置已于 2026-11-10 移除，**一律走 CLI**。二进制路径可用环境变量 `DBX_BIN` 覆盖。
 
 ## 命令速查
 
@@ -49,4 +49,4 @@ description: 通过 dbx CLI 操作数据库与 Nacos——查表结构、执行 
 - 写操作（UPDATE/DELETE/DDL）属危险动作，执行前向用户确认；改数后保留原值证据（SELECT 快照）
 - 凭据不在 dbx 里取：连接密码等原料走 vault CLI（见 vault-ops 技能）；系统登录/token 链路走 auth-center
 - Nacos 拓扑坑（dev 入口的 pms-uat 命名空间为空属正常）见 nacos-ops 技能；dbx 的 nacos 连接已按正确环境配好，优先用
-- 换机还原：`~/.agents/cli/mcp-shim-cli/` 内 `npm link` 即恢复全局命令；连接配置在 DBX 桌面端数据目录，不随本仓库走
+- 换机还原：`~/.agents/cli/dbx-cli/` 内 `npm install && npm link` 即恢复全局命令；连接配置在 DBX 桌面端数据目录，不随本仓库走

@@ -1,0 +1,15 @@
+{
+  "name": "dbx-cli",
+  "version": "1.0.0",
+  "description": "数据库/Nacos CLI：封装 DBX 的纯 MCP 二进制为子命令——连接/查询/批量脚本/表结构/Nacos 配置",
+  "type": "module",
+  "bin": {
+    "dbx": "bin/dbx.js"
+  },
+  "dependencies": {
+    "mcp-stdio-client": "file:../mcp-stdio-client"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

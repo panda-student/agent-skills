@@ -1,0 +1,15 @@
+{
+  "name": "vault-cli",
+  "version": "1.0.0",
+  "description": "凭据密码库 CLI：封装 vault.exe（纯 MCP 二进制）为子命令——搜条目/读元数据/密文落文件",
+  "type": "module",
+  "bin": {
+    "vault": "bin/vault.js"
+  },
+  "dependencies": {
+    "mcp-stdio-client": "file:../mcp-stdio-client"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
