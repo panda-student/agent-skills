@@ -149,7 +149,7 @@ severity 过滤按级别:快速只保留 high;标准保留 high+medium;深度全
 
 ## codescan CLI 参考
 
-- 位置:CLI 在公共工具目录 `C:/Users/Administrator/.agents/cli/codescan/`(npm link 注册全局命令 `codescan`,任意目录可直接调用;PMD 发行包随 CLI 包携带;详见其 README.md)
+- 位置:CLI 在公共工具目录 `C:/Users/Administrator/.agents/cli/codescan/`(npm link 注册全局命令 `codescan`,任意目录可直接调用;PMD 为公共依赖,首次 Java 扫描自动下载,不入 git 仓库;详见其 README.md)
 - 全局命令不可用时兜底:`node C:/Users/Administrator/.agents/cli/codescan/cli.js <目标>`
 - 常用:`--diff <ref>` 只扫新增行 | `--format text` 人读 | `--tools jscpd,astgrep,pmd,eslint,tsc,knip` 指定子集 | `--max-findings N`
 - 语言路由:java→pmd+jscpd+ast-grep;js/vue→eslint+knip+jscpd+ast-grep;ts→tsc(依赖未装自动跳过)+knip+jscpd+ast-grep

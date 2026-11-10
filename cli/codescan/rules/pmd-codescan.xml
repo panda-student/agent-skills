@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="codescan"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+  <description>codescan 技能精选规则:质量(bug/异常处理) + 单一职责信号 + KISS 复杂度信号</description>
+
+  <!-- ===== 质量:异常处理 ===== -->
+  <rule ref="category/java/design.xml/AvoidCatchingGenericException"/>
+  <rule ref="category/java/design.xml/AvoidThrowingRawExceptionTypes"/>
+  <rule ref="category/java/design.xml/AvoidThrowingNullPointerException"/>
+  <rule ref="category/java/errorprone.xml/EmptyCatchBlock"/>
+  <rule ref="category/java/errorprone.xml/BrokenNullCheck"/>
+  <rule ref="category/java/errorprone.xml/DoNotThrowExceptionInFinally"/>
+  <rule ref="category/java/errorprone.xml/ConstructorCallsOverridableMethod"/>
+
+  <!-- ===== 质量:潜在 bug ===== -->
+  <rule ref="category/java/errorprone.xml/EqualsNull"/>
+  <rule ref="category/java/errorprone.xml/UselessOperationOnImmutable"/>
+  <rule ref="category/java/errorprone.xml/MisplacedNullCheck"/>
+
+  <!-- ===== 单一职责:类级信号 ===== -->
+  <rule ref="category/java/design.xml/GodClass"/>
+  <rule ref="category/java/design.xml/TooManyMethods"/>
+  <rule ref="category/java/design.xml/TooManyFields"/>
+  <rule ref="category/java/design.xml/ExcessiveClassLength"/>
+
+  <!-- ===== KISS:复杂度信号 ===== -->
+  <rule ref="category/java/design.xml/CyclomaticComplexity"/>
+  <rule ref="category/java/design.xml/ExcessiveMethodLength"/>
+  <rule ref="category/java/design.xml/ExcessiveParameterList"/>
+  <rule ref="category/java/design.xml/NcssMethodCount"/>
+</ruleset>

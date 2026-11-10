@@ -1,0 +1,11 @@
+{
+  "name": "codescan",
+  "version": "1.0.0",
+  "description": "确定性代码质量扫描 CLI:jscpd/ast-grep/PMD/ESLint/vue-tsc/knip 六工具统一封装,供 codescan 技能调用",
+  "bin": {
+    "codescan": "cli.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,135 @@
+'use strict';
+const fs = require('fs');
+const path = require('path');
+const { sh, disp } = require('../util');
+
+const RULESET = path.join(__dirname, '..', '..', 'rules', 'pmd-codescan.xml');
+// PMD 是公共依赖,不入 git 仓库:首次使用自动下载官方 release 到包目录(已 gitignore)
+const PMD_VERSION = '6.55.0'; // 注意:PMD 7 需 JDK11+,本机 Java 8 用 6.x 最后版
+const PMD_HOME = path.join(__dirname, '..', '..', `pmd-bin-${PMD_VERSION}`);
+const PMD_URL = `https://github.com/pmd/pmd/releases/download/pmd_releases/${PMD_VERSION}/pmd-bin-${PMD_VERSION}.zip`;
+const HOME = path.join(__dirname, '..', '..');
+
+/** zip 魔数校验(PK):防代理故障产出"错误页+续传字节"的混合文件 */
+function isZip(p) {
+  try {
+    const fd = fs.openSync(p, 'r');
+    const buf = Buffer.alloc(4);
+    fs.readSync(fd, buf, 0, 4, 0);
+    fs.closeSync(fd);
+    return buf[0] === 0x50 && buf[1] === 0x4b;
+  } catch {
+    return false;
+  }
+}
+
+/** 用 Windows 自带 bsdtar 解压(注意:PATH 里 Git 的 GNU tar 不支持 zip,必须绝对路径;
+ *  且 -C 带盘符冒号会被解析成远程主机,必须用相对路径 + cwd) */
+function extractPmd(zipName) {
+  const bsdTar = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tar.exe');
+  sh(`"${disp(bsdTar)}" -xf ${zipName} -C .`, { cwd: HOME, timeoutMs: 300000 });
+  return fs.existsSync(path.join(PMD_HOME, 'bin', 'pmd.bat'));
+}
+
+/** 确保 PMD 可执行;缺失时自动下载解压(curl 断点续传 + bsdtar) */
+function ensurePmd() {
+  if (fs.existsSync(path.join(PMD_HOME, 'bin', 'pmd.bat'))) return { ok: true };
+  const zipName = `pmd-bin-${PMD_VERSION}.zip`;
+  const zipAbs = path.join(HOME, zipName);
+  fs.mkdirSync(HOME, { recursive: true });
+  // GitHub 直连在本机网络下极慢,优先走 ghfast.top 镜像(与 git remote fetch 同策略),直连兜底
+  const urls = [
+    `https://ghfast.top/${PMD_URL}`,
+    PMD_URL,
+  ];
+  const done = () => {
+    try { fs.unlinkSync(zipAbs); } catch { /* 临时 zip 清理失败无碍 */ }
+    return { ok: true, downloaded: true };
+  };
+  for (const url of urls) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      // 已有合法 zip(此前可能已下完)先直接尝试解压
+      if (fs.existsSync(zipAbs) && isZip(zipAbs) && extractPmd(zipName)) return done();
+      if (fs.existsSync(zipAbs) && !isZip(zipAbs)) {
+        try { fs.unlinkSync(zipAbs); } catch { /* 占用时忽略,下次重试 */ }
+      }
+      // -C - 断点续传:慢网络下多次重试可累积完成
+      const dl = sh(`curl -sSL -C - -o ${zipName} "${url}"`, { cwd: HOME, timeoutMs: 900000 });
+      if (dl.code === 0 && fs.existsSync(zipAbs) && fs.statSync(zipAbs).size > 10000000 && isZip(zipAbs)) {
+        if (extractPmd(zipName)) return done();
+        return { ok: false, error: 'PMD 解压失败(下载完整但解压异常,可手动解压 ' + disp(zipAbs) + ' 到 ' + disp(PMD_HOME) + ')' };
+      }
+    }
+  }
+  return {
+    ok: false,
+    error: `PMD 自动下载失败(已重试)。请手动下载 ${PMD_URL} 解压到 ${disp(PMD_HOME)},或用 --pmd-home 指定已有安装`,
+  };
+}
+
+// 规则 → 维度(未列出的默认 quality)
+const DIMENSION = {
+  GodClass: 'srp', TooManyMethods: 'srp', TooManyFields: 'srp', ExcessiveClassLength: 'srp',
+  CyclomaticComplexity: 'kiss', ExcessiveMethodLength: 'kiss', ExcessiveParameterList: 'kiss',
+  NcssMethodCount: 'kiss',
+};
+// 类级问题:diff 过滤时按"文件有变更"匹配(类声明行本身可能不在 diff 中)
+const FILE_LEVEL_RULES = new Set(['GodClass', 'TooManyMethods', 'TooManyFields', 'ExcessiveClassLength']);
+
+/** PMD 6.55 静态分析(Java):异常处理/潜在 bug + SRP/KISS 复杂度信号 */
+async function run(ctx) {
+  // --pmd-home 指向已存在的安装;不指定则用包内默认位置,缺失自动下载
+  const pmdHome = ctx.args.pmdHome ? path.resolve(ctx.args.pmdHome) : PMD_HOME;
+  if (!fs.existsSync(path.join(pmdHome, 'bin', 'pmd.bat'))) {
+    if (ctx.args.pmdHome) {
+      return { status: 'error', detail: `--pmd-home 指定目录不存在: ${disp(pmdHome)}`, findings: [] };
+    }
+    const ensured = ensurePmd();
+    if (!ensured.ok) return { status: 'error', detail: ensured.error, findings: [] };
+  }
+  const bat = path.join(pmdHome, 'bin', 'pmd.bat');
+  const r = sh(
+    `"${disp(bat)}" -d "${disp(ctx.targetAbs)}" -R "${disp(RULESET)}" -f xml ` +
+    `-language java -version 1.8 --no-cache`,
+    { cwd: HOME, timeoutMs: ctx.toolTimeout },
+  );
+  const out = r.stdout || '';
+  // stderr 可能是 GBK 乱码,只用 ASCII 片段判断
+  const errText = r.stderr || '';
+  if (/Cannot load ruleset|No rules found/.test(errText)) {
+    const m = errText.match(/Unable to find referenced rule \w+/);
+    return { status: 'error', detail: 'ruleset 加载失败: ' + (m ? m[0] : '见 stderr'), findings: [] };
+  }
+  if (!out.includes('<violation')) {
+    if (/Exception|Error/.test(errText) && !/deprecated/.test(errText)) {
+      return { status: 'error', detail: 'PMD 运行错误(stderr 前 300 字符): ' + errText.slice(0, 300), findings: [] };
+    }
+    return { status: 'ok', detail: 'no violations', findings: [] };
+  }
+  const findings = [];
+  const fileRe = /<file name="([^"]+)">([\s\S]*?)<\/file>/g;
+  let fm;
+  while ((fm = fileRe.exec(out))) {
+    const file = disp(fm[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&'));
+    const vioRe = /<violation([^>]*)>([\s\S]*?)<\/violation>/g;
+    let vm;
+    while ((vm = vioRe.exec(fm[2]))) {
+      const attrs = vm[1];
+      const get = (k) => { const m = attrs.match(new RegExp(k + '="([^"]*)"')); return m ? m[1] : ''; };
+      const rule = get('rule');
+      const line = parseInt(get('beginline'), 10) || 0;
+      const priority = parseInt(get('priority'), 10) || 3;
+      const msg = vm[2].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 300);
+      findings.push({
+        tool: 'pmd', rule, dimension: DIMENSION[rule] || 'quality',
+        severity: priority <= 2 ? 'high' : priority === 3 ? 'medium' : 'low',
+        file, line,
+        message: msg,
+        fileLevel: FILE_LEVEL_RULES.has(rule),
+      });
+    }
+  }
+  return { status: 'ok', detail: `${findings.length} violations`, findings };
+}
+
+module.exports = { name: 'pmd', run };

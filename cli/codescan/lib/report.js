@@ -1,0 +1,48 @@
+'use strict';
+const DIM_META = {
+  reuse: { icon: '🔁', label: '复用问题(确定性)' },
+  srp: { icon: '🎯', label: '单一职责信号(确定性)' },
+  quality: { icon: '📋', label: '质量问题(确定性)' },
+  performance: { icon: '⚡', label: '性能候选(确定性粗筛,需复核)' },
+  kiss: { icon: '🧩', label: 'KISS/死代码候选(确定性粗筛,需复核)' },
+};
+
+function toText(report) {
+  const lines = [];
+  lines.push(`# codescan 报告`);
+  lines.push(`目标: ${report.target}`);
+  lines.push(`语言: ${report.detected.join(', ')}  |  仓库: ${report.repoRoot || '非 git 仓库'}`);
+  if (report.diff) {
+    lines.push(`diff: ${report.diff.ref} → ${report.diff.files} 个文件有新增行${report.diff.error ? ' (⚠ ' + report.diff.error + ')' : ''}`);
+  }
+  lines.push('');
+  lines.push(`## 工具状态`);
+  for (const [name, t] of Object.entries(report.tools)) {
+    lines.push(`- ${name}: ${t.status}${t.detail ? ` — ${t.detail}` : ''} (${t.findings} 项, ${t.ms}ms)`);
+  }
+  lines.push('');
+  const byDim = {};
+  for (const f of report.findings) (byDim[f.dimension] = byDim[f.dimension] || []).push(f);
+  for (const dim of ['reuse', 'srp', 'quality', 'performance', 'kiss']) {
+    const fs = byDim[dim] || [];
+    if (!fs.length) continue;
+    const meta = DIM_META[dim];
+    lines.push(`## ${meta.icon} ${meta.label} (${fs.length} 项)`);
+    for (const f of fs) {
+      lines.push(`- [${f.severity}] ${shortPath(report, f.file)}:${f.line} — ${f.message}  {${f.tool}:${f.rule}}`);
+    }
+    lines.push('');
+  }
+  if (report.truncated) lines.push(`⚠ 还有 ${report.truncated} 项低优先级发现被截断(--max-findings 调整)`);
+  if (!report.findings.length) lines.push(`(工具未发现问题)`);
+  return lines.join('\n');
+}
+
+function shortPath(report, file) {
+  if (report.repoRoot && file.toLowerCase().startsWith(report.repoRoot.toLowerCase())) {
+    return file.slice(report.repoRoot.length + 1) || file;
+  }
+  return file;
+}
+
+module.exports = { toText };

@@ -1,0 +1,14 @@
+id: perf-nested-loop-java
+language: Java
+severity: hint
+note: 嵌套循环(O(n^2) 候选,需确认内层是否依赖外层数据规模)
+rule:
+  any:
+    - kind: for_statement
+    - kind: enhanced_for_statement
+    - kind: while_statement
+  has:
+    any:
+      - kind: for_statement
+      - kind: enhanced_for_statement
+      - kind: while_statement

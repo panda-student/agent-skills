@@ -7,6 +7,10 @@ skills/weekly-report/config/
 .openidea/
 .skill-lock.json
 
+# PMD 公共依赖:codescan 首次使用自动下载官方 release,不入库
+cli/codescan/pmd-bin-*/
+cli/codescan/pmd-bin-*.zip
+
 # >>> skills-private-whitelist(由 scripts/update-gitignore.py 生成,勿手改)
 skills/*
 !skills/anyshare-ops/

@@ -1,0 +1,15 @@
+id: perf-db-call-in-loop-java
+language: Java
+severity: warning
+note: 循环内的查询/远程调用(N+1 候选,含误报,需确认是否为 Mapper/Dao/Service 调用)
+rule:
+  pattern: $OBJ.$FUNC($$$ARGS)
+  inside:
+    any:
+      - kind: for_statement
+      - kind: enhanced_for_statement
+      - kind: while_statement
+      - kind: do_statement
+constraints:
+  FUNC:
+    regex: ^(select|query|find|get|list|count|insert|update|delete|load|fetch)[A-Z_].*
