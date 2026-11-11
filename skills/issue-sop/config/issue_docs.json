@@ -1,8 +1,11 @@
 {
   "_说明": "PMS 项目问题清单维护的两份腾讯文档。梳理问题时默认扫描两份文档的全部 tab（含隐藏 tab），不能只看 URL 里的 ?tab=。",
   "default_scope": "all_tabs_all_documents",
+  "default_status_filter": "待处理",
+  "status_filter_note": "默认只梳理状态为「待处理」的行；待验证/待解决/待确认/关闭/空值均不纳入，除非用户显式指定其他状态。",
   "note_author": "孙志强",
   "note_prefix_format": "{author}{date}：",
+  "note_prefix_rule": "署名跟实际操作人走（谁回复/谁操作就署谁）；当前只有孙志强使用本技能，实际写入统一为「孙志强YYYY-MM-DD：」。与责任人、提报人无关。",
   "match_person": "孙志强",
   "documents": {
     "internal": {
@@ -11,6 +14,7 @@
       "header_row": 0,
       "responsibility_column": "责任人",
       "status_column": "状态",
+      "status_filter": "待处理",
       "tabs": [
         { "name": "项目规划", "sheet_id": "BB08J2", "hidden": false },
         { "name": "项目立项", "sheet_id": "8po4fa", "hidden": false },
@@ -28,6 +32,7 @@
       "header_row": 1,
       "responsibility_column": "问题处理人",
       "status_column": "问题处理状态",
+      "status_filter": "待处理",
       "tabs": [
         { "name": "UAT1问题清单(副本1)", "sheet_id": "862xnp", "hidden": false },
         { "name": "UAT1问题清单", "sheet_id": "BB08J2", "hidden": true },
