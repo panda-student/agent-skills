@@ -15,7 +15,6 @@ cli/codescan/pmd-bin-*.zip
 skills/*
 !skills/anyshare-ops/
 !skills/api-center-register/
-!skills/api-ops/
 !skills/auth-center/
 !skills/cc-switch-sync/
 !skills/cherry-pick/
