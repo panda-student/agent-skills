@@ -99,7 +99,7 @@ git log origin/<source> --not origin/<target> --oneline --no-merges --reverse
 git checkout <target> && git pull   # 切换前确认工作区干净，有未提交改动先与用户确认处理方式
 ```
 若目标分支恰为当前分支，跳过切换但仍需 `git pull` 对齐最新。
-⚠️ `checkout` 报目标分支已被 worktree 占用时，禁止强拆他人树：按项目约定的标准路径新建临时树挂载目标分支（`git worktree add <标准路径>\<target> <target>`），在树内完成 pull + cherry-pick + push 后回收临时树。
+⚠️ `checkout` 报目标分支已被 worktree 占用时，禁止强拆他人树：按 `worktree-ops` 建临时树挂载目标分支（建树/回收与安全判定以该技能为准），在树内完成 pull + cherry-pick + push 后按 `worktree-ops` 回收临时树。
 
 ### 差异4：双线演进同名功能，先做文件级终态对比（2026-10-26 实证）
 dev 与 uat 曾**各自独立实现同一功能**（同名 API 文件、同名页面）时，`git cherry` 因 patch-id 不同把大量等价提交标 `+`，逐条 pick 必然冲突（add/add、content 冲突泥潭）。正确姿势：

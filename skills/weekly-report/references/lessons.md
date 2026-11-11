@@ -3,8 +3,8 @@
 持续追加。格式：问题 → 根因 → 解法。
 
 ## 最终定案：腾讯文档 API 直写（2026-10-23 第四轮收敛）
-- **结论：API 直写记录是周报三表的唯一正解**——无焦点/定位/分组/canvas 问题，5 秒写完三表；现统一经 `tencent-docs` 本地 CLI 执行。
-- **通用操作**（端点、token、字段值格式、选项映射、分页、写后校验）统一见 `tencent-docs`；本节只保留周报三表的业务元数据与落位经验。
+- **结论：API 直写记录是周报三表的唯一正解**——无焦点/定位/分组/canvas 问题，5 秒写完三表；现统一经 `tencent-docs` 执行。
+- **通用操作**（端点、token、字段值格式、选项映射、分页、写后校验）统一见 `tencent-docs-ops` 技能；本节只保留周报三表的业务元数据与落位经验。
 - **周报三表元数据**：`list_tables` 拿 sheet_id（日报 ss_3n8xi6 / 周报汇总 trhuGh / 下周计划 tfR4dX）；`list_fields` 的 singleSelect options 含 id；`list_records` 的 view_id 影响行序（SZQ 视图 vOj1HV）。
 - **记录落位**：add_records 追加到表尾，日期分组自动归位（游离区问题不存在）；delete_records 按 record_id 删，配合 list_records 可做任意清理。
 - **防重**：add 前若用户手填过同周数据会重复 → AI 拉全量记录，按 日期+成员+内容 分组，保留最后编辑时间最早的一条，其余删除。
@@ -17,13 +17,13 @@
 
 ## PowerShell / Node 互操作
 
-通用坑（内嵌引号被剥离、中文 GBK 编码、临时 JSON、UTF-8 输出解码）统一见 `tencent-docs`；周报 SOP 按该约定执行。
+通用坑（内嵌引号被剥离、中文 GBK 编码、临时 JSON、UTF-8 输出解码）统一见 `tencent-docs-ops` 技能；周报 SOP 按该约定执行。
 
 ## 禅道 API（现由 zentao CLI 封装，以下保留供排障）
 - **`GET /tasks` 返回重复且不全**：改用 `GET /executions/{executionId}/tasks?limit=200` 过滤 `assignedTo.account`；现直接用 `zentao my-tasks <执行ID>`。
 - **任务列表分页可能截断**：早年脚本 `page > 50` 提前退出导致大执行集漏任务 → 怀疑遗漏时对照禅道页面核对。
 - **任务详情 `desc` 可能为空**：需求范围要看 `storyTitle`，或让用户从禅道页面补描述。
-- **Token 认证**：`POST /api.php/v1/tokens` body `{account,password}` → header `Token: <token>`。自签证书需 `rejectUnauthorized:false`。现由 zentao CLI 经 auth-center 完成（凭据 `~/.auth-center/apps/zentao-cli/sso-credentials.json`，token 缓存 `~/.auth-center/apps/zentao-cli/config.json`）。
+- **Token 认证**：`POST /api.php/v1/tokens` body `{account,password}` → header `Token: <token>`。自签证书需 `rejectUnauthorized:false`。现由 zentao CLI 经 auth-center 完成（密码按 `vault-ops` 技能维护，运行时取用不落盘；token 缓存 `~/.auth-center/apps/zentao-cli/config.json`）。
 - **eval/JS 传中文**：Node 侧 HTTPS 无问题；但 agent-browser `eval --stdin` 传中文会编码损坏 → 用 base64 编码 JS（`eval -b`）或 `String.fromCharCode`。
 - **tokens 接口间歇性失败**：连续快速调用会返回空对象/无效 token（服务端限流）。→ 拿 token 后校验存在性，失败 sleep 2~3s 重试（最多 5~8 次）；批量调用每步 sleep 300~500ms。
 
@@ -40,7 +40,7 @@
 
 ## 腾讯文档浏览器自动化历史（已废弃，备查）
 
-- 当前统一用 `tencent-docs` 本地 CLI；通用操作见 `tencent-docs`。以下为早期 canvas/浏览器方案的历史坑，仅备查。
+- 当前统一用 `tencent-docs`；通用操作见 `tencent-docs-ops` 技能。以下为早期 canvas/浏览器方案的历史坑，仅备查。
 - **智能表格是 canvas 渲染**：snapshot 拿不到单元格，只有编辑器 text。操作靠：鼠标坐标点击 / 名称框（左上角，坐标约 (133,65)，跳转偶尔不生效）/ 键盘导航。
 - **视口与截图比例**：`agent-browser` 截图宽 992，实际视口 1912×922，比例 ≈1.9274。坐标换算错会点到邻列（曾把 L94 点成 M88 公式格）。先 `eval "window.innerWidth"` 确认。
 - **粘贴多行 TSV 会弹"拆分字段"确认框**：点"确定"才能按 `\t` 拆列。

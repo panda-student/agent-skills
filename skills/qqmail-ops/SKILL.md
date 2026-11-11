@@ -90,7 +90,7 @@ $Q = "$env:USERPROFILE\.agents\skills\qqmail-ops\scripts\qqmail.py"
 授权码不落常驻文件，每次使用前按 `vault-ops` 技能取用：
 
 - 通过 `vault-ops` 技能维护 `QQ邮箱` 条目（kind=api，secret=授权码）
-- 按 `vault-ops` 技能把授权码注入临时文件 `%TEMP%\qqmail-auth.txt`；脚本只读取该文件
+- 按 `vault-ops` 技能把授权码注入临时文件 `%TEMP%\vault-qqmail-authcode.tmp`；脚本只读取该文件
 - 用完立即删除；临时文件不得打印、不得放进仓库或技能目录
 
 授权码在 QQ 邮箱「设置 → 账号 → POP3/IMAP/SMTP 服务」生成，重置后旧码立即失效。

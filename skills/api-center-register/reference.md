@@ -219,12 +219,32 @@ window.ace.edit(document.querySelectorAll('.bosui-dialog')[2].querySelectorAll('
 - `tenant` 按环境：`pms-dev`（测试环境）、`pms-uat`（另一份）、生产需对应单独值
 - `dataId=gateway.yaml`, `group=DEFAULT_GROUP`
 
-> 下文命令中的账号密码由调用方按 `vault-ops` 技能取用后引用；密文不得出现在对话、终端回显或日志中。
+> 下文命令统一使用 `$nacosUser` / `$nacosPass` 变量，不写明文。
+
+### 凭据准备（每次任务开始）
+
+账号名取自 `vault-ops` 条目元数据，密码由 `vault-ops` 注入占位符；两者都不进入命令、对话或日志。
+
+```powershell
+$credFile = "$env:TEMP\vault-nacos-cred.tmp"
+@"
+username=<条目 account>
+password={{credential}}
+"@ | Set-Content -Encoding UTF8 $credFile
+# 按 vault-ops 技能把 nacos 条目的 secret 注入占位符
+vault fill <条目id> --field secret --file $credFile --mode replace
+$cred = ConvertFrom-StringData (Get-Content $credFile -Raw)
+$nacosUser = $cred.username
+$nacosPass = $cred.password
+# 任务结束：Remove-Item $credFile -Force
+```
+
+> 以下步骤与「凭据准备」在同一 PowerShell 会话执行；变量只在当前进程内使用，禁止打印。
 
 ### 9.1 读 YAML（核对现状）
 
-```bash
-curl "http://10.1.12.33:36032/nacos/v1/cs/configs?dataId=gateway.yaml&group=DEFAULT_GROUP&tenant=pms-dev&username=<nacos账号>&password=<nacos密码>"
+```powershell
+curl.exe -s "http://10.1.12.33:36032/nacos/v1/cs/configs?dataId=gateway.yaml&group=DEFAULT_GROUP&tenant=pms-dev&username=$nacosUser&password=$nacosPass"
 ```
 结果是完整的 YAML 文本，grep `exclude-path-patterns:` 就能看到当前白名单。
 
@@ -232,7 +252,7 @@ curl "http://10.1.12.33:36032/nacos/v1/cs/configs?dataId=gateway.yaml&group=DEFA
 
 ```powershell
 # Step 1. GET 保存到本地工作目录
-curl.exe -s "http://10.1.12.33:36032/nacos/v1/cs/configs?dataId=gateway.yaml&group=DEFAULT_GROUP&tenant=pms-dev&username=<nacos账号>&password=<nacos密码>" | Out-File -Encoding UTF8 -Force "gateway_<env>_before.yaml"
+curl.exe -s "http://10.1.12.33:36032/nacos/v1/cs/configs?dataId=gateway.yaml&group=DEFAULT_GROUP&tenant=pms-dev&username=$nacosUser&password=$nacosPass" | Out-File -Encoding UTF8 -Force "gateway_<env>_before.yaml"
 # Step 2. 用编辑器在 exclude-path-patterns 列表末尾追加一行（保持同样的 YAML 缩进：9 空格 + "- /pms/<模块>/**"）
 # Step 3. multipart/form-data 上传（⚠️ 禁止 --data-urlencode，会双编码）
 curl.exe -s -X POST "http://10.1.12.33:36032/nacos/v1/cs/configs" `
@@ -240,13 +260,14 @@ curl.exe -s -X POST "http://10.1.12.33:36032/nacos/v1/cs/configs" `
   -F "group=DEFAULT_GROUP" `
   -F "tenant=pms-dev" `
   -F "type=yaml" `
-  -F "username=<nacos账号>" `
-  -F "password=<nacos密码>" `
+  -F "username=$nacosUser" `
+  -F "password=$nacosPass" `
   -F "content=@gateway_<env>_before.yaml"
 # 期望返回 true。若返回 false 说明参数错。
 # Step 4. ⚠️ 必须立刻 GET 回读确认写入生效
-$back = curl.exe -s "http://10.1.12.33:36032/nacos/v1/cs/configs?dataId=gateway.yaml&group=DEFAULT_GROUP&tenant=pms-dev&username=<nacos账号>&password=<nacos密码>"
+$back = curl.exe -s "http://10.1.12.33:36032/nacos/v1/cs/configs?dataId=gateway.yaml&group=DEFAULT_GROUP&tenant=pms-dev&username=$nacosUser&password=$nacosPass"
 $back -match "/pms/<模块>/**"  # 必须 True 才算写入成功
+Remove-Item $credFile -Force   # 验证通过后清理临时凭据文件
 ```
 
 ### 9.3 刷新生效时序

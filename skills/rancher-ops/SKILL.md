@@ -16,7 +16,7 @@ description: Jomoo Rancher 容器平台操作指南——通过 rancher MCP 查�
 - Rancher Server：`https://rancher.jomoo.com`（v2.13.9-ent），API 端点 `/v3`
 - 集群：`c-9g5pt`（jm-c1-non-prod，RKE2 v1.33.12）
 - PMS 相关 namespace：`pms-uat` / `pms-dev`
-- 认证：Bearer Token 存 `vault-ops` 条目「Rancher API Token (Trae MCP)」（TTL 90 天，约 2027-02-02 过期）；取用按 `vault-ops` 技能，禁止落到配置或命令明文
+- 认证：Bearer Token 存 `vault-ops` 条目「Rancher API Token (Trae MCP)」（TTL 90 天，约 2027-02-02 过期）；取用按 `vault-ops` 技能，常驻配置只允许占位符注入，禁止手输、回显或提交仓库
 
 ## 场景 → 工具映射
 
@@ -44,7 +44,7 @@ description: Jomoo Rancher 容器平台操作指南——通过 rancher MCP 查�
 ## Token 管理与轮换
 
 - Token 过期症状：MCP 工具调用报 401/Unauthorized
-- 轮换流程：浏览器登录 Rancher → 头像 → Account and API Keys → 创建新 Key（No Scope，90 天）→ 更新 `C:\Users\JOMOO\AppData\Roaming\Trae CN\User\mcp.json` 的 `RANCHER_MCP_RANCHER_TOKEN` → 更新 `vault-ops` 条目（凭据写入见 `vault-ops` 技能，禁止明文过对话）→ 重启 Trae 或刷新 MCP
+- 轮换流程：浏览器登录 Rancher → 头像 → Account and API Keys → 创建新 Key（No Scope，90 天）→ 按 `vault-ops` 技能把新值以占位符注入 `C:\Users\JOMOO\AppData\Roaming\Trae CN\User\mcp.json` 的 `RANCHER_MCP_RANCHER_TOKEN`（先写占位符骨架，禁止手输明文）→ 同步更新 `vault-ops` 条目 → 重启 Trae 或刷新 MCP
 - 旧 token 惰性清理：Account and API Keys 列表删除失效条目
 
 ## 浏览器兜底路径（仅 MCP 覆盖不了时）

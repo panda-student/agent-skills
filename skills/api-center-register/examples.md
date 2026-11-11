@@ -8,12 +8,12 @@
 
 **场景**：接口已注册上架、服务端部署完成、但服务网关免 token 直连返回 401。决定走规则C（不改代码、不改注册地址、仅追加白名单）。
 
-> 账号密码按 `vault-ops` 技能取用；禁止明文写死在命令里。
+> 凭据准备见 [reference.md §9「凭据准备」](./reference.md#9-nacos-config-白名单读写操作手册)；下文使用 `$nacosUser` / `$nacosPass` 变量，不写明文。
 
 **Step 1 — 读当前 YAML 保存本地**：
 ```powershell
 $yamlPath = ".claude/tmp/gateway_pms-dev_before.yaml"
-curl.exe -s "http://10.1.12.33:36032/nacos/v1/cs/configs?dataId=gateway.yaml&group=DEFAULT_GROUP&tenant=pms-dev&username=<nacos账号>&password=<nacos密码>" | Out-File -Encoding UTF8 -Force $yamlPath
+curl.exe -s "http://10.1.12.33:36032/nacos/v1/cs/configs?dataId=gateway.yaml&group=DEFAULT_GROUP&tenant=pms-dev&username=$nacosUser&password=$nacosPass" | Out-File -Encoding UTF8 -Force $yamlPath
 # 确认白名单区域存在（一般在 emop.auth.exclude-path-patterns 下）
 Get-Content $yamlPath | Select-String -Pattern "exclude-path-patterns" -Context 0,8
 ```
@@ -37,8 +37,8 @@ $result = curl.exe -s -X POST "http://10.1.12.33:36032/nacos/v1/cs/configs" `
   -F "group=DEFAULT_GROUP" `
   -F "tenant=pms-dev" `
   -F "type=yaml" `
-  -F "username=<nacos账号>" `
-  -F "password=<nacos密码>" `
+  -F "username=$nacosUser" `
+  -F "password=$nacosPass" `
   -F "content=@$yamlPath"
 # $result 必须是 true；如果是 false，检查上面的 -F 参数有没有拼错字段。
 Write-Output "写入返回：$result"
@@ -47,7 +47,7 @@ Write-Output "写入返回：$result"
 **Step 4 — 必须回读验证**：
 ```powershell
 Start-Sleep 2
-$back = curl.exe -s "http://10.1.12.33:36032/nacos/v1/cs/configs?dataId=gateway.yaml&group=DEFAULT_GROUP&tenant=pms-dev&username=<nacos账号>&password=<nacos密码>"
+$back = curl.exe -s "http://10.1.12.33:36032/nacos/v1/cs/configs?dataId=gateway.yaml&group=DEFAULT_GROUP&tenant=pms-dev&username=$nacosUser&password=$nacosPass"
 if ($back -match "/pms/<模块>/**") {
     "✅ 写入生效"
 } else {
@@ -64,6 +64,8 @@ curl.exe -s -w "`nHTTP:%{http_code}" -X POST "https://api-test-pms.jomoo.com/pms
 ```
 
 **本次会话真实成功案例（2583 离职预警）**：将 `resignWarning` 代入 `<模块>`，完整流程后空数组返回 200 + code=1001 参数不能为空（非401 ✅）。
+
+**收尾**：验证通过后删除临时凭据文件 `Remove-Item "$env:TEMP\vault-nacos-cred.tmp" -Force`。
 
 ---
 

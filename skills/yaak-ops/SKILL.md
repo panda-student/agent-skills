@@ -9,6 +9,7 @@ user-invocable: true
 ## 核心原则
 
 - 接口相关任务（构建/发送/保存/复用/链式/批量/环境切换/校验/排查）**一律以 yaak 实现**；yaak CLI 与桌面端共用同一本地数据库，创建的请求是持久资产
+- **MCP 形态已移除**：不要安装或启用 `@yaak/mcp-server`；桌面 GUI 只用于人工查看与验证结果，不作为 AI 操作入口
 - **本技能是 Yaak 指导唯一技能**：命令/字段/模板函数细节**直接查 yaak CLI 自描述**（`yaak <command> --help`、`yaak request schema http --pretty`、`yaak template-function show <name>`）；本技能承载 SOP/执行规则/方法论/踩坑，不复制命令手册
 - Node fetch 脚本仅三种兜底：CI/环境无 yaak（yaak `export + --data-dir` 已能覆盖多数 CI 场景）、复杂断言逻辑一体化、二进制处理（PS5 管道损坏字节流）
 
@@ -55,6 +56,7 @@ A 系统页面显示 B 系统数据为空时，用**同一报文**逐层请求�
 
 ## Windows/PowerShell 5 坑与兜底
 
+- **UAT 内网请求被系统代理劫持（2026-11-10 实证）**：本机系统代理 `127.0.0.1:7892` 会被 yaak 的 reqwest 读取，且不识别 WinINET `ProxyOverride` 的 `*jomoo.com`，导致 TLS handshake EOF；PowerShell 直连正常可作区分。发 UAT 前设 `$env:NO_PROXY='*'; $env:no_proxy='*'`（会话级），不要全局关系统代理
 - **CLI 传 JSON 丢引号（复杂载荷）**：`--json '{"id":...}'` 报 `key must be a string`——PS5 剥内层引号；变量/Get-Content 传法全败。解法：node `spawnSync` argv 数组直调 CLI js 入口（`(Get-Command yaak).Source` → `node_modules/@yaakapp/cli/bin/cli.js`），`JSON.stringify` 生成参数，零 shell 解析。**注意（2026-10-23 实证）**：从 PowerShell 命令行直接调 `node cli.js` 并以 PS 字符串变量传参同样断裂（`.Replace('"','\"')` 手动转义后 PS→node.exe 的引号化仍二次处理，`\"Bearer x\"` 的段内空格必断）——PS 字符串变量路径无解；spawnSync 必须在 **node 脚本内部**构造 argv 数组才绕开 shell。多步请求+断言场景更快的路：直接写 Node fetch 脚本一体化（序列+断言+清理一气呵成，脚本放临时目录用完即删），不必强行走 yaak CLI
 - **CLI 传 JSON 可内联（2026-10-28 实证，简单载荷首选）**：`yaak request update '{\"id\":\"rq_xxx\",\"name\":\"...\"}'`——单引号包裹、**内部双引号全部前置反斜杠转义**（`\"`）、嵌套 JSON（如 body.text）内层引号用 `\\\"`；**载荷内禁止 ASCII 空格**（含空格会被 shell 包装拆散报 `unexpected argument`，中文说明去掉空格即可，中文本身可正常入库）。含空格/复杂转义载荷仍走上条 node spawnSync。**2026-11-03 反证**：`ConvertTo-Json` 产物再手动 `-replace '"','\"'` 转义同样两连败（长载荷报 `invalid escape`/`expected , or }`；含空格模板串报 `unexpected argument '${['`）——ConvertTo-Json 不改变 PS→exe 引号化二次处理的结局，勿再尝试该组合
 - **已存请求场景最省链路：yaak send 拿凭据 + python urllib 发业务请求（2026-11-02 实证）**：PS5.1 向原生 exe 传 JSON 参数双引号必被拆（`$obj | ConvertTo-Json` 变量直传同样报 `Invalid JSON: key must be a string`——PS→exe 引号化二次处理无解）；且 `yaak` 实为 `yaak.ps1` shim（`Get-Command yaak` 验证），python `subprocess.run(['yaak',...])` 报 WinError 2（找不到文件），`subprocess` 调 `powershell` 又可能被策略拦（WinError 786）。标准兜底链路：① Shell 里 `yaak send <登录请求ID> -e <环境ID> | Out-File $env:TEMP\xxx.json`（环境变量自动替换密码，**凭据不落对话**）② python urllib 读 token 文件后直接发业务请求。适用于「登录请求已存 yaak、业务请求临时发」的终验/联调场景

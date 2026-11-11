@@ -5,7 +5,7 @@ description: 通过 dbx CLI 操作数据库与 Nacos——查表结构、执行 
 
 # dbx CLI（数据库 / Nacos）
 
-> 封装说明：底层是 DBX 的纯 MCP 二进制（不支持命令行直调），`dbx` 命令是 MCP stdio 客户端 shim。源码 `~/.agents/cli/dbx-cli/`（领域逻辑）+ `~/.agents/cli/mcp-stdio-client/`（公共 MCP 客户端，file: 依赖），`npm install && npm link` 装到 /d/nodejs；ZCode 的 MCP 形态配置已于 2026-11-10 移除，**一律走 CLI**。二进制路径可用环境变量 `DBX_BIN` 覆盖。
+> 封装说明：底层是 DBX 的纯 MCP 二进制（不支持命令行直调），`dbx` 命令是 MCP stdio 客户端 shim。源码 `~/.agents/cli/dbx-cli/`（领域逻辑）+ `~/.agents/cli/mcp-client/`（统一 MCP 机制层，stdio 传输，file: 依赖），`npm install && npm link` 装到 /d/nodejs；ZCode 的 MCP 形态配置已于 2026-11-10 移除，**一律走 CLI**。二进制路径可用环境变量 `DBX_BIN` 覆盖。
 
 ## 命令速查
 

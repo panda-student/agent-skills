@@ -18,10 +18,10 @@ description: 通过 anyshare CLI 操作爱数 AnyShare 文档云（wendang.jomoo
 ## 背景（AI 不知道的部分）
 
 - AnyShare 7.0 API 网关：`https://wendang.jomoo.com/api/<服务>/v1/...`，认证 `Authorization: Bearer ory_at_...`（Hydra opaque token，**非 JWT**，无法本地解析 exp，只能靠 API 试活判断有效性）。
-- CLI 源码位于 `~/.agents/cli/anyshare-cli/`（同目录 `auth-center`）。**`~/.agents` 本身就是技能仓库根目录**，`skills/` 与 `cli/` 都是仓库内实体目录，`git pull` 即完成同步。换机还原：在该目录 `npm install` 后再 `npm link`，`anyshare` 即可用。token 落盘 `~/.auth-center/apps/anyshare-cli/config.json`；SSO 凭据在 `~/.auth-center/apps/anyshare-cli/sso-credentials.json`（WinForms 弹窗录入，明文不进终端/对话，输入框为标准 UIA Edit 控件 `AccessibleName=账号/密码`，可被密码管理器注入）。
+- CLI 源码位于 `~/.agents/cli/anyshare-cli/`（同目录 `auth-center`）。**`~/.agents` 本身就是技能仓库根目录**，`skills/` 与 `cli/` 都是仓库内实体目录，`git pull` 即完成同步。换机还原：在该目录 `npm install` 后再 `npm link`，`anyshare` 即可用。token 落盘 `~/.auth-center/apps/anyshare-cli/config.json`；SSO 密码按 `vault-ops` 技能维护，auth-center 运行时取用，不落盘。浏览器自身保存的登录态不纳入 `vault-ops` 管理。
 - **token 刷新链**（CLI 401 时全自动，无需人工干预）：
   1. 配置 token 试活；
-  2. 已配凭据 → 无头 UCenter 链（`loginByCode` → `/sso` 回跳，链路未实测打通，失败静默回落）；
+  2. `vault-ops` 中已有凭据 → 无头 UCenter 链（`loginByCode` → `/sso` 回跳，链路未实测打通，失败静默回落）；
   3. 先扫 Edge leveldb（机会性复用日常浏览器的残留 token，命中即免开浏览器）；
   4. 仍失败 → 唤起**专用 Profile Edge**（`~/.auth-center/edge-profile`，与日常浏览器隔离）打开**首页**触发静默 SSO 回路自动换发，CDP 轮询捕获 Authorization cookie（静默 180s）。会话有效时零交互；**检测到登录页时自动弹置顶系统提示框提醒人工介入**（终端输出易被忽略，实测反馈），此时等待延长到 10 分钟、**只提示一次**，且超时后**保留登录窗口**（不会关掉用户正在操作的页面）。首次使用在窗口登录一次后会话持久化，之后永久自动。
   - 判定顺序：**先读页面 cookie，再判登录页**。登录完成后 SPA 可能仍停在 `/anyshare/zh-cn?redirect=...` 形态，若先按 URL 判登录页就会永远不读 token——这正是「已经登录了一直弹窗不推进」的根因（2026-11-07 修复）。
@@ -35,7 +35,8 @@ description: 通过 anyshare CLI 操作爱数 AnyShare 文档云（wendang.jomoo
 ```bash
 anyshare whoami               # token 状态（有效性/来源/保存时间）——排查认证问题先跑这个
 anyshare libs                 # 文档库列表（name/type/gns id）
-anyshare ls [路径]             # 列目录。路径 = "文档库名/子目录/..." 或 gns:// id；d=目录 f=文件（文件行附 gns id）；缺省列默认目录
+anyshare ls [路径] [--json]    # 列目录。路径 = "文档库名/子目录/..." 或 gns:// id；d=目录 f=文件（文件行附 gns id）；缺省列默认目录。
+                              # --json 输出单行 JSON（含每个子目录的 gns id），供脚本按 id 定位、避免云端改名后路径失效
 anyshare dir [路径]            # 查看/设置默认进入目录（写入配置 default_dir，附网页入口 URL）；ls 无参时列默认目录
 anyshare download <路径> [目标] # 下载文件（别名 dl）。路径 = gns:// id 或 "文档库名/子目录/文件名"；
                               # 目标为已存在目录时落到该目录（用云端文件名），否则视为文件路径；缺省落当前目录
@@ -45,7 +46,7 @@ anyshare sync <云端路径> <本地目录> [--dry-run]
                               # 本地多出的文件不删除；下载后本地 mtime 对齐云端时间；--dry-run 仅预览
 anyshare token [--refresh]    # 输出 token 供 curl 复用；--refresh 强制走刷新链
 anyshare login                # 登录/换号（无头优先 → 浏览器捕获）
-anyshare cred-setup           # 一次性弹窗录入 SSO 凭据（启用无头刷新）
+anyshare cred-setup           # 验证 vault-ops 中的 SSO 凭据（启用无头刷新）
 anyshare logout               # 清除本地 token
 ```
 
@@ -67,11 +68,12 @@ anyshare logout               # 清除本地 token
 ```
 
 - **本地路径以「项目根」为基准**：脚本从当前目录向上探测，优先级为 ①同时含 `docs` 与 `.agents`/`.claude` 的工作区目录（取最外层，故在 `weekreport\pms` 这类子仓库内执行仍归位到 `weekreport`）→ ②最近的 `.git` 版本库根，落地到 `<项目根>\docs\requirement`。探测失败直接 exit 1（**不回退到当前目录**，避免在主目录等位置静默建出错误目录树）。需要指定别处时用 `-LocalBase <绝对路径>` 覆盖；`-ShowRoot` 只打印探测结果、不联网，可用于执行前确认。
-- 脚本内容：对云端基路径 `九牧集团信息化/48-项目管理系统V1.0/04产品研发&测试/需求规格说明书` 与本地基路径 `.\docs\requirement` 的 10 组目录映射（`1-项目规划及变更`→`项目规划及变更`、`2-立项申请`→`项目立项`、`项目变更`→`变更`、`项目效益`→`效益`、`项目权限`→`离职人员预警`、`工程项目采购申请流程`→`工程采购`，其余同名）逐条执行 `anyshare sync`
+- **云端定位（改名容忍，2026-11-11 加固）**：不再写死完整路径。库名固定 `九牧集团信息化`，其下按稳定片段 `48-项目管理系统` → `04产品研发` → `需求规格说明书` 逐级匹配（精确 → 包含 → 去前导序号后包含）；并优先复用 gns id 缓存 `~/.anyshare-ops/pms-requirement-root.json`——AnyShare 改名/移动不改变文档 id，因此云端再改名也照常同步，缓存读不到才回落名称解析。自动解析失败时用 `-BaseGns <gns:// id>` 直接指定根目录
+- 脚本内容：对上述云端需求规格说明书根目录与本地基路径 `.\docs\requirement` 的 10 组目录映射（`1-项目规划及变更`→`项目规划及变更`、`2-立项申请`→`项目立项`、`项目变更`→`变更`、`项目效益`→`效益`、`项目权限`→`离职人员预警`、`工程项目采购申请流程`→`工程采购`，其余同名）逐条执行 `anyshare sync`（每条按云端子目录的 gns id 同步，同样不受改名影响）
 - 注意：**禁止 `sync 需求规格说明书` 整库根目录**（云端目录名与本地不一致且含 0-历史，会生成错误结构）；本地 `流程自动化测试\` 无云端对应，保持不动；云端根目录游离旧版 `项目信息_..._V0.1.xlsx` 不会被循环拉取，属正常
 - 稳态表现：无变化时 10 个目录约 3 秒跑完，全部「已是最新 0 下载」；云端有改动时只增量下载变化文件
 - 失败语义：脚本开头校验 `anyshare` 是否可用，缺 CLI 直接 exit 1；任一目录失败会汇总并 exit 1——**看到红色「同步未全部完成」即代表真有目录没同步，不能当成功**
-- 云端目录结构变化（新增/改名子目录）时，先改脚本内 `$map` 再执行
+- 云端目录结构变化（新增/改名子目录）时：改名只要保留核心词（如「项目变更」「项目费用」）无需改脚本；新增目录或核心词也变了，再改脚本内 `$map`。脚本失败时会打印该层实际子目录名，按提示调整即可；结构大改时可用 `-BaseGns <gns:// id>` 先恢复同步
 - **脚本编码硬规则**：`.ps1` 含中文必须存为 **UTF-8 with BOM**（Windows PowerShell 5.1 对无 BOM 文件按 GBK 解析，中文全乱码报解析错误）；用工具改完脚本后若报「意外的标记」，先补 BOM 再跑
 
 ## 坑位（勿重试清单，2026-11-04 实测）
@@ -84,6 +86,7 @@ anyshare logout               # 清除本地 token
 - 不要用剪贴板方案回传 token（页面失焦时 clipboard 全被拒）；不要改 Authorization cookie 做实验（SPA 会陷入 chunk 重载死循环）。
 - **同步/比对只看更新时间，不看文件大小**（2026-11-05 用户拍板）：云端列表接口的 KB 显示值与本地字节比对不可靠（舍入误差），且同大小可能内容已变——判定「是否需要下载」的唯一依据是云端 `modified_at` vs 本地 mtime；大小只用于下载后完整性校验。
 - **技能脚本路径不要写死 `C:\Users\JOMOO\...`**（2026-11-07 换机踩坑）：换机后该路径不存在，脚本静默全失败。统一用 `$HOME\.agents\skills\...`。
+- **云端路径不要写死完整目录名**（2026-11-11 踩坑）：云端把 `48-项目管理系统V1.0` 改成 `48-项目管理系统（PMS)V1.0`，脚本写死的基路径 10 个目录全报「路径不存在」——CLI 的 contains 模糊匹配也救不了（旧名不是新名的子串）。现已改为「稳定片段逐级解析 + gns id 缓存 + 按目录 id 同步」；新增脚本同样不要写死带版本号/括号补充的目录名。
 - **登录页是 `?redirect=` 形态，不含 login 字样**（2026-11-07 实测）：未登录时 SPA 落在 `/anyshare/zh-cn?redirect=%2Fzh-cn%2Fhomepage`，旧正则 `\/login|\/signin|oauth2\/(login|auth)` 匹配不到 → 不弹「请登录」置顶提示 → 无人介入，静默等满 180s 报「CDP 静默回路: 超时未捕获到有效 token」。已在 `cli/auth-center/src/cdp-edge.mjs` 的 `DEFAULT_LOGIN_PAGE_RE` 补 `[?&]redirect=` 规则。
 - **一次同步弹出一堆登录窗口**（2026-11-07 已修，`cli/auth-center`）：根因是三件事叠加——① 刷新链无单飞/无锁，sync 的 10 个目录各是一个进程、单个进程内还有 4 路并发下载，每个 401 都独立走完刷新链；② `captureTokenByCdp` 无条件 spawn，同 profile 再启动时 Edge 把命令转交给已有实例并立刻退出，于是每调一次多一个窗口，而 `killEdgeTree` 杀的是早已退出的壳进程；③ 端口 9223 被 IDE（openidea）占用时 Edge 起不来调试口，调用方白等又重试。现在：进程内单飞 + `refresh.lock`（应用级）+ `.browser.lock`（profile 级）、CDP 端口探活复用、占用则顺延、无目标页时用 `PUT /json/new` 开标签页而不是开窗口、事件驱动感知登录完成、`Browser.close` 优雅收尾。
 - 换机还原 CLI：`~/.agents/cli/<cli>` 下 `npm install` → `npm link`；npm 对 `file:` 依赖建 Junction，改源码即时生效，无需重装。

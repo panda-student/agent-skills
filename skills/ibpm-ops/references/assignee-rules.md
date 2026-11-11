@@ -228,7 +228,7 @@ spec 用法（节点级，仅 userTask 支持）：
 
 **生成器默认 `true`（2026-10-08 起）**：声明 propers 的节点显式输出 `allowInterfaceApproval="true"`；未声明 propers 的节点无块、引擎同样放行——即生成的流程所有节点天然支持接口代办，spec 无需手写。仅当显式覆盖 `"allowInterfaceApproval": false` 时该节点才拒绝接口代办（人工 UI 审批不受影响）。
 
-> 历史坑（生成器默认改 true 之前）：声明 propers（哪怕只为 `executorIsEmpty: "jump"`）会连带模板默认 `false`，导致该节点无法接口代办。历史导入的流程若命中，用 `configuring-ibpm-interface-approval` 技能在线补救（改前查 → saveDefConf → 改后复验，热生效）。
+> 历史坑（生成器默认改 true 之前）：声明 propers（哪怕只为 `executorIsEmpty: "jump"`）会连带模板默认 `false`，导致该节点无法接口代办。历史导入的流程若命中，用本技能「允许接口审批配置」在线补救（改前查 → saveDefConf → 改后复验，热生效）。
 
 ```jsonc
 { "id": "UserTask_countersign2", "type": "userTask", "name": "二级会签",

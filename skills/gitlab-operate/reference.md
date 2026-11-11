@@ -95,13 +95,13 @@ GitLab 地址与 Token 均按 `vault-ops` 技能取用，本节只保留 GitLab 
 
 ## Python 调用示例
 
-以下脚本假定 Token 已按 `vault-ops` 技能取用并写入，脚本只读取使用，不打印。
+以下脚本假定 Token 已按 `vault-ops` 技能取用并写入 `%TEMP%\vault-gitlab-token.tmp`（命名约定见 vault-ops），脚本只读取使用，不打印。
 
 ### 触发流水线
 ```python
 import json, os, tempfile, urllib.request
 
-token_file = os.path.join(tempfile.gettempdir(), 'gitlab-token.txt')
+token_file = os.path.join(tempfile.gettempdir(), 'vault-gitlab-token.tmp')
 with open(token_file, encoding='utf-8') as f:
     token = f.read().strip()
 

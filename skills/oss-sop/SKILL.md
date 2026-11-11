@@ -65,9 +65,10 @@ git diff --stat upstream/main...HEAD   # 三点：只算 merge-base 之后的净
 
 ## 基于最新 upstream/main 开干净 worktree
 
+按 `worktree-ops` 在该仓库创建并切换到任务树（分支 `<type>/<slug>`，起点 `upstream/main`）；建树、回收与合并判定以该技能为准，本节只保留仓库拓扑与分支命名策略。
+
 ```bash
-git worktree add ../<task> -b <type>/<slug> upstream/main
-cd ../<task>
+cd <worktree-ops 返回的任务树路径>
 pnpm install --frozen-lockfile        # 按项目实际包管理器
 ```
 
@@ -191,7 +192,7 @@ gh run view <run-id> --repo <upstream> --job <job-id> --log-failed
 
 - 删除本次产生的临时文件：代理脚本、patch、Cookie 副本、`curl -o` 误落在仓库根目录的 html/json、中转脚本。
 - 删除仅为截图创建的临时 release/tag、assets 分支、GitHub Pages（确认 PR 正文已改为 user-attachments 后再删）。
-- PR 未合并前保留 PR worktree；合并后再 `git worktree remove ../<task>`。
+- PR 未合并前保留 PR worktree；合并后按 `worktree-ops` 回收（判定与删除命令以该技能为准）。
 - 如果重启/关闭过用户的浏览器或进程：明确告知影响与恢复方式（如 `Ctrl+Shift+T` 恢复标签页）；绝不批量杀用户进程。
 - 最终检查：PR worktree `git status` clean、提交已推送、PR 正文链接可访问、CI 状态已说明。
 
@@ -211,8 +212,7 @@ git log --oneline upstream/main..HEAD
 git diff --stat upstream/main...HEAD
 gh pr list --repo <upstream> --author <you> --state all
 
-# 干净 worktree + 移植
-git worktree add ../<task> -b <type>/<slug> upstream/main
+# 干净 worktree + 移植（先按 worktree-ops 基于 upstream/main 建任务树，再在树内执行）
 git -C <old> diff > /tmp/task.patch
 git apply -3 /tmp/task.patch
 

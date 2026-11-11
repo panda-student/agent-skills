@@ -2,7 +2,7 @@
 """QQ Mail CLI (IMAP + SMTP), Python 3.8+ stdlib only.
 
 Self-contained: no third-party packages.
-Secret is read from %TEMP%\qqmail-auth.txt and never printed.
+Secret is read from %TEMP%\vault-qqmail-authcode.tmp and never printed.
 
 Commands:
   check   [--n 10]                         login + recent messages
@@ -32,7 +32,7 @@ from pathlib import Path
 
 BASE = Path(os.environ.get("USERPROFILE", Path.home())) / ".qqmail"
 CONFIG = BASE / "config.json"
-AUTH = Path(tempfile.gettempdir()) / "qqmail-auth.txt"
+AUTH = Path(tempfile.gettempdir()) / "vault-qqmail-authcode.tmp"
 DOWNLOADS = BASE / "downloads"
 
 DEFAULT_CONFIG = {

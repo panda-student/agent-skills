@@ -111,7 +111,7 @@ node <SKILL_DIR>/bpmn-gen/pipeline.mjs --stages compare-di <解包目录>       
 - **审批人落库验证（API 自动化，2026-10-21 实测可用）**：导入部署成功后无需在 UI 逐节点人工核对——
   - 静态核对：`GET /model/flow/node/v1/getDefSetting?defId=` 取部署态 bpmnXml，解析 `ext:userNode → userAssign → userRule` 与 spec.assignee 预期比对
   - 运行时核对：发起实例后 `GET /runtime/runtime/instance/v1/instanceFlowOpinions?instId=` 返回各节点实际办理人（姓名+工号+orgPath），可验证 hrScript/var 类动态规则的真实取人结果
-  - token 获取与接口细节见 `configuring-ibpm-interface-approval` 技能（refreshToken 换取链捷径；runtime 服务命名空间为双段前缀 `/runtime/runtime/`）
+  - token 获取见本技能「登录 / token 获取」章节；接口细节见「允许接口审批配置」章节（runtime 服务命名空间为双段前缀 `/runtime/runtime/`）
 - **表单 URL**：spec 里配 `formPath`（前端 view 组件路由路径，如 `projectApply/addIbpm`），生成器自动拼 `{host}{formPath}?workflowType={processKey}...`；`targetSystemId` 写死取 `config.json` 的 `form.targetSystemId`（PMS 前端固定子系统，≠ 流程分类主系统 `sysName`）；需完全自定义时用 `globalFormUrl` 覆盖
 - **流程变量**：网关条件依赖变量，样本里必须配 `variables`；**生成器入口校验——网关出边 `condition` 引用的变量未在 `variables` 或 `config.json.builtinVars` 声明时拒绝生成**
 

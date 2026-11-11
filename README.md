@@ -12,6 +12,7 @@
 | [codescan](skills/codescan/) | 代码审查：codescan CLI 确定性扫描（jscpd/PMD/ESLint/vue-tsc/knip/ast-grep）+ 模型兜底语义判断 | [查看](skills/codescan/SKILL.md) |
 | [vitest](skills/vitest/) | 前端 vitest 单测经验（.vue 组件测试配置与依赖隔离） | [查看](skills/vitest/SKILL.md) |
 | [cherry-pick](skills/cherry-pick/) | 按禅道编号挑选特性分支提交同步到当前分支 | [查看](skills/cherry-pick/SKILL.md) |
+| [worktree-ops](skills/worktree-ops/) | Git 工作树管理：worktrunk（`git-wt`）盘点、合并判定与安全回收 | [查看](skills/worktree-ops/SKILL.md) |
 | [gitlab-operate](skills/gitlab-operate/) | GitLab CI/CD 流水线触发、轮询、日志查看与按序部署 | [查看](skills/gitlab-operate/SKILL.md) |
 | [start-pms-backend](skills/start-pms-backend/) | 本地正确启动 PMS 后端（pms-service） | [查看](skills/start-pms-backend/SKILL.md) |
 | [pms-menu-config](skills/pms-menu-config/) | JMBOS 平台菜单配置 SOP，使前端新页面的动态路由可访问 | [查看](skills/pms-menu-config/SKILL.md) |
@@ -29,6 +30,7 @@
 | 技能 | 说明 | 文档 |
 |------|------|------|
 | [yaak-ops](skills/yaak-ops/) | Yaak 指导唯一技能：接口任务执行 SOP 与验证方法（直接基于 yaak CLI） | [查看](skills/yaak-ops/SKILL.md) |
+| [dbx-ops](skills/dbx-ops/) | 通过 dbx CLI 操作数据库与 Nacos：查表结构、SQL、会话事务、Redis、Nacos 配置/实例 | [查看](skills/dbx-ops/SKILL.md) |
 | [api-center-register](skills/api-center-register/) | 九牧 API 中心后台通过浏览器自动化注册接口 | [查看](skills/api-center-register/SKILL.md) |
 | [rancher-ops](skills/rancher-ops/) | Rancher 容器平台：查看 Pod 日志、确认部署是否生效 | [查看](skills/rancher-ops/SKILL.md) |
 | [nacos-ops](skills/nacos-ops/) | Nacos 注册中心：入口拓扑与服务注册状态排查 | [查看](skills/nacos-ops/SKILL.md) |
@@ -41,6 +43,7 @@
 | [daily-report](skills/daily-report/) | 整理标准日报，自动拉取 PMS 三仓库当天提交 | [查看](skills/daily-report/SKILL.md) |
 | [weekly-report](skills/weekly-report/) | 周报/日报/下周计划全流程，并生成禅道工时补录草稿 | [查看](skills/weekly-report/SKILL.md) |
 | [issue-sop](skills/issue-sop/) | 腾讯文档问题跟进 SOP（PMS 内部测试问题表与 UAT 问题清单） | [查看](skills/issue-sop/SKILL.md) |
+| [tencent-docs-ops](skills/tencent-docs-ops/) | 腾讯文档表格读写唯一技能：普通表格 / 智能表格命令、字段格式与写后校验 | [查看](skills/tencent-docs-ops/SKILL.md) |
 | [anyshare-ops](skills/anyshare-ops/) | 通过 anyshare CLI 操作爱数 AnyShare 文档云 | [查看](skills/anyshare-ops/SKILL.md) |
 | [qqmail-ops](skills/qqmail-ops/) | 通过脚本操作 QQ 邮箱：读收件箱、搜索邮件 | [查看](skills/qqmail-ops/SKILL.md) |
 
@@ -58,7 +61,7 @@
 | [skill-builder](skills/skill-builder/) | 技能的创建、优化、审查与诊断 | [查看](skills/skill-builder/SKILL.md) |
 | [learn](skills/learn/) | 会话复盘，把经验教训固化到项目规则或记忆 | [查看](skills/learn/SKILL.md) |
 | [cc-switch-sync](skills/cc-switch-sync/) | 修改技能名称/描述后同步 cc-switch 数据库 | [查看](skills/cc-switch-sync/SKILL.md) |
-| [task-wrapup](skills/task-wrapup/) | 开发任务收尾：遗留事项登记、临时文件清理与仓库收口 | [查看](skills/task-wrapup/SKILL.md) |
+| [task-closeout](skills/task-closeout/) | 开发任务收尾：遗留事项登记、临时文件清理与仓库收口 | [查看](skills/task-closeout/SKILL.md) |
 | [oss-sop](skills/oss-sop/) | 维护开源仓库并提交上游 PR 的标准作业流程 | [查看](skills/oss-sop/SKILL.md) |
 
 ## CLI 与库
@@ -68,11 +71,27 @@
 | 目录 | 说明 |
 |------|------|
 | [cli/auth-center](cli/auth-center/) | 统一登录与 token 管理 |
+| [cli/codescan](cli/codescan/) | 代码扫描 CLI（jscpd/PMD/ESLint/vue-tsc/knip/ast-grep） |
+| [cli/dbx-cli](cli/dbx-cli/) | 数据库与 Nacos 命令行 |
+| [cli/mcp-client](cli/mcp-client/) | 统一 MCP 机制层（stdio + Streamable HTTP），自带 `mcp` 通用调试命令 |
+| [cli/tencent-docs-cli](cli/tencent-docs-cli/) | 腾讯文档业务命令行（普通表格 / 智能表格） |
 | [cli/pms-cli](cli/pms-cli/) | PMS 命令行 |
 | [cli/anyshare-cli](cli/anyshare-cli/) | AnyShare 文档云命令行 |
 | [cli/ibpm-cli](cli/ibpm-cli/) | 宏天 IBPM 流程命令行 |
 | [cli/zentao-cli](cli/zentao-cli/) | 禅道命令行 |
 | [cli/vault-cli](cli/vault-cli/) | 本机凭据密码库命令行（vault.exe 的 MCP stdio 客户端 shim） |
+
+### MCP 封装选型
+
+MCP 封装分**机制层**与**领域层**，机制统一、领域分开：
+
+| 层 | 包 | 职责 |
+|---|---|---|
+| 机制 | `mcp-client` | 连接、initialize、JSON-RPC id 匹配、超时、session/SSE；提供 `stdio` 与 `http` 传输，自带 `mcp` 命令做任意 HTTP MCP 的 `tools` / `call` |
+| 领域 | `vault-cli` / `dbx-cli` | stdio 服务子命令（`vault` / `dbx`） |
+| 领域 | `tencent-docs-cli` | 腾讯文档表格业务（`tencent-docs`） |
+
+新接入一个 MCP：先判断传输方式，再新建 `cli/<name>-cli/`，`file:` 依赖 `mcp-client`，只写领域子命令与业务参数，配 `skills/<name>-ops/`。不要复制进程管理、握手、JSON-RPC 或 session/SSE 代码；机制层不读凭据、不写业务语义。
 
 ## 目录结构
 

@@ -45,36 +45,53 @@ auth logout <app>          # 清除本地 token（保留凭据）
 ├── edge-profile/                 # 唯一 Edge Profile，所有 SSO 会话
 └── apps/
     └── <app>/
-        ├── config.json           # token 缓存 + 该 app 的连接配置
-        └── sso-credentials.json  # 可选：账号密码（WinForms/vault-ops 录入）
+        ├── config.json           # token 缓存 + 连接配置 + vault 映射
+        └── sso-credentials.json  # 仅历史遗留（已停用；密码由 vault-ops 管理）
 ```
 
 - 根目录可用 `AUTH_CENTER_HOME` 覆盖；Profile 可用 `AUTH_CENTER_PROFILE_DIR` 覆盖。
 - 旧环境变量 `UNIFIED_AUTH_HOME` / `UNIFIED_AUTH_PROFILE_DIR`、`JOMOO_AUTH_HOME` / `JOMOO_AUTH_PROFILE_DIR` 仍兼容。
-- 旧路径 `~/.<app>/config.json`、`~/.<app>/sso-credentials.json` 由 `ensureAppFile()` 自动迁移。
+- 旧路径 `~/.<app>/config.json` 由 `ensureAppFile()` 自动迁移；`sso-credentials.json` 已停用，仅用于迁移清理。
 
 ## 支持的 app
 
 | app | 登录方式 | 配置目录 |
 |---|---|---|
-| `zentao` | 共享 Edge 登录捕获 `zentaosid`；有凭据时无头 `/tokens` | `apps/zentao-cli/` |
+| `zentao` | 共享 Edge 登录捕获 `zentaosid`；无头 `/tokens` 时密码按 `vault-ops` 技能运行时取用 | `apps/zentao-cli/` |
 | `pms` | 共享 Edge SSO 静默捕获 cookie token | `apps/pms-cli/` |
-| `anyshare` | 共享 Edge SSO 静默捕获；可选无头登录 | `apps/anyshare-cli/` |
-| `ibpm` | UCenter 无头 SSO；失败回落浏览器 | `apps/ibpm-cli/` |
+| `anyshare` | 共享 Edge SSO 静默捕获；可选无头登录（密码按 `vault-ops` 技能运行时取用） | `apps/anyshare-cli/` |
+| `ibpm` | UCenter 无头 SSO（密码按 `vault-ops` 技能运行时取用）；失败回落浏览器 | `apps/ibpm-cli/` |
 | `tencent-docs` | MCP OAuth 授权码 + PKCE（自动 refresh）；OAuth 不可用时从现有 MCP 配置导入 32 位 token | `apps/tencent-docs/` |
 | `api-center` | 共享 Edge 捕获 `nisbos_auth_token` cookie；登录页在共享 Profile 中人工登录一次；`status` 为本地 JWT 过期校验，`token` 过期会自动刷新 | `apps/api-center/` |
 | `github` | 共享 Edge 捕获 HttpOnly `user_session`（网页登录态，供 PR 图片上传等网页操作复用；API 仍用 PAT） | `apps/github/` |
 
 ## 给新 CLI 接入
 
-1. **优先复用库**：`import { createTokenManager, loadAppConfig, saveAppConfig, configFilePath, credentialsFilePath } from 'auth-center';`
+1. **优先复用库**：`import { createTokenManager, loadAppConfig, saveAppConfig, configFilePath } from 'auth-center';`
+   - 共享 Profile 唯一定义在 `src/cdp-edge.mjs` 的 `SHARED_PROFILE_DIR`（并 re-export）；`createTokenManager` 与 `captureTokenByCdp` 默认使用它，业务 CLI 不要另建 profile
 2. 实现系统特定项：
    - `validateToken(token)`：轻量接口试活。
    - `headlessLogin(cred)`：可选，无头登录返回 token。
    - `cookieTokenRe` / `cookieSource`：cookie 型 token 用；`cookieSource: 'cdp'` 可读 HttpOnly cookie。
 3. `createTokenManager({ appName, label, baseUrl, launchUrl, validateToken, headlessLogin, ... })` 自动完成「缓存试活 → 无头 → Edge leveldb → CDP 弹窗 → 落盘」。
-4. 凭据录入用 `promptAndSaveCredentials(appName)`；不要自己写 `~/.<app>` 路径。
+4. 凭据不落盘：按 `vault-ops` 技能维护条目，并在 `config.json` 的 `vault` 字段声明映射（见下节）；不要调用 `promptAndSaveCredentials`。
 5. 在 `auth-center/bin/auth.mjs` 的 `APPS` 里注册 app 的 login/status（或自定义登录函数），让 `auth login <app>` 可用。
+
+## 凭据映射（vault-ops）
+
+密码统一按 `vault-ops` 技能维护，auth-center 运行时按 app 映射取用，**不再写 `sso-credentials.json`**。
+
+- 默认检索词：app 名去掉 `-cli`（如 `zentao-cli` → `zentao`），取 `kind=password` 且含密码的唯一条目。
+- 条目不唯一、需指定环境或多环境时，在 `apps/<app>/config.json` 增加映射：
+
+```json
+{ "vault": { "entryId": "<id>", "groupId": "default", "field": "password" } }
+{ "vault": { "query": "ibpm", "title": "IBPM 平台 Web 登录" } }
+{ "vault": { "uat": { "query": "ibpm", "title": "IBPM 平台 Web 登录" } } }
+```
+
+- `vault-ops` 的 CLI 默认取 PATH 中的 `vault`，可用 `AUTH_CENTER_VAULT_CLI` 覆盖。
+- `vault-ops` 的 CLI 不可用或条目缺失时，无头登录失败并在错误信息中提示；浏览器登录态不受影响。
 
 ## 腾讯文档
 
@@ -87,11 +104,12 @@ auth logout <app>          # 清除本地 token（保留凭据）
 - OAuth 不可用时兜底：从现有 MCP 客户端配置（`~/.claude.json` / Trae）导入 32 位 token。
 - **不要**手动打开 `open/auth/mcp.html` 或 `open-claw.html` 直接点「确认授权」：缺 OAuth 参数会提示「授权失败」。`auth login` 会自动拼好参数。
 - 页面上 55 位的 `tencent-doc-token` 是 Skill 安装 token，不是 MCP token。
-- 业务配置 `tencent-docs/config/tdocs_common.json` 只保留 `token_source` / `quota` / `sync_targets`。
-- 轮换/同步：`node ~/.agents/skills/tencent-docs/scripts/sync_token.mjs [token]` 或 `--from-auth`。
+- 业务配置由调用方技能维护；腾讯文档走 `tencent-docs`，其它远程 MCP 走 `mcp`（`mcp-client` 自带命令）。
+- 轮换/同步：`auth login tencent-docs`（过期自动 refresh）；`tencent-docs tools` 可验证 token 是否可用。
 
 ## 安全约定
 
 - 不在对话中打印 token/密码。
-- 凭据写入 `apps/<app>/sso-credentials.json`，用 WinForms 弹窗或按 `vault-ops` 技能注入；占位符 `{{credential}}` 视为未注入。
+- 密码只在 `vault-ops` 中维护；auth-center 运行时取用，不写入 `sso-credentials.json`。该文件仅历史遗留，可删除。
+- 浏览器自身保存的登录态（Edge Profile）不纳入 `vault-ops` 管理。
 - 共享 Profile 只保留登录会话，不手工复制/迁移到其他目录。
