@@ -83,14 +83,29 @@ obs-service / project-service                     │
 
 > 环境名称从流水线的 `$ENV_NAME` 变量获取，不硬编码
 
+## 凭据获取（vault-ops）
+
+GitLab 地址与 Token 均按 `vault-ops` 技能取用，本节只保留 GitLab 的匹配规则：
+
+- 检索 `gitlab` 条目，候选需具备 Token
+- `url` / `services[].url` 与目标 GitLab 一致；JPM SOA 内网优先 `environment` 为「PMS项目」的条目
+- 多个候选无法区分时询问用户，不猜
+- API base = 条目 `url` + `/api/v4`
+- 条目可能有多个凭据组，按目标环境选择对应组
+
 ## Python 调用示例
+
+以下脚本假定 Token 已按 `vault-ops` 技能取用并写入，脚本只读取使用，不打印。
 
 ### 触发流水线
 ```python
-import json, urllib.request
+import json, os, tempfile, urllib.request
 
-token = '<from gitlab.yaml>'
-base = '<gitlab-url>/api/v4'
+token_file = os.path.join(tempfile.gettempdir(), 'gitlab-token.txt')
+with open(token_file, encoding='utf-8') as f:
+    token = f.read().strip()
+
+base = '<条目 url>/api/v4'
 
 url = f'{base}/projects/{project_id}/pipeline'
 req = urllib.request.Request(

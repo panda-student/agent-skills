@@ -8,7 +8,7 @@
 
 - 所有接口需要请求头 `Authorization: Bearer <token>`，token 取登录后的 cookie `nisbos_auth_token`（有效期约 2~4 小时）
 - 浏览器 Console 提取：`document.cookie.match(/nisbos_auth_token=([^;]+)/)[1]`
-- UAT token 过期需重登（UAT 支持账号密码直登，账号见 `.trae/config/accounts.yaml`）
+- UAT token 过期需重登（UAT 支持账号密码直登；账号密码按 `vault-ops` 技能检索「PMS 平台 UAT 超管账号」取用）
 - 脚本免浏览器登录（2026-10-20 实证）：`GET https://{domain}/api/system/getSystemByDomain/{domain}` → `{systemId, domainApi}`（domainApi 无协议前缀需补 `https://`）→ `POST https://{domainApi}/niscommon/noAuth/loginNew`，请求头 `{Content-Type: application/json;charset=UTF-8, x-noauth: true, systemid: String(systemId)}`，body `{loginType:1, rememberMe:false, systemType:'1', tenantCode:'', usePwd, userCode, uuid:null}` → `data.ssoToken` 即 Bearer token；token 按 systemId 隔离，跨体系不可混用
 
 ### 环境域名映射（菜单管理类接口统一走租户网关）

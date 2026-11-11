@@ -170,7 +170,7 @@ agent-browser --session pr-<n> eval "document.querySelector('meta[name=user-logi
 - 批量上传可能在最后一个文件完成前返回 URL；404 的单个文件重传并替换正文中的链接。
 - 不要用 Playwright `context.request` 校验附件：请求超时会打印带 Cookie 的请求头。
 - 用完后 `agent-browser --session pr-<n> close`，删除临时上传脚本；临时 assets 分支在正文改用 user-attachments 后删除。
-- Edge 157+ 对**默认 profile** 禁止 `--remote-debugging-port`；统一 profile 是非默认 profile，可直接复用。需要账号密码时用 vault 注入，2FA/安全密钥交还用户，**任何环节都不打印明文**。
+- Edge 157+ 对**默认 profile** 禁止 `--remote-debugging-port`；统一 profile 是非默认 profile，可直接复用。需要账号密码时按 `vault-ops` 技能注入，2FA/安全密钥交还用户，**任何环节都不打印明文**。
 
 ## CI 失败诊断
 
@@ -197,7 +197,7 @@ gh run view <run-id> --repo <upstream> --job <job-id> --log-failed
 
 ## 安全与沟通约定
 
-- 不在对话中打印 token、密码、Cookie；凭据走 vault/auth-center。
+- 不在对话中打印 token、密码、Cookie；凭据走 `vault-ops`/auth-center。
 - 破坏性或对外可见操作（force push、删分支/release/Pages、关闭 PR、发评论）先确认。
 - 验证结论必须可复现：命令、结果、未做的验证（例如“未做 GUI 实机验证”）都要写清楚。
 - 遇到旧故障与本次改动无关时，单独说明是 HEAD/上游既有问题，不混入本次结论。

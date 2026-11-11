@@ -1,46 +1,159 @@
 ---
 name: vault-ops
-description: 通过 vault CLI 操作本机凭据密码库（vault.exe）——搜条目、读条目元数据、把密码/token 密文写入目标文件（密文永不回显、永不进对话）。PMS SOP 中「凭据一律本地密码管理器」红线由此 CLI 承载（原 MCP 形态已移除）。当需要取数据库/平台/Redis/Nacos 等账号密码或 API token 给脚本与 curl 复用、登记新凭据、整理凭据标签时使用；系统登录/token 刷新链路仍走 auth-center 技能。也可通过 /vault-ops 手动触发。
+description: 通过 vault CLI 操作本机凭据密码库——搜条目、读元数据、把密码/token 密文写入目标文件或浏览器/桌面输入框（密文永不回显、永不进对话），含凭据登记、更新、分组、标签、导出与恢复。统一走 CLI，不为单个软件注册 MCP 封装。任何技能或任务需要数据库、平台、Redis、Nacos、GitLab 等账号密码或 API token、需要注入脚本/配置/登录框、或需要登记整理凭据时使用；登录与 token 刷新链路仍走 auth-center。可通过 /vault-ops 手动触发。
+user-invocable: true
+allowed-tools:
+  - Read
+  - Bash
 ---
 
-# vault CLI（凭据密码库）
+# vault CLI（本机凭据密码库）
 
-> 封装说明：底层 `D:/vault/vault.exe --mcp` 是纯 MCP 二进制，`vault` 命令是 MCP stdio 客户端 shim。源码 `~/.agents/cli/vault-cli/`（领域逻辑）+ `~/.agents/cli/mcp-stdio-client/`（公共 MCP 客户端，file: 依赖），`npm install && npm link` 装到 /d/nodejs；ZCode 的 MCP 形态配置已于 2026-11-10 移除，**一律走 CLI**。路径可用环境变量 `VAULT_BIN` 覆盖。
+> **单一来源约定**：所有技能不得各自复述 vault 取用细节，只声明「选哪个条目 + 哪个凭据组 + 注入目标」，操作方式统一引用本技能。凭据数据本体在 `D:/vault/data`，不随仓库走。
 
-## 命令速查
+## 入口：vault CLI
 
-| 命令 | 作用 |
+`D:/vault/vault.exe --mcp` 是纯 MCP 二进制；`vault` 命令是配套的 MCP stdio 客户端 shim，把常用操作暴露为子命令。**统一走 CLI，不为单个软件重复注册 MCP**。
+
+| 项 | 值 |
 |---|---|
-| `vault search [关键词] [--tag pms] [--kind password\|api\|database\|generic]` | 搜条目（只出元数据：id/title/tags/groups/账号名/有无密码或token），**永不出密文** |
-| `vault get <id> [id…]` | 按 id 读条目元数据（groups[].id、revision 等，改条目前先读） |
-| `vault fill <id> --field password --file D:\path\to\out.txt [--mode create\|replace] [--group GID]` | 把密文写进目标文件（不回显明文） |
-| `vault call <工具名> '<json参数>'` | 其余工具原样透传（create/update/delete/pin/organize/export…） |
-| `vault tools [--json]` | 工具清单与参数模式（权威参考） |
+| 命令 | `vault`（全局，落在 `/d/nodejs`） |
+| 源码 | `~/.agents/cli/vault-cli/` + `~/.agents/cli/mcp-stdio-client/`（file: 依赖） |
+| 换机还原 | 在 `~/.agents/cli/vault-cli/` 执行 `npm install && npm link` |
+| 二进制覆盖 | 环境变量 `VAULT_BIN` |
+| 数据本体 | `D:/vault/data`（不随仓库走） |
 
-## 用法范式
+## 核心约束：密文只落不回
 
-- 取密码给脚本用：`vault search uat库` → 拿 id → `vault fill <id> --field password --file "$TEMP/pwd.txt"` → 脚本读该文件，用完即删；**禁止 cat 该文件、禁止让密码出现在终端输出**
-- 覆盖已有文件中的占位符：模板里放恰好一个 `{{credential}}` 标记，`--mode replace` 只替换该标记、保留文件其余内容；`--mode create`（默认）新建文件
-- 多凭据组条目（同一服务生产/测试两套账号）须 `--group <groups[].id>` 指定组
-- `field` 取值：password / token / account / environment / secret（secret=密码，组里没密码时取 token）/ url / service_url / host / port / database_name / database_type
-- 填 Windows 桌面程序输入框（WinForms SSO 弹窗等）：`vault call capture_fill_target '{…windowTitle…}'` 拿 30 秒一次性 targetId → `write_credential` target.type=input（anyshare-ops 的 SSO 回路即此机制）
+- `vault search` / `vault get` **只返回元数据**：id、标题、URL、标签、环境、账号名、`hasPassword` / `hasToken`，没有明文
+- 取明文唯一出口是 `vault fill`（或 `vault call write_credential`）：把值写入**文件**或**输入框**，只返回 `file_written` / `input_sent`
+- `input_sent` 只代表键盘事件已发送，不代表页面或程序已接受；需另行校验，且不得打印值
+- 全流程禁止 echo / cat / 日志打印密文；密文不得进入对话、命令参数、git 记录
+- 写出的临时文件用完立即删除，不得 read 其内容，不得放入仓库或技能目录
+
+## 检索与元数据
+
+```bash
+vault search gitlab
+vault search --tag pms --kind password
+vault get <id> [id...]
+```
+
+- 结果结构：`results[].entries[]`，每个请求项对应一条 result
+- 条目字段：`id`、`title` / `name`、`url`、`services[]`、`groups[]`、`tags[]`、`siteMissing`
+- 凭据组字段：`groups[].id` / `environment` / `account` / `hasPassword` / `hasToken`
+- `siteMissing:true` 表示条目来源不明：**问用户归属，不要猜**
+- 多个候选无法用 URL / tag / environment 区分时，同样问用户
+- 条目 id 是唯一句柄：先 search 后 get，不凭记忆拼 id
+
+## 取用范式
+
+### A. 临时文件（给脚本 / CLI / curl 用）
+
+适用：脚本、命令行工具、接口调用等进程内读取。
+
+- 先解析临时目录：`python -c "import tempfile;print(tempfile.gettempdir())"`
+- 写入密文，`--file` 必须是绝对路径：
+
+```bash
+vault fill <id> --field secret --file "<绝对临时路径>" [--group <gid>]
+```
+
+- 脚本从该文件读取值放进请求头 / 连接参数，**不打印**
+- 用完立即 `rm -f "<同一路径>"`
+
+### B. 占位符替换（注入已有配置文件）
+
+适用：`sso-credentials.json`、`.env.local` 等结构固定的落盘文件。
+
+- 先写骨架文件，密文位置放**恰好一个** `{{credential}}`
+- 注入：
+
+```bash
+vault fill <id> --field secret --file "<绝对路径>" --mode replace [--group <gid>]
+```
+
+- `--mode replace` 只替换 `{{credential}}`，保留文件其余内容
+- 任务收尾按需把该字段写回 `{{credential}}`，保持磁盘无明文
+
+### C. 浏览器 / 桌面输入框
+
+适用：登录页、WinForms SSO 弹窗等无法落文件交给进程读取的场景。
+
+```bash
+vault call capture_fill_target '{"windowTitle":"<窗口标题子串>","fieldName":"<控件可访问名称>","expectedPassword":true}'
+vault call write_credential '{"credentialId":"<id>","groupId":"<gid>","field":"secret","target":{"type":"input","targetId":"<capture 返回的 id>"}}'
+```
+
+- Edge / Chrome 必须传 `windowTitle` + `fieldName` + `expectedPassword:true`；可用 `processId` 缩小窗口
+- `targetId` 一次性、30 秒有效；过期重新 capture
+- 输入插入到光标 / 选区，不清空、不提交；是否成功由调用方校验页面状态
+- 空参数 capture 只认当前原生光标位置，DOM 聚焦不算数
+- 目标必须唯一可编辑且标签匹配；歧义、只读、不匹配会被拒绝，不要绕过
+
+## 凭据组与字段
+
+- 一个条目可有多个凭据组；**多组时 `--group` 必填**，按 `environment` / `account` 选择
+- `--field` 取值：
+  - `password` / `token` / `secret`（`secret` = 有密码取密码，无密码取 token）
+  - `account` / `environment` / `url` / `service_url` / `host` / `port` / `database_name` / `database_type`
+- 条目有多个服务地址时，`field:"service_url"` 需指定 `serviceId`
+
+## 登记与维护
+
+```bash
+vault call <工具名> '<json参数>'   # create/update/delete/restore/pin/organize/export 等
+vault tools --json                 # 工具清单与参数模式（权威参考）
+```
+
+| 操作 | 工具 | 要点 |
+|------|------|------|
+| 新建 | `create_entries` | `items` 一次 1-100 条，批量原子；password/api 条目至少一组含密码或 token |
+| 更新 | `update_entries` | 必须带 `expectedRevision`；只传要改字段，省略的密码 / token 保留 |
+| 改组 | `update_entries` | 传 `groups[].id` 改现有组；省略 id 新增组；`removeGroups` 删组 |
+| 软删除 | `delete_entries` | 删除后不可用；`restore_entries` 逐条恢复 |
+| 置顶 | `pin_entries` | 单条 |
+| 标签整理 | `organize` | 标签重命名 / 全局删除 |
+| 导出 | `export_entries` | 桌面端人工输入口令；AI 只拿到状态与条目数 |
+| 设置 / 同步 | 桌面端 | settings 权限默认关闭且权限规则只读；需要改设置或触发同步时请用户在桌面端操作 |
 
 ## 常用条目（tag 检索，2026-11-10 快照）
 
 | tag | 条目 |
-|---|---|
+|-----|------|
 | pms | PMS 平台 UAT 超管账号(00071763)、测试超管账号、普通账号(00098962/00098997) |
 | mysql | uat-pms MySQL UAT 库(sys)、test-pms 测试库(pms_test)，账号 pmsuser |
 | nacos | Nacos 注册中心 pms-szq / Nacos test / Nacos uat |
 | zentao / 腾讯文档 | 禅道账号、腾讯文档 MCP Token |
 | git / gitlab / rancher / ibpm / xxl-job / smtp / ucenter | 各系统账号与 API token |
 
-**以 `vault search` 实时结果为准**；凭据与 auth-center 的关系：auth-center 管系统登录与 token 缓存/刷新链路，本库存底层账号密码与 API token 原料，auth-center 链路不可用时从这里取原料手动构建。
+**以 `vault search` 实时结果为准**。
+
+## 与 auth-center 的边界
+
+- `auth-center`：系统登录、token 缓存与刷新链路
+- `vault-ops`：底层账号密码 / API token 原料
+- auth-center 链路不可用时，从 vault 取原料手动构建，不要另建凭据存储
+
+## 被其它技能引用（复用契约）
+
+调用方只声明三件事：
+
+- **条目定位**：标题 / tag / URL / environment
+- **凭据组**：`groups[].id` 或目标环境
+- **注入目标**：临时文件路径、占位符文件路径，或浏览器窗口与字段名
+
+统一引用句：
+
+> 凭据取用见 `vault-ops` 技能；本技能只声明条目匹配与注入目标。
+
+调用方禁止复制本技能的 CLI 命令与字段语义——口径变更只改本技能。
 
 ## 踩坑与红线
 
-- 密文红线：MCP 工具层设计上「密文只落文件不回显」，`vault get`/`search` 只出元数据——不要试图用其他工具绕过读取明文；fill 写出的敏感文件用完即删，且不 read 其内容
-- search 输出为 JSON（含结构化信息），jq/python 解析时按 `results[0].entries[]` 取
-- 导出走桌面端人工确认（export_entries 需桌面窗口打开且输入口令），CLI 调用后两分钟无响应需重试
-- 条目 id 是唯一句柄：先 search 后 get/fill，不要凭记忆拼 id
-- 换机还原：`~/.agents/cli/vault-cli/` 内 `npm install && npm link`；凭据数据本体在 `D:/vault/data`（不随仓库走）
+- 统一走 CLI，不要为单个软件再注册 MCP 封装；MCP 形态只在 `vault.exe --mcp` 内部协议层使用
+- `vault` 不可用时先按「入口」表还原（`npm install && npm link`），不要自行拼 MCP 客户端
+- 密文红线：`search` / `get` 只出元数据，`fill` / `write_credential` 只落文件或输入框；不要试图绕过读取明文
+- search 输出是 JSON，解析按 `results[0].entries[]` 取
+- 导出需桌面端打开并人工确认；长时间无响应先确认桌面端状态，不重复触发
+- 临时产物（密文文件、骨架文件、注入产生的 env 类文件）按任务收尾规则删除或复位

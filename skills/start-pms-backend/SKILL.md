@@ -171,7 +171,7 @@ pms_frontend 的 vite.config.js 有三处环境指向必须**环境自洽**：`/
 - **登录链路三跳**（任何一跳坏都表现为「登录失败」，逐跳核实）：① `getCheckTenant(hostname)` 走 `/api` 代理查系统注册（hostname 取自 sso.js `window.config.hostname`，见上节）→ 写 Cookie `systemId`/`url`(=domainApi)；② `loginNew` **不走代理、直连** Cookie `url` 指向的认证网关发 token（`systemid` 请求头取自①）；③ PMS 业务接口走 `/service` 代理（低代码页面引擎按 Cookie `url` 拼绝对地址，见「低代码页面请求前缀陷阱」）
 - **loginNew API 契约**：`GET /oauth2/api/system/getSystemByDomain/<domain>` 取 `data.systemId` → `POST /oauth2/api/niscommon/noAuth/loginNew`，body `{domain,userCode,usePwd,loginType:1}`，**必须带 `systemId` 请求头**；多公司账号带 `companyId` 头重登；成功写 Cookie `nisbos_auth_token`
 - **时好时坏机理与修复纪律**：有效 token/companyObj Cookie 会掩盖坏点，清 Cookie 或 token 过期即暴露；修复登录问题禁止只修单跳就宣布完成，**必须实测完整登录进首页**才算闭环
-- **凭据统一从 vault 取**（local-password-manager MCP，禁止硬编码）：测试超管「PMS 平台测试超管账号」、UAT 超管「PMS 平台 UAT 超管账号」、普通账号「PMS 平台普通账号」（00098962）；浏览器场景用 `fill_credential` 注入；password 类条目不回明文，脚本读不到密码只能本地代填；`pms_frontend/e2e/.env.local` 是注入落盘产物
+- **凭据统一按 `vault-ops` 技能取用**（禁止硬编码）：测试超管「PMS 平台测试超管账号」、UAT 超管「PMS 平台 UAT 超管账号」、普通账号「PMS 平台普通账号」（00098962）；浏览器/桌面输入框按 `vault-ops` 技能的注入范式填写；password 类条目不回明文，脚本读不到密码只能本地代填；`pms_frontend/e2e/.env.local` 是注入落盘产物
 - **密码事实**：dev 网关拒绝 UAT 密码（错误码 12003），两环境密码不同；浏览器记住密码会回填旧密码，登录前必须核对/清空
 - **token 有效期边界**：`nisbos_auth_token` 约 2h 过期；过期后 UAT 平台登录强制 iJOMOO APP 扫码/手机验证码，用户不在场无法自主重登 → 需登录态的 E2E 趁会话有效期内尽早做完；路由守卫只验 token 存在性（`!!getToken()`），有效性由平台接口校验
 - **token 传递捷径**：路由守卫支持 `https://localhost:<端口>/?nisbos_auth_token=<token>` URL 参数直接种 cookie（IBPM 待办新开页同机制）
@@ -239,7 +239,7 @@ bos-saas-page 页面引擎按 `'https://' + cookie url + domApi路径` 拼绝对
 
 本地缺登录态（`LoginUtil.getCurrentUserId()` 缺失）会让 Controller 报 500 NPE。若拦截器**只解析 JWT 的 `user.userCode` 而不验签**（如 PMS `UserContextInterceptor`），可直接构造 dev token 解锁：
 
-- 账号来源：vault（local-password-manager MCP，条目见「登录链路三跳与账号配置」；超管 `00071763` / 普通 `00098962`）
+- 账号来源：按 `vault-ops` 技能取用（条目见「登录链路三跳与账号配置」；超管 `00071763` / 普通 `00098962`）
 - token 构造（Node，signature 随意）：
 
 ```javascript
@@ -253,7 +253,7 @@ const token = `${b64url(JSON.stringify({alg:'HS256',typ:'JWT'}))}.${b64url(JSON.
 
 需要登录态的 UI 验证（localhost 页面无既有登录态时）：
 
-- **密码来源**：统一从 vault 取（见「登录链路三跳与账号配置」），UAT 网关登录密码注入落盘在 `pms_frontend/e2e/.env.local`（gitignore）；yaak dev 环境变量里的 `usePwd`（Welcome1）**不是** UAT 网关密码，用它登录会静默失败（loginNew 200 但不写 token cookie、页面不跳转、无任何提示）
+- **密码来源**：统一按 `vault-ops` 技能取用（见「登录链路三跳与账号配置」），UAT 网关登录密码按 vault-ops 范式注入落盘在 `pms_frontend/e2e/.env.local`（gitignore）；yaak dev 环境变量里的 `usePwd` **不是** UAT 网关密码，用它登录会静默失败（loginNew 200 但不写 token cookie、页面不跳转、无任何提示）
 - **登录成功标志**：cookie 出现 `nisbos_auth_token` / `nisbos_refresh_token`，URL 跳出 /login；仅写入 `url`/`systemId` cookie 不算登录成功
 - **登录按钮点击无效时**：原生 `agent-browser click` 无反应（不触发 loginNew）→ 用 `agent-browser eval` 派发 mousedown/mouseup/click 事件序列可触发（实例：2026-10-23 效益排序验证）
 

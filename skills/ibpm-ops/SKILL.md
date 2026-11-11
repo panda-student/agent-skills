@@ -27,11 +27,11 @@ token 过期时任何命令都会提示 exit code 2，重新登录即可（有�
 按优先级依次尝试，落库目标都是 `~/.auth-center/apps/ibpm-cli/config.json`：
 
 1. **全自动（已录入凭据时）**：`ibpm login -e uat`。若存在 `~/.auth-center/apps/ibpm-cli/sso-credentials.json` 则走纯 HTTP SSO 链路（loginByCode → tokenByCode → 换 JWT），零浏览器零人工。
-   录入凭据（2026-10-27 实测打通，AI 可直接完成，无需用户动手）：先 Write 骨架文件 `{"uat":{"account":"00071763","password":"{{credential}}"}}`，再调 vault `write_credential`：`credentialId=<UCenter条目id>`, `field='secret'`, `target={type:'file', path:'C:\\Users\\JOMOO\\.ibpm-cli\\sso-credentials.json', mode:'replace'}`——**不要传 template 参数**（会 INVALID_INPUT），replace 模式默认替换文件中的 `{{credential}}` 占位符，返回 `file_written` 即成功。校验只看结构（account 值 + password 长度），禁止输出密码。注意：sso-setup 录入弹窗在 AI toolhost 会话里不可见（已实证），勿再尝试。
+   录入凭据（2026-10-27 实测打通，AI 可直接完成，无需用户动手）：先 Write 骨架文件 `{"uat":{"account":"00071763","password":"{{credential}}"}}`，再按 `vault-ops` 技能从 UCenter 条目取用并注入 `~/.auth-center/apps/ibpm-cli/sso-credentials.json`（占位符文件）。注入成功后校验只看结构（account 值 + password 长度），禁止输出密码。注意：sso-setup 录入弹窗在 AI toolhost 会话里不可见（已实证），勿再尝试。
 2. **agent-browser + 人工接管登录（推荐，2026-10-27 实测打通）**：
    - 后台起回传服务：`ibpm login -e uat --port 49777`（`--port` 固定回传端口）
    - `agent-browser open https://test-ibpm.jomoo.com/mvue/flowDesign` → 302 到账号中心登录页
-   - 自动填账号（`agent-browser fill`），然后交用户手动输密码并点登录（agent-browser 无 handoff 工具，等用户操作完成后再继续；vault capture_fill_target 对此 Edge 窗口 field 定位失败，勿重试浪费时间）
+   - 自动填账号（`agent-browser fill`），然后交用户手动输密码并点登录（agent-browser 无 handoff 工具，等用户操作完成后再继续；按 `vault-ops` 技能做输入框注入时，对此 Edge 窗口 field 定位失败，勿重试浪费时间）
    - 登录跳转回 mvue 后，对**原 tab**（须用 `agent-browser tab list` 确认当前 tab，sessionStorage 按 tab 隔离）执行 `agent-browser eval`：`location.href='http://127.0.0.1:49777/?t='+JSON.parse(sessionStorage.currentUser).token` —— token 全程不进 AI 上下文
    - catch 服务收到即自动写配置并退出；`ibpm whoami` 验证
 3. **兜底**：直接 `ibpm login`（默认流程，用户 F12 粘贴回传脚本，180 秒超时可重试）。
@@ -85,7 +85,7 @@ ibpm approval QT04001 --nodes "T_A,T_B" --value true   # 改为放行（saveDefC
 - 三态语义：**无 propers=引擎不校验（放行，勿动）**；显式 false=拒绝 openapi complete（报「{节点名}未配置允许接口审批」）；true=放行。**只有显式 false 的节点需要改成 true**
 - CLI 自动从 bpmnXml 提取全局表单 URL 回传（防清空保护）；nodePropertieMap 增量合并，只更新传入节点
 - saveDefConf 热生效：定义 version 不变，新发起实例立即用新配置，运行中实例不受影响
-- 业务级验证：重跑对应流程 E2E 测试类（PMS：`mvn -pl pms-service -am clean test "-Dtest=<流程>E2ETest" "-Dsurefire.failIfNoSpecifiedTests=false" -q`，需 `$env:JAVA_TOOL_OPTIONS="-Dfile.encoding=UTF-8"; $env:IBPM_SECRET="4a88cb9f"`）
+- 业务级验证：重跑对应流程 E2E 测试类（PMS：`mvn -pl pms-service -am clean test "-Dtest=<流程>E2ETest" "-Dsurefire.failIfNoSpecifiedTests=false" -q`，需 `$env:JAVA_TOOL_OPTIONS="-Dfile.encoding=UTF-8"`，`IBPM_SECRET` 的值按 `vault-ops` 技能取用）
 
 ## 办结抄送配置（流程结束通知）
 

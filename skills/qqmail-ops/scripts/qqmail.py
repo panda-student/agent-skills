@@ -2,7 +2,7 @@
 """QQ Mail CLI (IMAP + SMTP), Python 3.8+ stdlib only.
 
 Self-contained: no third-party packages.
-Secret is read from %USERPROFILE%\.qqmail\auth and never printed.
+Secret is read from %TEMP%\qqmail-auth.txt and never printed.
 
 Commands:
   check   [--n 10]                         login + recent messages
@@ -23,6 +23,7 @@ import os
 import re
 import smtplib
 import sys
+import tempfile
 import time
 from email.header import decode_header, make_header
 from email.message import EmailMessage
@@ -31,7 +32,7 @@ from pathlib import Path
 
 BASE = Path(os.environ.get("USERPROFILE", Path.home())) / ".qqmail"
 CONFIG = BASE / "config.json"
-AUTH = BASE / "auth"
+AUTH = Path(tempfile.gettempdir()) / "qqmail-auth.txt"
 DOWNLOADS = BASE / "downloads"
 
 DEFAULT_CONFIG = {
@@ -56,8 +57,8 @@ def load():
     if not AUTH.exists():
         sys.exit(
             f"missing secret file: {AUTH}\n"
-            "Write the QQ Mail 授权码 there first (vault write_credential, template {{credential}}), "
-            "or paste it manually. Never commit this file."
+            "Inject the QQ Mail 授权码 there via the vault-ops skill first. "
+            "Never commit this file."
         )
     auth = AUTH.read_text(encoding="utf-8-sig").strip()
     if not auth:

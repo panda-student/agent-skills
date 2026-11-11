@@ -16,7 +16,7 @@
 
 1. 列出浏览器标签页，找到已打开的 API 中心页面；若无，导航到门户。
 2. 取页面快照确认渲染出菜单（「API接口注册」等）。
-3. **若为登录页**：按登录配置自动登录（配置文件 `d:\IdeaProjects\pms\.claude\config\api-center-login.md`，含账号/密码/表单元素特征/自动登录步骤）；配置文件不存在或登录失败时，停下请用户手动登录。
+3. **若为登录页**：先 `auth login api-center` 走 auth-center 共享 Edge Profile；仍停在登录页时，账号密码按 `vault-ops` 技能取用并注入（禁止硬编码）；注入失败或需验证码时，停下请用户手动登录。
 4. **后台标签页久置 Debugger 断连**（快照可用但页面 JS 执行报 Bridge error）：先激活该标签页，再重新导航刷新页面后重试。
 
 ## 3. 数据模型与编码速查
@@ -165,7 +165,7 @@ window.ace.edit(document.querySelectorAll('.bosui-dialog')[2].querySelectorAll('
 | 保存后状态非预期 | 通过网络请求捕获看保存请求返回 + 重新查询列表确认 |
 | 嵌套参数漏 parentUUID | 响应参数有子字段时，子行必须挂在父行下（parentUUID 指向父 uuid） |
 | Debugger 断连（Bridge error: Debugger is not attached） | 先激活该标签页，再重新导航刷新页面后重试 |
-| 刷新后跳登录页 | 按 `d:\IdeaProjects\pms\.claude\config\api-center-login.md` 自动登录 |
+| 刷新后跳登录页 | `auth login api-center`；账号密码按 `vault-ops` 技能取用 |
 | **坑8 · 请求路径 disabled**：保存后编辑请求路径没变 | 「请求路径」在编辑抽屉中带 `disabled` 属性，**创建时一次性锁定，之后再编辑会被后端忽略**。要改路径只能删掉该接口重建，不要在更新流程中浪费时间改此输入框。✅ 已实测证伪方案A |
 | **坑9 · 同名服务多条记录**（PMS 903 vs PMS服务 905） | 先核对两条服务的服务地址（host），只要 host 一致就不影响转发；但创建接口时必须选对服务行，选完之后想改也不能（和请求路径同理，所属服务字段编辑也可能只读） |
 | **坑10 · Nacos 保存用 --data-urlencode content= 会双编码** | curl 提交 Nacos `publishConfig` 时，若用 `--data-urlencode "content=<urlencode内容)"` 会把原本已 UTF-8 编码的 YAML 再编码一层，保存返回 `true` 但实际内容全是 `%XX%XX`，读回发现没生效。**正确写法：写 YAML 到本地文件，用 `curl -F "content=@<yamlfile>"` 走 multipart 表单上传**，二进制不变形。✅ 已踩坑修复两次 |
@@ -215,14 +215,16 @@ window.ace.edit(document.querySelectorAll('.bosui-dialog')[2].querySelectorAll('
 
 **Nacos 连接约定**：
 - 地址：`http://10.1.12.33:36032/nacos`（pms-uat/pms-dev 同 host）
-- 账号密码：`nacos/nacos`（测试/开发环境）
+- 账号密码：按 `vault-ops` 技能取用 `nacos` 条目（测试/开发环境），**禁止写死在命令或文档中**
 - `tenant` 按环境：`pms-dev`（测试环境）、`pms-uat`（另一份）、生产需对应单独值
 - `dataId=gateway.yaml`, `group=DEFAULT_GROUP`
+
+> 下文命令中的账号密码由调用方按 `vault-ops` 技能取用后引用；密文不得出现在对话、终端回显或日志中。
 
 ### 9.1 读 YAML（核对现状）
 
 ```bash
-curl "http://10.1.12.33:36032/nacos/v1/cs/configs?dataId=gateway.yaml&group=DEFAULT_GROUP&tenant=pms-dev&username=nacos&password=nacos"
+curl "http://10.1.12.33:36032/nacos/v1/cs/configs?dataId=gateway.yaml&group=DEFAULT_GROUP&tenant=pms-dev&username=<nacos账号>&password=<nacos密码>"
 ```
 结果是完整的 YAML 文本，grep `exclude-path-patterns:` 就能看到当前白名单。
 
@@ -230,7 +232,7 @@ curl "http://10.1.12.33:36032/nacos/v1/cs/configs?dataId=gateway.yaml&group=DEFA
 
 ```powershell
 # Step 1. GET 保存到本地工作目录
-curl.exe -s "http://10.1.12.33:36032/nacos/v1/cs/configs?dataId=gateway.yaml&group=DEFAULT_GROUP&tenant=pms-dev&username=nacos&password=nacos" | Out-File -Encoding UTF8 -Force "gateway_<env>_before.yaml"
+curl.exe -s "http://10.1.12.33:36032/nacos/v1/cs/configs?dataId=gateway.yaml&group=DEFAULT_GROUP&tenant=pms-dev&username=<nacos账号>&password=<nacos密码>" | Out-File -Encoding UTF8 -Force "gateway_<env>_before.yaml"
 # Step 2. 用编辑器在 exclude-path-patterns 列表末尾追加一行（保持同样的 YAML 缩进：9 空格 + "- /pms/<模块>/**"）
 # Step 3. multipart/form-data 上传（⚠️ 禁止 --data-urlencode，会双编码）
 curl.exe -s -X POST "http://10.1.12.33:36032/nacos/v1/cs/configs" `
@@ -238,12 +240,12 @@ curl.exe -s -X POST "http://10.1.12.33:36032/nacos/v1/cs/configs" `
   -F "group=DEFAULT_GROUP" `
   -F "tenant=pms-dev" `
   -F "type=yaml" `
-  -F "username=nacos" `
-  -F "password=nacos" `
+  -F "username=<nacos账号>" `
+  -F "password=<nacos密码>" `
   -F "content=@gateway_<env>_before.yaml"
 # 期望返回 true。若返回 false 说明参数错。
 # Step 4. ⚠️ 必须立刻 GET 回读确认写入生效
-$back = curl.exe -s "http://10.1.12.33:36032/nacos/v1/cs/configs?dataId=gateway.yaml&group=DEFAULT_GROUP&tenant=pms-dev&username=nacos&password=nacos"
+$back = curl.exe -s "http://10.1.12.33:36032/nacos/v1/cs/configs?dataId=gateway.yaml&group=DEFAULT_GROUP&tenant=pms-dev&username=<nacos账号>&password=<nacos密码>"
 $back -match "/pms/<模块>/**"  # 必须 True 才算写入成功
 ```
 

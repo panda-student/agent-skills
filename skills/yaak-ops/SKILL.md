@@ -20,7 +20,7 @@ user-invocable: true
 | 保存复用/整理 | 请求与文件夹（继承 headers/auth）存入 workspace，桌面端即时可见 |
 | 链式依赖（回环往复） | 参数用模板 `${[ response.body.path(request='rq_login', path='$.token') ]}`，yaak 自动先发上游 |
 | 批量/按序执行 | `yaak send <fl_id 或 wk_id>`（`--fail-fast` `--parallel`） |
-| 多环境切换 | base_url 变量化 `${[ base_url ]}` + 子环境 `-e ev_uat`；凭据引用环境变量，禁止写入真实 secret |
+| 多环境切换 | base_url 变量化 `${[ base_url ]}` + 子环境 `-e ev_uat`；凭据引用环境变量（变量值按 `vault-ops` 技能取用），禁止写入真实 secret |
 | CI/无人值守 | `yaak export` + `--data-dir ./.yaak` 得可运行套件（ID 跨导入存活） |
 | 导入存量接口 | `yaak import`（OpenAPI/Postman/Insomnia/Bruno/cURL 自动识别） |
 

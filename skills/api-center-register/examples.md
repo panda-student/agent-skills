@@ -8,10 +8,12 @@
 
 **场景**：接口已注册上架、服务端部署完成、但服务网关免 token 直连返回 401。决定走规则C（不改代码、不改注册地址、仅追加白名单）。
 
+> 账号密码按 `vault-ops` 技能取用；禁止明文写死在命令里。
+
 **Step 1 — 读当前 YAML 保存本地**：
 ```powershell
 $yamlPath = ".claude/tmp/gateway_pms-dev_before.yaml"
-curl.exe -s "http://10.1.12.33:36032/nacos/v1/cs/configs?dataId=gateway.yaml&group=DEFAULT_GROUP&tenant=pms-dev&username=nacos&password=nacos" | Out-File -Encoding UTF8 -Force $yamlPath
+curl.exe -s "http://10.1.12.33:36032/nacos/v1/cs/configs?dataId=gateway.yaml&group=DEFAULT_GROUP&tenant=pms-dev&username=<nacos账号>&password=<nacos密码>" | Out-File -Encoding UTF8 -Force $yamlPath
 # 确认白名单区域存在（一般在 emop.auth.exclude-path-patterns 下）
 Get-Content $yamlPath | Select-String -Pattern "exclude-path-patterns" -Context 0,8
 ```
@@ -35,8 +37,8 @@ $result = curl.exe -s -X POST "http://10.1.12.33:36032/nacos/v1/cs/configs" `
   -F "group=DEFAULT_GROUP" `
   -F "tenant=pms-dev" `
   -F "type=yaml" `
-  -F "username=nacos" `
-  -F "password=nacos" `
+  -F "username=<nacos账号>" `
+  -F "password=<nacos密码>" `
   -F "content=@$yamlPath"
 # $result 必须是 true；如果是 false，检查上面的 -F 参数有没有拼错字段。
 Write-Output "写入返回：$result"
@@ -45,7 +47,7 @@ Write-Output "写入返回：$result"
 **Step 4 — 必须回读验证**：
 ```powershell
 Start-Sleep 2
-$back = curl.exe -s "http://10.1.12.33:36032/nacos/v1/cs/configs?dataId=gateway.yaml&group=DEFAULT_GROUP&tenant=pms-dev&username=nacos&password=nacos"
+$back = curl.exe -s "http://10.1.12.33:36032/nacos/v1/cs/configs?dataId=gateway.yaml&group=DEFAULT_GROUP&tenant=pms-dev&username=<nacos账号>&password=<nacos密码>"
 if ($back -match "/pms/<模块>/**") {
     "✅ 写入生效"
 } else {

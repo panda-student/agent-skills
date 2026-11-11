@@ -23,16 +23,16 @@ allowed-tools:
 - **Runner缓存感知**：CI Runner本地Maven仓库可能缓存不一致，失败时重试
 - **逐层推进**：先部署基础依赖层，成功后再部署上层服务
 
-## 配置
+## 凭据获取（vault-ops）
 
-读取 `项目根/.claude/config/gitlab.yaml` 获取 GitLab URL 和 Token：
-```yaml
-gitlab:
-  url: <gitlab-server-url>
-  token: <access-token>
-```
+GitLab 地址与 Token 按 `vault-ops` 技能取用，本节只声明 GitLab 的条目匹配规则：
 
-> URL 和 Token 从配置文件读取，不硬编码。不同环境（dev/uat/prod）通过流水线分支区分。
+- **检索**：按 `vault-ops` 技能检索 `gitlab` 条目，候选需具备 Token
+- **选择**：条目 `url` / `services[].url` 与目标 GitLab 一致；JPM SOA 内网优先取 `environment` 为「PMS项目」的条目；多个候选无法区分时问用户，不猜
+- **取用**：从条目 `url` 得到 API base = `{url}/api/v4`，按 `vault-ops` 技能取用 Token 后放入 `PRIVATE-TOKEN` 请求头
+- **清理**：用完立即删除临时文件，不打印、不提交
+
+> 密文红线：Token 不得出现在对话输出、终端回显或 git 记录中。
 
 ## API 参考
 

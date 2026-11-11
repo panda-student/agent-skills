@@ -47,6 +47,6 @@ description: 通过 dbx CLI 操作数据库与 Nacos——查表结构、执行 
 - 大结果集：query 单次上限 1000 行，更多用 LIMIT 分页；`--cell 4000` 只放宽单元格截断，超长值走 cell_char_offset 滑窗
 - DDL 隐式提交：MySQL 族 DDL 不能进事务批量（dbx 会拒绝 use_transaction+DDL 组合）
 - 写操作（UPDATE/DELETE/DDL）属危险动作，执行前向用户确认；改数后保留原值证据（SELECT 快照）
-- 凭据不在 dbx 里取：连接密码等原料走 vault CLI（见 vault-ops 技能）；系统登录/token 链路走 auth-center
+- 凭据不在 dbx 里取：连接密码等原料按 `vault-ops` 技能取用；系统登录/token 链路走 auth-center
 - Nacos 拓扑坑（dev 入口的 pms-uat 命名空间为空属正常）见 nacos-ops 技能；dbx 的 nacos 连接已按正确环境配好，优先用
 - 换机还原：`~/.agents/cli/dbx-cli/` 内 `npm install && npm link` 即恢复全局命令；连接配置在 DBX 桌面端数据目录，不随本仓库走

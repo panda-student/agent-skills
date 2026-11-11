@@ -27,7 +27,7 @@ description: 周报/日报/下周计划填写全流程。拉取 PMS 仓库本周
 |---|---|---|
 | PMS 仓库 | `<项目根>/pms`、`pms_frontend`、`pms_mobile` | 统一切 `uat` 分支 |
 | 禅道配置 | `~/.auth-center/apps/zentao-cli/config.json` | baseUrl/account/defaultAssignee + token 缓存；由 zentao CLI 管理，不含密码 |
-| 禅道凭据 | `~/.auth-center/apps/zentao-cli/sso-credentials.json` | 由 zentao CLI 经 auth-center 管理；AI 用 vault 注入时只改这个文件 |
+| 禅道凭据 | `~/.auth-center/apps/zentao-cli/sso-credentials.json` | 由 zentao CLI 经 auth-center 管理；AI 按 `vault-ops` 注入时只改这个文件 |
 | 周报文档配置 | **技能内 `config/weekly_docs.json`** | 只存周报三表标识（doc 节）；token/同步目标在 `tencent-docs/config/tdocs_common.json` |
 | 配置模板 | 技能内 `config.example/*.json` + `tencent-docs/config.example/tdocs_common.json` | 换机时复制到对应 `config/` 并填入真实值 |
 | 禅道 CLI | `zentao` 全局命令（源码 `~/.agents/cli/zentao-cli`） | 任务列表/详情、工时、关闭；用法见 `jpm-zentao-operate` |
@@ -38,7 +38,7 @@ description: 周报/日报/下周计划填写全流程。拉取 PMS 仓库本周
 
 **配置位置**：禅道连接配置、凭据与 token 缓存统一在 `~/.auth-center/apps/zentao-cli/`，由 zentao CLI 与 auth-center 管理，周报不再维护禅道配置；周报文档配置 `config/weekly_docs.json` 由 AI 直接读取；腾讯文档 token 由 `tencent-docs` CLI 从 `tencent-docs/config/tdocs_common.json` 读取，周报不接触。
 
-## 凭据注入（vault，可选；无头登录时需要）
+## 凭据注入（vault-ops，可选；无头登录时需要）
 
 周报自己的凭据只有禅道密码；腾讯文档 token 由 `tencent-docs` 技能统一管理，周报不再单独维护。
 
@@ -47,15 +47,15 @@ description: 周报/日报/下周计划填写全流程。拉取 PMS 仓库本周
 - 可选无头登录：凭据存 `~/.auth-center/apps/zentao-cli/sso-credentials.json`，`zentao login` 直接调 `/tokens`，不弹窗。
 - 占位符 `{{credential}}` 会被 CLI 视为未注入；失效时重新 `zentao login` 即可。
 
-| 凭据 | vault 条目 | credentialId | 注入目标 |
-|---|---|---|---|
-| 禅道密码（账号 W00120） | `禅道 zentao.jomoo.com` | `080c11b5-ec00-42b8-882a-9079080c5bdc` | `~/.auth-center/apps/zentao-cli/sso-credentials.json` |
+| 凭据 | `vault-ops` 条目 | 注入目标 |
+|---|---|---|
+| 禅道密码（账号 W00120） | `禅道 zentao.jomoo.com`（按标题检索） | `~/.auth-center/apps/zentao-cli/sso-credentials.json` |
 
-- **骨架**：先写 `{"account":"W00120","password":"{{credential}}"}` 到注入目标（文件不存在时），再调 vault。
-- **注入**：调 vault `write_credential`，`field=secret`，`target={"type":"file","mode":"replace","placeholder":"{{credential}}","path":"<注入目标绝对路径>"}`，`credentialId` 用上表。
+- **骨架**：先写 `{"account":"W00120","password":"{{credential}}"}` 到注入目标（文件不存在时）。
+- **注入**：按 `vault-ops` 技能取用上表条目并注入（占位符文件）。
 - **验证**：`zentao whoami`（缓存有效）或 `zentao login`（强制刷新）。
 - **复位**：流程跑完把对应字段写回 `{{credential}}`（改 JSON 即可，不要打印值），保持磁盘无明文。
-- **轮换**：改密码后在 vault 桌面端更新禅道条目；腾讯文档 token 的轮换见 `tencent-docs` 技能。
+- **轮换**：改密码后按 `vault-ops` 技能更新禅道条目；腾讯文档 token 的轮换见 `tencent-docs` 技能。
 
 ## 流程
 

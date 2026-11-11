@@ -49,6 +49,7 @@
 | 技能 | 说明 | 文档 |
 |------|------|------|
 | [auth-center](skills/auth-center/) | 统一登录与 token 管理入口，覆盖禅道、PMS、AnyShare、IBPM、腾讯文档、API 中心等 | [查看](skills/auth-center/SKILL.md) |
+| [vault-ops](skills/vault-ops/) | 本机凭据库统一取用（vault CLI）：检索、注入临时文件/占位符/输入框，密文不回显；供其它技能复用 | [查看](skills/vault-ops/SKILL.md) |
 
 ### 元技能（技能管理）
 
@@ -71,6 +72,7 @@
 | [cli/anyshare-cli](cli/anyshare-cli/) | AnyShare 文档云命令行 |
 | [cli/ibpm-cli](cli/ibpm-cli/) | 宏天 IBPM 流程命令行 |
 | [cli/zentao-cli](cli/zentao-cli/) | 禅道命令行 |
+| [cli/vault-cli](cli/vault-cli/) | 本机凭据密码库命令行（vault.exe 的 MCP stdio 客户端 shim） |
 
 ## 目录结构
 

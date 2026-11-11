@@ -46,7 +46,7 @@ auth logout <app>          # 清除本地 token（保留凭据）
 └── apps/
     └── <app>/
         ├── config.json           # token 缓存 + 该 app 的连接配置
-        └── sso-credentials.json  # 可选：账号密码（WinForms/vault 录入）
+        └── sso-credentials.json  # 可选：账号密码（WinForms/vault-ops 录入）
 ```
 
 - 根目录可用 `AUTH_CENTER_HOME` 覆盖；Profile 可用 `AUTH_CENTER_PROFILE_DIR` 覆盖。
@@ -93,5 +93,5 @@ auth logout <app>          # 清除本地 token（保留凭据）
 ## 安全约定
 
 - 不在对话中打印 token/密码。
-- 凭据写入 `apps/<app>/sso-credentials.json`，用 WinForms 弹窗或 vault `write_credential` 注入；占位符 `{{credential}}` 视为未注入。
+- 凭据写入 `apps/<app>/sso-credentials.json`，用 WinForms 弹窗或按 `vault-ops` 技能注入；占位符 `{{credential}}` 视为未注入。
 - 共享 Profile 只保留登录会话，不手工复制/迁移到其他目录。
