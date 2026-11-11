@@ -14,7 +14,7 @@ allowed-tools:
 
 ## 分级审查策略
 
-先通过 `git diff --stat` 或目标范围估算变更行数,自动匹配审查级别:
+先通过 `git diff --stat` + 未跟踪文件(`git status --short`)或目标范围估算变更行数,自动匹配审查级别:
 
 | 变更量 | 级别 | codescan + 模型兜底方式 | 报告范围 |
 |--------|------|------------------------|---------|
@@ -27,21 +27,48 @@ allowed-tools:
 ## 执行流程
 
 ### 1. 获取审查目标 + 判定级别
-- 用户指定了文件/目录 → 审查指定范围;指定了 commit/diff → 用对应 ref
-- 未指定 → 审查当前工作目录所在 git 仓库的未提交变更(ref = HEAD)
+- 用户指定了文件/目录 → 审查指定范围
+- 用户指定 commit → `--diff-commit <sha>`;指定 base 分支/ref → `--diff <base>`(base→工作区)
+- 未指定 → 审查当前工作目录所在 git 仓库的未提交变更(`--diff`,包含未跟踪的新文件)
 - 估算变更行数,匹配分级策略,告知用户当前级别
 
 ### 2. 运行 codescan(确定性扫描,必做)
 
 ```bash
-codescan <目标文件或目录> --diff <ref> --format json --max-findings 100
+# 未提交变更(含未跟踪文件)
+codescan <目标文件或目录> --diff --format json --max-findings 100
+
+# 某个提交 / 某条 base 之后
+codescan <目标> --diff-commit <sha> --format json
+codescan <目标> --diff <base> --format json
 ```
 
 - CLI 自动按语言路由 6 个工具并输出统一 JSON,每条 finding 含:
   `dimension`(reuse/srp/quality/performance/kiss)、`severity`(high/medium/low/info)、`file:line`、`tool:rule`、`message`
-- **无需指定文件清单**:CLI 自己识别 java/js/ts/vue;未提交变更用 `--diff HEAD`,审查某 commit 用 `--diff <sha>`,全量审查去掉 `--diff`
-- CLI 工具状态都在输出 `tools` 字段里;某工具 skipped/error 不阻塞,继续流程
+- **无需指定文件清单**:CLI 自己识别 java/js/ts/vue;全量审查去掉 `--diff*`
+- `--staged` 审查暂存区;`--jobs N` 控制并发(默认 4);`--fail-on-tool-error` 供 CI 用
 - **codescan 完全不可用**(如 node 缺失)时才降级为纯模型审查:按下文模板启 5 个 Agent
+
+#### 2.1 检查扫描完整性(必做)
+
+先读 JSON 顶层字段,再进入结果分类:
+
+| 字段 | 含义 |
+|---|---|
+| `ok` | `false` = 至少一个工具 `error`/`partial` |
+| `summary` | `ok/skipped/partial/error` 计数 + 耗时 |
+| `tools.<name>.status/detail` | 每个工具的结果与原因 |
+| `files.truncated` | 文件收集达到 3000 上限,结果不完整 |
+
+注意:`tools.<name>.findings` 是该工具过滤前的原始数量;顶层 `findings` 才是本次 diff 范围内、去重并截断后的结果,两者不一致是正常的。
+
+处理规则:
+
+1. `ok === true` → 正常进入第 3 步。
+2. `ok === false` → 在报告开头加「⚠ 扫描完整性」块,逐个列出 `error`/`partial` 工具及 `detail`;结论中不能出现"未发现问题"这类整体判定,只能说"已成功执行的工具未发现问题"。
+3. `skipped` → 在报告末尾注明哪些工具未执行及原因(依赖未安装、无 eslint 配置、全部文件被 eslintignore 忽略等)。
+4. `partial` 常见原因:部分文件解析失败、lint 批次失败、文件被 eslintignore 全部忽略、knip 配置加载失败。**只如实上报,不要尝试修改项目配置**。
+5. `files.truncated === true` → 注明文件收集达到上限,结论不完整。
 
 ### 3. 对工具结果分类
 
@@ -94,6 +121,9 @@ severity 过滤按级别:快速只保留 high;标准保留 high+medium;深度全
 ```markdown
 ## 代码审查报告(X 级别)
 
+> 扫描完整性:✅ 全部工具成功执行 | ⚠ 有工具未完整执行
+> 未执行/不完整:eslint(skipped: 依赖未安装)、knip(partial: vue.config.js 加载失败)
+
 ### 🔁 复用问题 (N 项)
 - [文件:行号] 重复代码 X 行 ↔ 对侧位置 + 抽取建议  [确定性 jscpd]
 
@@ -110,6 +140,7 @@ severity 过滤按级别:快速只保留 high;标准保留 high+medium;深度全
 - [文件:行号] 过度设计/死代码 + 简化建议  [确定性 pmd/knip + 模型复核] 或 [模型判断]
 
 ### 总结
+- 扫描完整性:X/Y 个工具成功;不完整的工具及原因
 - 优先修复项(按严重度排序)
 - 确定性发现(工具每次结果一致)与模型判断(可能波动)分别计数
 ```
@@ -149,10 +180,16 @@ severity 过滤按级别:快速只保留 high;标准保留 high+medium;深度全
 
 ## codescan CLI 参考
 
-- 位置:CLI 在公共工具目录 `C:/Users/Administrator/.agents/cli/codescan/`(npm link 注册全局命令 `codescan`,任意目录可直接调用;PMD 为公共依赖,首次 Java 扫描自动下载,不入 git 仓库;详见其 README.md)
+- 位置:CLI 在公共工具目录 `C:/Users/Administrator/.agents/cli/codescan/`;`npm link` 已注册全局命令 `codescan`,改代码后无需重新 link(`codescan --version` 当前为 `0.3.0`)
+- 全局命令丢失时重新注册:`cd C:/Users/Administrator/.agents/cli/codescan && npm link`
 - 全局命令不可用时兜底:`node C:/Users/Administrator/.agents/cli/codescan/cli.js <目标>`
-- 常用:`--diff <ref>` 只扫新增行 | `--format text` 人读 | `--tools jscpd,astgrep,pmd,eslint,tsc,knip` 指定子集 | `--max-findings N`
-- 语言路由:java→pmd+jscpd+ast-grep;js/vue→eslint+knip+jscpd+ast-grep;ts→tsc(依赖未装自动跳过)+knip+jscpd+ast-grep
+- 审查范围:`--diff [ref]` ref→工作区(含未跟踪文件) | `--diff-commit <ref>` 单个提交 | `--staged` 暂存区 | 不传 = 全量
+- 其他:`--jobs N` 并发(默认 4) | `--format text` 人读 | `--tools jscpd,astgrep,pmd,eslint,tsc,knip` 指定子集 | `--max-findings N` | `--fail-on-tool-error` CI 用
+- 退出码:`0` 成功(有 finding 也是 0) | `1` 用法错误 | `2` 目标错误 | `3` 内部异常 | `4` 有工具未完整执行(仅 `--fail-on-tool-error`)
+- 语言路由:java→pmd+jscpd+ast-grep;js/vue→eslint+knip+jscpd+ast-grep;ts/vue→tsc(vue-tsc/tsc,依赖未装自动跳过)+knip
+- monorepo:ESLint 按文件最近的配置分组;tsc 用最近的 `tsconfig.json`;knip 用最近的 `package.json`
+- 工具接口:契约在 `lib/tool.js`,注册表在 `lib/registry.js`;`scan` 不直接依赖具体工具
+- 替换/新增工具:`--tool-module <path>` 加载外部适配器(同名覆盖内置),`--list-tools` 查看已注册工具;不要直接改 `lib/scan.js`
 - 维护:加 ast-grep 规则放 `rules/astgrep/`(id 前缀 perf-/kiss- 定维度);调 PMD 规则改 `rules/pmd-codescan.xml`
 
 ## 使用方式
@@ -161,4 +198,4 @@ severity 过滤按级别:快速只保留 high;标准保留 high+medium;深度全
 - `/codescan --quick` / `--deep` - 强制级别
 - `/codescan 审查 src/utils/ 目录` - 指定范围
 - `/codescan 重点看性能问题` - 快速模式下指定额外抽查维度
-- `/codescan 检查最近提交的代码` - 自然语言指定范围(对应 `--diff HEAD~1`)
+- `/codescan 检查最近提交的代码` - 自然语言指定范围(对应 `--diff-commit HEAD`)

@@ -1,0 +1,4 @@
+node_modules/
+pmd-bin-*/
+pmd-bin-*.zip
+*.log

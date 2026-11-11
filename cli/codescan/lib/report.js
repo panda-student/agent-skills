@@ -7,19 +7,35 @@ const DIM_META = {
   kiss: { icon: '🧩', label: 'KISS/死代码候选(确定性粗筛,需复核)' },
 };
 
+const STATUS_ICON = { ok: '✅', skipped: '⏭️', partial: '⚠️', error: '❌' };
+
 function toText(report) {
   const lines = [];
   lines.push(`# codescan 报告`);
   lines.push(`目标: ${report.target}`);
-  lines.push(`语言: ${report.detected.join(', ')}  |  仓库: ${report.repoRoot || '非 git 仓库'}`);
-  if (report.diff) {
-    lines.push(`diff: ${report.diff.ref} → ${report.diff.files} 个文件有新增行${report.diff.error ? ' (⚠ ' + report.diff.error + ')' : ''}`);
+  lines.push(`语言: ${report.detected.join(', ') || '(none)'}${report.hasVue ? ', vue' : ''}  |  仓库: ${report.repoRoot || '非 git 仓库'}`);
+  if (report.files) {
+    lines.push(`文件: ${report.files.total} 个${report.files.truncated ? ' (⚠ 已达收集上限,结果不完整)' : ''}`);
   }
+  if (report.diff) {
+    const mode = report.diff.mode || 'worktree';
+    lines.push(`diff: ${mode} ${report.diff.ref || ''} → ${report.diff.files} 个文件有新增行${report.diff.error ? ' (⚠ ' + report.diff.error + ')' : ''}`);
+  }
+
+  const bad = Object.entries(report.tools || {}).filter(([, t]) => t.status === 'error' || t.status === 'partial');
+  const skipped = Object.entries(report.tools || {}).filter(([, t]) => t.status === 'skipped');
+  if (bad.length) {
+    lines.push('');
+    lines.push(`⚠ 有 ${bad.length} 个工具未完整执行,本次结论可能不完整:`);
+    for (const [name, t] of bad) lines.push(`  - ${name}(${t.status}): ${t.detail || '无详情'}`);
+  }
+
   lines.push('');
   lines.push(`## 工具状态`);
-  for (const [name, t] of Object.entries(report.tools)) {
-    lines.push(`- ${name}: ${t.status}${t.detail ? ` — ${t.detail}` : ''} (${t.findings} 项, ${t.ms}ms)`);
+  for (const [name, t] of Object.entries(report.tools || {})) {
+    lines.push(`- ${STATUS_ICON[t.status] || '•'} ${name}: ${t.status}${t.detail ? ` — ${t.detail}` : ''} (${t.findings} 项, ${t.ms}ms)`);
   }
+
   lines.push('');
   const byDim = {};
   for (const f of report.findings) (byDim[f.dimension] = byDim[f.dimension] || []).push(f);
@@ -33,8 +49,18 @@ function toText(report) {
     }
     lines.push('');
   }
+
   if (report.truncated) lines.push(`⚠ 还有 ${report.truncated} 项低优先级发现被截断(--max-findings 调整)`);
-  if (!report.findings.length) lines.push(`(工具未发现问题)`);
+  if (!report.findings.length) {
+    const executed = Object.values(report.tools || {}).filter((t) => t.status === 'ok' || t.status === 'partial');
+    if (!executed.length) {
+      lines.push(`(没有成功执行的工具,无法判断是否干净)`);
+    } else if (bad.length || skipped.length) {
+      lines.push(`(成功执行的工具未发现问题;注意有工具跳过/失败,见上方状态)`);
+    } else {
+      lines.push(`(所有工具均成功执行且未发现问题)`);
+    }
+  }
   return lines.join('\n');
 }
 

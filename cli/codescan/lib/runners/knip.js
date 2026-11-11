@@ -1,23 +1,29 @@
 'use strict';
 const path = require('path');
 const fs = require('fs');
-const { sh, disp, normKey, inScope } = require('../util');
+const { sh, disp, inScope, extractJson, summarizeError } = require('../util');
+const { findBin } = require('../detect');
+
+// 固定已知可用版本,避免每次 npx 拉到不同版本导致结果不可复现
+const KNIP_VERSION = process.env.CODESCAN_KNIP_VERSION || '6.44.2';
 
 /** knip 死代码检测(JS/TS):未使用文件/导出/依赖 → KISS 维度(确定性候选) */
 async function run(ctx) {
-  const repo = ctx.repoRoot;
-  if (!repo) return { status: 'skipped', detail: '不在 git/npm 仓库内', findings: [] };
+  const repo = ctx.packageDir || ctx.rootDir || ctx.repoRoot;
+  if (!repo) return { status: 'skipped', detail: '找不到项目根目录', findings: [] };
   if (!ctx.langs.includes('js') && !ctx.langs.includes('ts')) {
     return { status: 'skipped', detail: '无 js/ts 文件', findings: [] };
   }
   if (!fs.existsSync(path.join(repo, 'package.json'))) {
     return { status: 'skipped', detail: '无 package.json', findings: [] };
   }
-  // --no-exit-code:发现问题不返回非零;--no-progress? knip 无此 flag,静默靠 reporter json
-  const r = sh('npx --yes knip --reporter json --no-exit-code', { cwd: repo, timeoutMs: ctx.toolTimeout });
-  const data = safeJson(r.stdout);
-  if (!data) {
-    return { status: 'error', detail: (r.stderr || r.stdout || 'no output').slice(0, 200), findings: [] };
+  // 优先用仓库自己的 knip;没有则用固定版本的 npx
+  const npx = findBin(repo, repo, 'knip') ? 'npx --no-install knip' : `npx --yes knip@${KNIP_VERSION}`;
+  const r = await sh(`${npx} --reporter json --no-exit-code`, { cwd: repo, timeoutMs: ctx.toolTimeout });
+  const data = extractJson(r.stdout);
+  if (!data || typeof data !== 'object') {
+    const msg = r.spawnError ? `knip 启动失败: ${r.error}` : summarizeError(r.stderr || r.stdout);
+    return { status: 'error', detail: msg, findings: [] };
   }
   const issues = data.issues || data; // 兼容新旧 reporter 结构
   const findings = [];
@@ -41,7 +47,13 @@ async function run(ctx) {
       if (name) push(findings, entryFile, 0, '未使用依赖', `依赖 ${name} 未被引用(需人工确认动态引用)`);
     }
   }
-  return { status: 'ok', detail: `knip 扫描 ${scannedFiles} 个文件条目`, findings };
+  // --no-exit-code 下正常应为 0;非 0 说明部分配置/文件没加载成功,结果不完整
+  const note = r.code === 0 ? '' : `; knip 退出码 ${r.code}: ${summarizeError(r.stderr)}`;
+  return {
+    status: r.code === 0 ? 'ok' : 'partial',
+    detail: `knip 扫描 ${scannedFiles} 个文件条目${note}`,
+    findings,
+  };
 }
 
 function push(findings, file, line, rule, message) {
@@ -51,10 +63,10 @@ function push(findings, file, line, rule, message) {
   });
 }
 
-function safeJson(s) {
-  const t = (s || '').trim();
-  if (!t.startsWith('{') && !t.startsWith('[')) return null;
-  try { return JSON.parse(t); } catch { return null; }
-}
-
-module.exports = { name: 'knip', run };
+module.exports = {
+  name: 'knip',
+  languages: ['js', 'ts'],
+  dimensions: ['kiss'],
+  description: '未使用文件/导出/依赖',
+  run,
+};

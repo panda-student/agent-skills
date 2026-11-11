@@ -1,11 +1,43 @@
 {
   "name": "codescan",
-  "version": "1.0.0",
-  "description": "确定性代码质量扫描 CLI:jscpd/ast-grep/PMD/ESLint/vue-tsc/knip 六工具统一封装,供 codescan 技能调用",
+  "version": "0.3.0",
+  "description": "确定性代码质量扫描 CLI:jscpd/ast-grep/PMD/ESLint/vue-tsc/knip 六工具统一封装,工具适配器可替换,面向 diff 审查与 AI Agent 调用",
+  "license": "MIT",
   "bin": {
     "codescan": "cli.js"
   },
+  "files": [
+    "bin",
+    "lib",
+    "rules",
+    "cli.js",
+    "README.md"
+  ],
+  "scripts": {
+    "start": "node cli.js",
+    "test": "node --test \"test/*.test.js\""
+  },
   "engines": {
     "node": ">=18"
+  },
+  "keywords": [
+    "code-review",
+    "static-analysis",
+    "linter",
+    "pmd",
+    "eslint",
+    "ast-grep",
+    "knip",
+    "jscpd",
+    "diff",
+    "ai-agent"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/panda-student/agent-skills.git",
+    "directory": "cli/codescan"
+  },
+  "bugs": {
+    "url": "https://github.com/panda-student/agent-skills/issues"
   }
 }
