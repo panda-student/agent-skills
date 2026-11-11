@@ -42,7 +42,7 @@ description: PMS 项目开发交付 SOP：受理分诊 → 前期确认 → 方�
 | 确认+方案 | `verify-issue`（核实/排查/梳理/方案素材）+ `grill-me`（决策树拍板） |
 | 实施 | git worktree（建树/预检/依赖复用/证书）+ `test-driven-development`（前端单测 `vitest`）；PMS 工程约束走项目规则（AGENTS.md 按需索引） |
 | 代码评审 | `simplify`（fast path 单维快检 / 标准路径四维并行）；PMS 重点核查项/拦截检查走项目规则 |
-| 编译+冒烟 | `yaak-ops`（命令细节 `use-yaak`）；PMS mvn 纪律/冒烟规则走项目规则 |
+| 编译+冒烟 | `yaak-ops`（命令细节直接查 yaak CLI 自描述）；PMS mvn 纪律/冒烟规则走项目规则 |
 | 复盘固化 | `learn`（踩坑草稿正式固化，产出随合并推送一并提交） |
 | 合并推送 | git worktree 合并推送流程（单一来源）；PMS 提交信息约定走项目规则 |
 | uat→dev 同步 | `cherry-pick`（单一来源） |
@@ -81,6 +81,6 @@ description: PMS 项目开发交付 SOP：受理分诊 → 前期确认 → 方�
 - 实施必建 git worktree，全部改动树内；强制 TDD，豁免须经用户确认
 - 评审未通过不提交；推送后必须删除已合并 worktree，禁止遗留
 - 提交只发生在 uat，dev 只作镜像；uat→dev 全量同步只走 cherry-pick，禁止 merge 整个 uat；同步完切回 uat
-- 工具红线：数据库一律 `dbx` CLI（见 dbx-ops 技能，MCP 形态已于 2026-11-10 移除）；凭据一律 `vault` CLI（见 vault-ops 技能），禁止硬编码、禁止读仓库配置文件里的密码；接口操作一律 `yaak-ops`（SOP 层，命令细节落 `use-yaak`），禁止终端 curl
+- 工具红线：数据库一律 `dbx` CLI（见 dbx-ops 技能，MCP 形态已于 2026-11-10 移除）；凭据一律 `vault` CLI（见 vault-ops 技能），禁止硬编码、禁止读仓库配置文件里的密码；接口操作一律 `yaak-ops`（SOP 层，命令细节直接查 yaak CLI 自描述），禁止终端 curl
 - 「验证通过」以 UAT 部署后终验为准且逐项出示证据，无证据按未验证处理；本地冒烟不作通过依据
 - 规格书单元格删除线 = 需求作废，不得作为必填/校验依据；字段物理删列须目标环境新镜像生效后执行

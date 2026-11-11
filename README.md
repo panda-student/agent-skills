@@ -28,8 +28,7 @@
 
 | 技能 | 说明 | 文档 |
 |------|------|------|
-| [yaak-ops](skills/yaak-ops/) | 接口任务的执行 SOP 与验证方法（基于 yaak CLI） | [查看](skills/yaak-ops/SKILL.md) |
-| [api-ops](skills/api-ops/) | 接口联调相关执行 SOP，统一以 yaak 处理 | [查看](skills/api-ops/SKILL.md) |
+| [yaak-ops](skills/yaak-ops/) | Yaak 指导唯一技能：接口任务执行 SOP 与验证方法（直接基于 yaak CLI） | [查看](skills/yaak-ops/SKILL.md) |
 | [api-center-register](skills/api-center-register/) | 九牧 API 中心后台通过浏览器自动化注册接口 | [查看](skills/api-center-register/SKILL.md) |
 | [rancher-ops](skills/rancher-ops/) | Rancher 容器平台：查看 Pod 日志、确认部署是否生效 | [查看](skills/rancher-ops/SKILL.md) |
 | [nacos-ops](skills/nacos-ops/) | Nacos 注册中心：入口拓扑与服务注册状态排查 | [查看](skills/nacos-ops/SKILL.md) |

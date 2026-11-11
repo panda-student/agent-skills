@@ -1,6 +1,6 @@
 ---
 name: yaak-ops
-description: 接口相关任务统一以 yaak 处理的执行 SOP 与验证方法论——单发联调、保存复用、链式依赖（回环往复）、批量执行、多环境切换、CI 无人值守、导出文件校验、跨系统数据断点排查。当用户提到接口联调、验证接口、请求调试、接口自动化、接口测试、导出文件校验、调接口、排查接口返回为空/404/认证失败时使用；yaak 命令与字段细节以 use-yaak 技能及 CLI 自描述为准
+description: Yaak 指导唯一技能——接口相关任务统一以 yaak CLI 处理的执行 SOP 与验证方法论：单发联调、保存复用、链式依赖（回环往复）、批量执行、多环境切换、CI 无人值守、导出文件校验、跨系统数据断点排查。当用户提到接口联调、验证接口、请求调试、接口自动化、接口测试、导出文件校验、调接口、排查接口返回为空/404/认证失败时使用；命令与字段细节直接查 yaak CLI 自描述（`yaak --help` / `yaak request schema`），不依赖其它 Yaak 技能
 user-invocable: true
 ---
 
@@ -9,7 +9,7 @@ user-invocable: true
 ## 核心原则
 
 - 接口相关任务（构建/发送/保存/复用/链式/批量/环境切换/校验/排查）**一律以 yaak 实现**；yaak CLI 与桌面端共用同一本地数据库，创建的请求是持久资产
-- 命令/字段/模板函数细节**以 use-yaak 技能与 CLI 自描述为准**（`yaak <command> --help`、`yaak request schema http --pretty`、`yaak template-function show <name>`），本技能只写 SOP 与方法论，不复制命令手册
+- **本技能是 Yaak 指导唯一技能**：命令/字段/模板函数细节**直接查 yaak CLI 自描述**（`yaak <command> --help`、`yaak request schema http --pretty`、`yaak template-function show <name>`）；本技能承载 SOP/执行规则/方法论/踩坑，不复制命令手册
 - Node fetch 脚本仅三种兜底：CI/环境无 yaak（yaak `export + --data-dir` 已能覆盖多数 CI 场景）、复杂断言逻辑一体化、二进制处理（PS5 管道损坏字节流）
 
 ## 任务类型 → yaak 实现速查
@@ -29,6 +29,7 @@ user-invocable: true
 - 发送前不确定字段/鉴权结构 → 先 `yaak request schema http --pretty`，不要猜
 - **body 必须为 `{bodyType: "application/json", text: "<json字符串>"}` 对象形态**，且 Content-Type 头需手工加（bodyType 不会自动加头）。2026.9.0 对纯字符串 body 会**静默丢弃**——update 失败仍发旧存储 body，导致「重试实际发旧 payload」（2026-11-04 事故复盘）；2026.9.1 起已改为硬报错（`invalid type: string, expected a map`），但不得依赖报错兜底，按下条执行
 - **create/update 后必须读回比对，一致才 send**：`yaak request show <rq_id>` 读回，核对 `body.text` 与本次预期载荷逐字符一致后再发送；不一致立即停下排查构造过程，**禁止盲目重试**（body 未更新时重试只会反复发旧 payload）。该兜底同时拦截「合法 JSON 但内容错误」（旧 payload 复用、引号剥离后变形等 CLI 报错拦不住的情形）
+- **模板参数传 JSON 文本：单引号必须转义**：Yaak 模板函数参数用单引号定界，JSON 文本里的 `'` 必须写成 `\'`，例如 `${[ json.escape(input='{"name":"O\'Reilly"}') ]}`；未转义时 `'` 被当作参数结束符，模板扫描失败且 **不报错**，整段 `${[ ... ]}` 会原样发给服务端。更稳的写法是把 JSON 文本放环境变量后引用 `${[ json.escape(input=jsonText) ]}`。2026-11-11 用本地 echo 服务验证：普通 JSON body（含中文/嵌套 JSON/换行）、URL/表单参数均正常，仅模板参数内的裸单引号受影响；`json.minify` / `json.jsonpath` / `json.escape` 都适用此规则
 - **验证以 `yaak response show` 为准**（status/headers/timing/最终 URL），send 的 stdout 只有 body；`-v` 仅作旁证
 - **exit 0 ≠ 接口健康**：HTTP 404/500 也 exit 0，必须核对状态码再下结论
 - 删除请求/文件夹需 `--yes`，且先与用户确认
@@ -63,7 +64,7 @@ A 系统页面显示 B 系统数据为空时，用**同一报文**逐层请求�
 
 ## 职责边界
 
-- 本技能是接口任务**经验 SSOT**（SOP/执行规则/方法论/踩坑只在此维护）；`use-yaak` 为 CLI 生成技能，`yaak agent install` 会整体覆盖它，故经验禁止写进 use-yaak
+- 本技能是 Yaak 指导**唯一 SSOT**（SOP/执行规则/方法论/踩坑只在此维护）；其它技能只引用 `yaak-ops`；命令细节一律以 `yaak --help` 等 CLI 自描述为准
 
 ## Node fetch 兜底场景（仅此三种）
 

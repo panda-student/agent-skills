@@ -283,7 +283,7 @@ PowerShell 5.1 将服务端 UTF-8 响应按 GBK 解码，终端输出/落盘内�
 
 - 测试：前端 https://test-pms.jomoo.com（只服务页面，API 404）；网关 https://api-test-pms.jomoo.com/pms/pms-service/pms，必备头 authorization: Bearer <token> + systemid: 1108598
 - UAT：前端 https://uat-pms.jomoo.com；网关 https://uat-pms.jomoo.com/pms/pms-service/pms；登录取 token 走 api-application-uat-jmbos.jomoo.com 的 `system/getSystemByDomain/<domain>` → `niscommon/noAuth/loginNew`（E2E 凭据在 pms_frontend/e2e/.env.local）
-- 请求脚本模板与状态码诊断见 use-yaak 技能 examples.md
+- 请求脚本模板与状态码诊断见 yaak-ops 技能；命令细节直接查 `yaak --help` / `yaak request schema http`
 
 ## 背景（为什么不是参数问题）
 
