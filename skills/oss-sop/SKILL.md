@@ -96,7 +96,7 @@ git apply -3 <scratch>/task.patch
 - 类型检查：`pnpm typecheck`
 - 格式/静态检查：`oxfmt --check <changed files>`、`pnpm lint`
 - i18n/文案目录测试（新增用户可见文本必须同时补 `en` 和 `zh`）：`pnpm vitest run src/platform/locales`
-- GUI 验证（有 UI 变更时）：Tauri MCP / agent-browser，先 focus 窗口，再截图；多步骤交互要有前后对比图或录屏
+- GUI 验证（有 UI 变更时）：统一走 Tauri MCP —— 方案、安装配置、依赖与已知坑见 [tauri-mcp.md](./tauri-mcp.md)，工具未配置时按其「安装与配置」一节指导补齐；agent-browser / Computer Use 仅在 MCP 不可用时兜底。先 focus 窗口，再截图；多步骤交互要有前后对比图或录屏
 - 记录**实际执行的命令 + 结果**，写进 PR 的 “How it was verified”
 
 定量验证优于“看起来正常”：例如切换 tab 时记录容器高度/位置是否恒定，而不是只截一张图。
@@ -221,6 +221,10 @@ pnpm vitest run <path>
 pnpm typecheck
 pnpm exec oxfmt --check <files>
 pnpm lint
+
+# GUI 验证（统一走 Tauri MCP，细节见 tauri-mcp.md）
+pnpm dev:app    # 起应用；execute_js 要用 window.__TAURI__ 时必须用它而非 pnpm tauri dev
+pnpm dev:status # 查本 worktree 桥接端口，之后 driver_session start 带上该 appIdentifier
 
 # 提交与 PR
 git push -u origin <branch>

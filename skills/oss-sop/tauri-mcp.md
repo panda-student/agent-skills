@@ -1,0 +1,59 @@
+# Tauri MCP：驱动 OpenIDEA 应用做 GUI 验证
+
+oss-sop 的 GUI 验证统一走本方案。项目侧规范（AGENTS.md）也要求 Tauri MCP 优先，agent-browser / Computer Use 只在 MCP 不可用时兜底。
+
+## 方案与依赖
+
+MCP server 用社区的 `@hypothesi/tauri-mcp-server`，配合应用内嵌的 `tauri-plugin-mcp-bridge`（`src-tauri/Cargo.toml` 已声明，无需另装）。
+
+| 依赖 | 说明 |
+|---|---|
+| 应用侧插件 | `tauri-plugin-mcp-bridge`，随应用编译自带；版本见 `src-tauri/Cargo.toml`（当前 0.13 系） |
+| MCP server | `@hypothesi/tauri-mcp-server`（npm），**版本与插件同 minor**（当前 0.13.x），不匹配会告警 |
+| 运行时 | Node + npx（server 按需拉起，无需预装） |
+| 起应用 | `pnpm dev:app`（不是 `pnpm tauri dev`）：GUI 验证要在 `execute_js` 里用 `window.__TAURI__` 全局 API，只有 `dev:app` 开启它 |
+
+## 安装与配置（工具没有时照此指导）
+
+ZCode 用户级配置 `~/.zcode/cli/config.json` → `mcp.servers` 加（用户级对所有 worktree 生效、不进仓库）：
+
+```json
+"tauri": {
+  "command": "cmd",
+  "args": ["/c", "npx", "-y", "@hypothesi/tauri-mcp-server@0.13.2"]
+}
+```
+
+- 版本号按「与插件同 minor」原则对齐后再固定；应用升级插件后同步改。
+- 其他客户端（Claude Code / Cursor 等）用等价的 `mcpServers` 条目。
+- MCP 工具在**会话启动时**绑定：配置后本会话看不到工具，新开会话自动连接（也可在 设置 → MCP 确认状态）。
+
+配置后冒烟验证（不依赖任何客户端，直接 stdio 握手）：
+
+```bash
+printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"smoke","version":"0.0.1"}}}' | npx -y @hypothesi/tauri-mcp-server@0.13.2 | head -c 300
+```
+
+返回 `serverInfo.name: mcp-server-tauri` 即通。连 ZCode 工具都没有（新会话之前）也可以用裸 stdio JSON-RPC 驱动它：`tools/list` 拿工具清单，`tools/call` 逐个调用，每个调用加超时，`initialize` 后先发 `notifications/initialized`。
+
+## 使用流程
+
+```text
+pnpm dev:app（后台起应用）
+→ pnpm dev:status（轮询到 bridges[].appIdentifier，端口 9223 起）
+→ driver_session start（带 appIdentifier）
+→ manage_window focus（截图/计时敏感步骤前必须，否则后台窗口节流、截图可能黑屏）
+→ webview_execute_js / webview_dom_snapshot / webview_interact / webview_screenshot …
+→ driver_session stop（必须带 appIdentifier；server 是多会话共享的，不带会停掉别人的）
+```
+
+常用工具：`driver_session`、`webview_execute_js`、`webview_dom_snapshot`、`webview_interact`、`webview_keyboard`、`webview_wait_for`、`webview_screenshot`（可 `filePath` 落盘）、`manage_window`、`ipc_execute_command`、`read_logs`。
+
+项目专属细节（CodeMirror/xterm 不吃 MCP `type`、点击 `event.detail===0`、坐标换算 0.9 等）以仓库内 `.agents/skills/verify` 为准。
+
+## 已知坑
+
+- 杀掉 `pnpm dev:app` 包装进程不会带走应用：残留的 `openidea.exe` 要按 PID 定点清理（先 `tasklist` 查 PID，再 `taskkill /pid <pid> /t /f`），绝不用进程名批量杀；Vite 死了应用还开着时，webview 一刷新就是空白页，重启会话。
+- 每个工具调用都要带 `appIdentifier`（`pnpm dev:status` 报的端口）；多个 worktree 同时跑时端口不固定。
+- `execute_js` 检查 `window.__TAURI__` 前提是应用用 `dev:app` 起的。
+- 会话中途才配置的 MCP 不生效，重启会话。
