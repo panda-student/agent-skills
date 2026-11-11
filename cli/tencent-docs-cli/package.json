@@ -1,0 +1,16 @@
+{
+  "name": "tencent-docs-cli",
+  "version": "1.0.0",
+  "description": "腾讯文档 CLI：普通表格/智能表格读写与通用工具调用，连接机制复用 mcp-client",
+  "type": "module",
+  "bin": {
+    "tencent-docs": "bin/tencent-docs.js"
+  },
+  "dependencies": {
+    "mcp-client": "file:../mcp-client"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "private": true
+}

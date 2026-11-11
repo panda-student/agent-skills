@@ -1,6 +1,6 @@
 # dbx-cli
 
-数据库 / Redis / Nacos 客户端（DBX）的 CLI 封装。DBX 的 MCP 二进制只讲 MCP 协议，本包经 [mcp-stdio-client](../mcp-stdio-client/) 与其通信，把常用操作暴露成子命令。
+数据库 / Redis / Nacos 客户端（DBX）的 CLI 封装。DBX 的 MCP 二进制只讲 MCP 协议，本包经 [mcp-client](../mcp-client/) 与其通信，把常用操作暴露成子命令。
 
 > 2026-11-10 拍板：MCP 形态每次换工具都要重复注册，已从 ZCode `cli/config.json` 移除（备份 `config.json.bak-20261110-mcp-remove`），统一走本 CLI。配套技能见 `skills/dbx-ops/`。
 
@@ -21,7 +21,7 @@ dbx tools --json                                  # 31 个工具全清单（写 
 
 ```powershell
 cd ~/.agents/cli/dbx-cli
-npm install && npm link     # 依赖同仓库的 ../mcp-stdio-client（file: 引用），全局命令落到 /d/nodejs
+npm install && npm link     # 依赖同仓库的 ../mcp-client（file: 引用），全局命令落到 /d/nodejs
 ```
 
 二进制本体随 DBX（`@dbx-app/mcp-win32-x64`）安装位置各自维护；路径变更用环境变量 `DBX_BIN` 覆盖。

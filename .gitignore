@@ -35,10 +35,12 @@ skills/*
 !skills/rancher-ops/
 !skills/skill-builder/
 !skills/start-pms-backend/
-!skills/task-wrapup/
+!skills/task-closeout/
+!skills/tencent-docs-ops/
 !skills/vault-ops/
 !skills/verify-issue/
 !skills/vitest/
 !skills/weekly-report/
+!skills/worktree-ops/
 !skills/yaak-ops/
 # <<< skills-private-whitelist

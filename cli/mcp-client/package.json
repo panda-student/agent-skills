@@ -1,0 +1,16 @@
+{
+  "name": "mcp-client",
+  "version": "2.0.0",
+  "description": "统一 MCP 机制层：stdio 与 Streamable HTTP 传输、initialize 握手、tools/list、tools/call（供各域 CLI 以 file: 依赖复用）",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js"
+  },
+  "bin": {
+    "mcp": "bin/mcp.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

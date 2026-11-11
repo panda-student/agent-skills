@@ -7,7 +7,7 @@
     "dbx": "bin/dbx.js"
   },
   "dependencies": {
-    "mcp-stdio-client": "file:../mcp-stdio-client"
+    "mcp-client": "file:../mcp-client"
   },
   "engines": {
     "node": ">=18"

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * vault CLI：本机凭据密码库（vault.exe）子命令封装。
- * vault.exe 是纯 MCP 二进制（--mcp 才起协议），本脚本经 mcp-stdio-client 与其通信。
+ * vault.exe 是纯 MCP 二进制（--mcp 才起协议），本脚本经 mcp-client（stdio 传输）与其通信。
  *
  * 用法：
  *   vault tools [--json]                                     工具清单与参数模式
@@ -12,10 +12,20 @@
  *
  * 环境变量 VAULT_BIN 覆盖二进制路径；--timeout=毫秒 调整单请求超时。
  */
-import { withClient, McpStdioClient } from "mcp-stdio-client";
+import { withClient, McpClient } from "mcp-client";
 
 const COMMAND = process.env.VAULT_BIN || "D:/vault/vault.exe";
 const ARGS = ["--mcp"];
+
+function stdio(opts) {
+  return {
+    transport: "stdio",
+    command: COMMAND,
+    args: ARGS,
+    timeoutMs: opts.timeoutMs,
+    clientInfo: { name: "vault-cli", version: "1.0.0" },
+  };
+}
 
 function parseArgs(argv) {
   const opts = { json: false, timeoutMs: 120000 };
@@ -33,7 +43,7 @@ function parseArgs(argv) {
 }
 
 function emit(result) {
-  const text = McpStdioClient.resultText(result);
+  const text = McpClient.resultText(result);
   if (result && result.isError) {
     console.error(text);
     process.exit(1);
@@ -43,7 +53,7 @@ function emit(result) {
 
 async function run(opts, fn) {
   try {
-    emit(await withClient(COMMAND, ARGS, { timeoutMs: opts.timeoutMs }, fn));
+    emit(await withClient(stdio(opts), fn));
   } catch (err) {
     console.error(err.message);
     process.exit(1);
@@ -51,7 +61,7 @@ async function run(opts, fn) {
 }
 
 async function printTools(opts) {
-  const tools = await withClient(COMMAND, ARGS, { timeoutMs: opts.timeoutMs }, (c) => c.listTools());
+  const tools = await withClient(stdio(opts), (c) => c.listTools());
   if (opts.json) console.log(JSON.stringify(tools, null, 2));
   else for (const t of tools) console.log(t.name + " — " + (t.description || "").split("\n")[0]);
 }

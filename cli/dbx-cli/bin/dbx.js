@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * dbx CLI：数据库 / Redis / Nacos 客户端（DBX）子命令封装。
- * DBX 的 MCP 二进制只讲 MCP 协议，本脚本经 mcp-stdio-client 与其通信。
+ * DBX 的 MCP 二进制只讲 MCP 协议，本脚本经 mcp-client（stdio 传输）与其通信。
  *
  * 用法：
  *   dbx tools [--json]                                       工具清单（31 个，权威参考）
@@ -16,11 +16,21 @@
  * 环境变量 DBX_BIN 覆盖二进制路径；--timeout=毫秒 调整单请求超时。
  * --conn 是连接名称（connection_name），--db 是 database。
  */
-import { withClient, McpStdioClient } from "mcp-stdio-client";
+import { withClient, McpClient } from "mcp-client";
 
 const COMMAND = process.env.DBX_BIN
   || "D:/nodejs/node_modules/@dbx-app/mcp-server/node_modules/@dbx-app/mcp-win32-x64/bin/dbx-mcp.exe";
 const ARGS = [];
+
+function stdio(opts) {
+  return {
+    transport: "stdio",
+    command: COMMAND,
+    args: ARGS,
+    timeoutMs: opts.timeoutMs,
+    clientInfo: { name: "dbx-cli", version: "1.0.0" },
+  };
+}
 
 function parseArgs(argv) {
   const opts = { json: false, timeoutMs: 120000 };
@@ -38,7 +48,7 @@ function parseArgs(argv) {
 }
 
 function emit(result) {
-  const text = McpStdioClient.resultText(result);
+  const text = McpClient.resultText(result);
   if (result && result.isError) {
     console.error(text);
     process.exit(1);
@@ -48,7 +58,7 @@ function emit(result) {
 
 async function run(opts, fn) {
   try {
-    emit(await withClient(COMMAND, ARGS, { timeoutMs: opts.timeoutMs }, fn));
+    emit(await withClient(stdio(opts), fn));
   } catch (err) {
     console.error(err.message);
     process.exit(1);
@@ -56,7 +66,7 @@ async function run(opts, fn) {
 }
 
 async function printTools(opts) {
-  const tools = await withClient(COMMAND, ARGS, { timeoutMs: opts.timeoutMs }, (c) => c.listTools());
+  const tools = await withClient(stdio(opts), (c) => c.listTools());
   if (opts.json) console.log(JSON.stringify(tools, null, 2));
   else for (const t of tools) console.log(t.name + " — " + (t.description || "").split("\n")[0]);
 }
