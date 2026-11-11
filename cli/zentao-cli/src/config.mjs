@@ -2,14 +2,14 @@
  * 配置管理 — 只存 baseUrl / account / defaultAssignee + token 缓存，不存密码。
  *
  * 路径：ZENTAO_CONFIG 或 ~/.auth-center/apps/zentao-cli/config.json
- * 凭据：auth-center（~/.auth-center/apps/zentao-cli/sso-credentials.json）
+ * 凭据：按 vault-ops 技能在 vault 中维护，运行时由 auth-center 取用（不落盘）
  * 旧路径 ~/.zentao-cli/config.json 与 ~/.zentao/config.json 会自动/一次性迁移
  * Token：auth-center createTokenManager 缓存到同一 config.json
  */
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { loadCredentials, saveCredentials, configFilePath, ensureAppFile } from 'auth-center';
+import { loadCredentials, configFilePath, ensureAppFile } from 'auth-center';
 import { fail } from './utils/output.mjs';
 
 export const APP_NAME = 'zentao-cli';
@@ -20,7 +20,7 @@ let cfgCache = null;
 /**
  * 一次性迁移旧路径：
  *   ~/.zentao-cli/config.json → ~/.auth-center/apps/zentao-cli/config.json
- *   ~/.zentao/config.json    → 合并连接信息；旧 auth.password 转存 sso-credentials.json
+ *   ~/.zentao/config.json    → 合并连接信息；旧 auth.password 不再落盘，提示改由 vault 维护
  */
 function ensureMigrated() {
     if (process.env.ZENTAO_CONFIG) return;
@@ -47,8 +47,8 @@ function ensureMigrated() {
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(merged, null, 2) + '\n', 'utf8');
 
     const oldPassword = old.auth && old.auth.password;
-    if (oldPassword && !String(oldPassword).includes('{{credential}}') && account && !loadCredentials(APP_NAME)) {
-        saveCredentials(APP_NAME, { account, password: oldPassword });
+    if (oldPassword && !String(oldPassword).includes('{{credential}}')) {
+        console.warn('[zentao] 检测到旧配置中的密码；密码不再落盘，请在 vault 中维护禅道凭据（操作见 vault-ops 技能）');
     }
 
     try { fs.unlinkSync(legacy); } catch { /* 旧文件保留不影响读取 */ }
@@ -88,8 +88,10 @@ export function getAccount() {
     const cfg = getConfig();
     const account = cfg.auth.account || cfg.defaultAssignee;
     if (account) return account;
-    const cred = loadCredentials(APP_NAME);
-    if (cred && cred.account) return cred.account;
+    try {
+        const cred = loadCredentials(APP_NAME);
+        if (cred && cred.account) return cred.account;
+    } catch { /* vault 不可用或未登记时按缺少 account 处理 */ }
     fail('配置缺少 account：请运行 zentao setup --base-url <API地址> --account <账号>');
 }
 
@@ -100,7 +102,7 @@ export function getWebUrl() {
 
 /**
  * 写入连接配置（setup 命令）。保留同文件里的 token 缓存字段。
- * password 不再落盘：传入时由调用方写入 auth-center 凭据文件。
+ * password 不再落盘：密码统一在 vault 中维护（操作见 vault-ops 技能）。
  */
 export function writeConfig(input) {
     const existing = readConfigFile();

@@ -275,9 +275,9 @@ export function createTokenManager(options) {
     throw new Error(`${label} 登录失败（${failures.join('；') || '未配置任何登录途径'}）`);
   }
 
-  /** 一次性凭据录入（WinForms 弹窗），保存到 ~/.<appName>/sso-credentials.json */
-  async function setupCredentials(dialogOptions) {
-    return promptAndSaveCredentials(appName, dialogOptions);
+  /** 凭据录入已停用：密码统一由 vault 管理（操作见 vault-ops 技能） */
+  async function setupCredentials() {
+    return promptAndSaveCredentials(appName);
   }
 
   return { currentToken, refreshToken, login, saveToken, setupCredentials };

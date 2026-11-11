@@ -1,6 +1,6 @@
 // 统一用户目录：所有 app 的配置与凭据都收在 ~/.auth-center/apps/<app>/
 //   config.json          token 缓存 + 业务 CLI 自己的连接配置
-//   sso-credentials.json 账号密码（弹窗/vault 注入）
+//   sso-credentials.json 仅历史遗留（已停用；密码统一由 vault 管理）
 // 可用 AUTH_CENTER_HOME 覆盖根目录。
 import { existsSync, mkdirSync, renameSync, copyFileSync, unlinkSync } from 'node:fs';
 import { dirname, join } from 'node:path';

@@ -44,7 +44,7 @@ function usage() {
 
 查:
   ibpm login [-e uat] [--manual]   登录并保存 token（已配凭据时全自动 SSO 直连；--manual 强制浏览器手动流程）
-  ibpm sso-setup [-e uat]          一次性弹窗录入 SSO 凭据（存 ~/.auth-center/apps/ibpm-cli/sso-credentials.json），启用全自动登录
+  ibpm sso-setup [-e uat]          验证 vault 中的 IBPM 凭据并登录（密码不再弹窗/落盘，操作见 vault-ops 技能）
   ibpm whoami [-e uat]             token 状态
   ibpm list [关键词] [-e uat]       流程列表
   ibpm show <defKey> [-e uat]      流程画像（节点/连线/审批人/条件）
@@ -166,7 +166,7 @@ async function main() {
           console.log('  回退浏览器手动流程...\n');
         }
       } else if (!hasFlag('--manual')) {
-        console.log('ℹ 未配置 SSO 凭据：执行 `ibpm sso-setup` 一次性录入后，登录即全自动（零浏览器零人工）。');
+        console.log('ℹ 未配置 SSO 凭据：请在 vault 中维护 IBPM 凭据（操作见 vault-ops 技能），再执行 `ibpm sso-setup` 验证，登录即全自动。');
         console.log('  本次走浏览器手动流程。\n');
       }
       await login(envName, { port: Number(getFlag('--port')) || 0 });

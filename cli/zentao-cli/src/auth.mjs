@@ -1,8 +1,8 @@
 /**
  * 认证 — 凭据与 token 生命周期统一交给 auth-center。
  *
- * 禅道没有 UCenter/SSO 入口，/tokens 仍用账号密码交换；但密码不再写进配置：
- * - 凭据：~/.auth-center/apps/zentao-cli/sso-credentials.json（auth-center 弹窗/vault 注入）
+ * 禅道没有 UCenter/SSO 入口，/tokens 仍用账号密码交换；密码统一由 vault 管理：
+ * - 凭据：运行时按 vault-ops 技能从 vault 取用（不落盘）
  * - Token：createTokenManager 缓存到 ~/.auth-center/apps/zentao-cli/config.json
  * - leveldb 扫描关闭；CDP 仅用于浏览器登录时读取 zentaosid（HttpOnly）
  */
@@ -12,8 +12,6 @@ import { getBaseUrl, getWebUrl, getAccount, APP_NAME } from './config.mjs';
 import {
     createTokenManager,
     loadCredentials,
-    saveCredentials,
-    promptAndSaveCredentials,
     loadAppConfig,
     saveAppConfig,
 } from 'auth-center';
@@ -33,8 +31,8 @@ export function hasSsoCredentials() {
     return !!loadSsoCredentials();
 }
 
-export function saveSsoCredentials(cred) {
-    saveCredentials(APP_NAME, cred);
+export function saveSsoCredentials() {
+    throw new Error('密码不再落盘：请在 vault 中维护禅道凭据（操作见 vault-ops 技能）');
 }
 
 /** 禅道系统特定登录：账号密码 → /tokens */
@@ -95,7 +93,7 @@ function rememberAccount(account) {
 
 /**
  * 获取可用 Token。
- * 阶梯由 auth-center 统一编排：缓存试活 → 凭据无头登录（已录入时）→ CDP 弹窗登录 → 落盘。
+ * 阶梯由 auth-center 统一编排：缓存试活 → 凭据无头登录（vault 中已有凭据时）→ CDP 弹窗登录 → 落盘。
  */
 export async function getToken() {
     const account = getAccount();
@@ -121,10 +119,11 @@ export async function login() {
     return token;
 }
 
-/** 一次性凭据录入（WinForms 弹窗，明文不进终端） */
+/** 验证 vault 中的禅道凭据（弹窗录入已停用） */
 export async function setupCredentials() {
-    // promptAndSaveCredentials 已落盘，无需二次 saveSsoCredentials
-    return promptAndSaveCredentials(APP_NAME, { windowTitle: '禅道凭据录入' });
+    const cred = loadSsoCredentials();
+    if (!cred) throw new Error('vault 中未找到禅道凭据，请先在 vault 中维护（操作见 vault-ops 技能）');
+    return cred;
 }
 
 /** 清除缓存 token（保留凭据） */

@@ -4,18 +4,13 @@
 //   2) UCenter tokenByCode（auth-center）→ ssoToken/refreshToken
 //   3) GET  {ibpm}/uc/sso/auth?ticket=<refreshToken>&code=<ssoToken>&service=<页面URL> → 顶层含 JWT token
 //      （第 3 步为 IBPM 系统特定交换链，保留在本文件）
-// 凭据：~/.auth-center/apps/ibpm-cli/sso-credentials.json（按环境分层 {uat:{account,password}}），
-//       经 WinForms 弹窗一次性录入（auth-center），明文不进终端/对话
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
+// 凭据：按 vault-ops 技能在 vault 中维护；运行时由 auth-center 取用（不落盘）
 import { parseJwt, ENV_PRESETS, saveEnvToken } from './config.mjs';
 import {
   ucenterLoginByCode,
   ucenterTokenByCode,
   createCookieJar,
-  promptAndSaveCredentials,
-  credentialsFilePath,
-  ensureAppFile,
+  loadCredentials,
 } from 'auth-center';
 
 // UCenter SSO 参数（按环境扩展）；clientSecret/grantType 与 IBPM mvue/sso.js 一致
@@ -24,24 +19,15 @@ const SSO_PRESETS = {
 };
 
 const IBPM_APP = 'ibpm-cli';
-const CRED_FILE = credentialsFilePath(IBPM_APP);
-ensureAppFile(IBPM_APP, 'sso-credentials.json'); // 迁移旧 ~/.ibpm-cli/sso-credentials.json
 
-// ---------- 凭据存取（ibpm 多环境分层结构，与 core 平铺结构做适配） ----------
+// ---------- 凭据存取（vault 运行时取用，多环境通过 config.json 的 vault 映射区分） ----------
 
 export function hasSsoCredentials(envName = 'uat') {
-  return !!loadSsoCredentials(envName);
+  try { return !!loadSsoCredentials(envName); } catch { return false; }
 }
 
 function loadSsoCredentials(envName = 'uat') {
-  if (!existsSync(CRED_FILE)) return null;
-  try {
-    const all = JSON.parse(readFileSync(CRED_FILE, 'utf8'));
-    const cred = all[envName];
-    return cred && cred.account && cred.password ? cred : null;
-  } catch {
-    return null;
-  }
+  return loadCredentials(IBPM_APP, { env: envName });
 }
 
 // ---------- 纯 HTTP SSO 链路（1/2 步走 auth-center，第 3 步为 IBPM 特定） ----------
@@ -83,7 +69,7 @@ export async function ssoLogin(envName = 'uat') {
   const preset = ENV_PRESETS[envName];
   if (!sso || !preset) throw new Error(`未知环境: ${envName}`);
   const cred = loadSsoCredentials(envName);
-  if (!cred) throw new Error(`未配置 SSO 凭据，请先执行: ibpm sso-setup -e ${envName}`);
+  if (!cred) throw new Error(`vault 中未找到 IBPM 凭据，请先按 vault-ops 技能维护，再执行: ibpm sso-setup -e ${envName}`);
 
   const jar = createCookieJar();
   const redirectUri = preset.baseUrl + preset.loginPath;
@@ -106,26 +92,16 @@ export async function ssoLogin(envName = 'uat') {
   return { token, jwt };
 }
 
-// ---------- 凭据录入（auth-center 弹窗 + ibpm 多环境适配） ----------
+// ---------- 凭据验证（密码统一由 vault 管理） ----------
 
-/** 一次性凭据录入：弹窗收集 → 保存凭据文件（环境分层）→ 立即执行全自动登录验证 */
+/** 验证 vault 中的 IBPM 凭据并执行全自动登录 */
 export async function ssoSetup(envName = 'uat') {
   const preset = ENV_PRESETS[envName];
   if (!preset) throw new Error(`未知环境: ${envName}`);
 
-  const cred = await promptAndSaveCredentials(IBPM_APP, { windowTitle: `IBPM SSO 凭据录入（${envName}）` });
-  // core 已保存平铺结构，这里改写为 ibpm 的环境分层结构
-  let all = {};
-  if (existsSync(CRED_FILE)) {
-    try {
-      const saved = JSON.parse(readFileSync(CRED_FILE, 'utf8'));
-      if (!saved[envName]) all = saved; // 平铺结构（无环境键）仅作为录入来源，落盘仍按环境分层
-    } catch { /* 覆盖坏文件 */ }
-  }
-  all[envName] = cred;
-  mkdirSync(dirname(CRED_FILE), { recursive: true });
-  writeFileSync(CRED_FILE, JSON.stringify(all, null, 2), 'utf8');
-  console.log('✓ 凭据已保存到 ' + CRED_FILE);
+  const cred = loadSsoCredentials(envName);
+  if (!cred) throw new Error('vault 中未找到 IBPM 凭据，请先在 vault 中维护（操作见 vault-ops 技能）');
+  console.log(`✓ 已从 vault 读取 IBPM 凭据（账号 ${cred.account}）`);
 
   console.log('\n[ibpm] 验证全自动登录...');
   const { jwt } = await ssoLogin(envName);

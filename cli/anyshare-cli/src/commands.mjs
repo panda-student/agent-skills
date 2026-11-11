@@ -52,10 +52,21 @@ export async function cmdLibs() {
   }
 }
 
-/** ls [路径]：列目录。路径支持 gns:// 或 "文档库名/子目录/..."；缺省用配置的默认目录 */
-export async function cmdLs(pathArg) {
-  const gns = await resolveGns(pathArg || getDefaultDir());
+/** ls [路径]：列目录。路径支持 gns:// 或 "文档库名/子目录/..."；缺省用配置的默认目录。
+ *  --json：输出单行 JSON（含 gns id），供脚本按 id 定位、避免云端改名后路径失效 */
+export async function cmdLs(pathArg, opts = {}) {
+  const input = pathArg || getDefaultDir();
+  const gns = await resolveGns(input);
   const { dirs, files } = await listSubObjectsAll(gns);
+  if (opts.json) {
+    console.log(JSON.stringify({
+      input,
+      gns,
+      dirs: dirs.map((d) => ({ name: d.name, id: d.id, modified_at: d.modified_at })),
+      files: files.map((f) => ({ name: f.name, id: f.id, size: f.size, modified_at: f.modified_at })),
+    }));
+    return;
+  }
   for (const d of dirs) {
     console.log(`d\t${fmtDate(d.modified_at)}\t${d.name}`);
   }
@@ -240,7 +251,7 @@ export async function cmdLogin() {
   console.log('  执行 anyshare whoami 查看状态。');
 }
 
-/** cred-setup：SSO 凭据一次性弹窗录入 */
+/** cred-setup：验证 vault 中的 SSO 凭据 */
 export async function cmdCredSetup() {
   const token = await ssoSetup();
   if (token) {

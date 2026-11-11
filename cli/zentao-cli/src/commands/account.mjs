@@ -19,7 +19,7 @@ import { ok } from '../utils/output.mjs';
 
 /**
  * zentao setup --base-url <url> --account <acc> [--assignee <acc>] [--credentials]
- * 密码不写配置：--password 仅为兼容旧用法，会转存到 auth-center 凭据文件
+ * 密码不写配置：--password 仅为兼容旧用法，调用会报错并提示改由 vault 维护
  * @param {{baseUrl: string, account: string, password?: string, assignee?: string}} input
  */
 export async function cmdSetup(input) {
@@ -32,8 +32,7 @@ export async function cmdSetup(input) {
             credentials = 'cleared';
         }
         if (input.password) {
-            saveSsoCredentials({ account: input.account || config.auth.account, password: input.password });
-            credentials = 'saved';
+            saveSsoCredentials();
         }
         ok({
             status: 'ok',
@@ -48,14 +47,14 @@ export async function cmdSetup(input) {
     }
 }
 
-/** zentao setup --credentials — 弹窗录入凭据并验证登录 */
+/** zentao setup --credentials — 验证 vault 中的凭据并登录 */
 export async function cmdSetupCredentials() {
     try {
         const cred = await setupCredentials();
         const token = await getToken();
         ok({
             status: 'ok',
-            message: '凭据已保存并通过登录验证',
+            message: '已从 vault 读取凭据并通过登录验证',
             account: cred.account,
             tokenState: token ? 'valid' : 'unknown'
         });

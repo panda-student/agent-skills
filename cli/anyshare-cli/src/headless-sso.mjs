@@ -4,14 +4,14 @@
 //   2) GET  {BASE}/sso?code=<code>&state=aishu → 跟随重定向，cookie jar 收集，
 //      由 wendang 后端用其 clientSecret 向 UCenter 换票并建立 Hydra 会话
 //   3) 从重定向链 / 响应体 / cookie 中提取 ory_at token
-// 凭据：~/.auth-center/apps/anyshare-cli/sso-credentials.json（auth-center 弹窗一次性录入）
+// 凭据：按 vault-ops 技能在 vault 中维护；运行时由 auth-center 取用（不落盘）
 import { UCENTER_LOGIN_BY_CODE, SSO_CALLBACK } from './endpoints.mjs';
 import { ucenterLoginByCode, createCookieJar, extractToken, loadCredentials } from 'auth-center';
 
 const ANYSHARE_APP = 'anyshare-cli';
 
 export function hasSsoCredentials() {
-  return !!loadCredentials(ANYSHARE_APP);
+  try { return !!loadCredentials(ANYSHARE_APP); } catch { return false; }
 }
 
 export function loadSsoCredentials() {
@@ -61,10 +61,11 @@ export async function headlessSsoLogin(cred) {
   }
 }
 
-/** 凭据录入 + 无头登录验证（anyshare cred-setup 命令实现）。返回 token 或 null */
+/** 验证 vault 中的凭据 + 无头登录验证（anyshare cred-setup 命令实现）。返回 token 或 null */
 export async function ssoSetup() {
-  const { promptAndSaveCredentials } = await import('auth-center');
-  const cred = await promptAndSaveCredentials(ANYSHARE_APP, { windowTitle: 'AnyShare SSO 凭据录入' });
+  const cred = loadSsoCredentials();
+  if (!cred) throw new Error('vault 中未找到 AnyShare 凭据，请先在 vault 中维护（操作见 vault-ops 技能）');
+  console.log(`✓ 已从 vault 读取 AnyShare 凭据（账号 ${cred.account}）`);
 
   console.log('\n[anyshare] 验证无头登录...');
   const token = await headlessSsoLogin(cred);

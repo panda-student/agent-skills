@@ -12,15 +12,15 @@ function usage() {
 
 登录与 token:
   anyshare login                登录并保存 token（已配凭据时无头直连；否则唤起 Edge 静默捕获）
-  anyshare cred-setup           一次性弹窗录入 SSO 凭据（启用无头登录/刷新）
+  anyshare cred-setup           验证 vault 中的 SSO 凭据（密码不再弹窗/落盘，操作见 vault-ops 技能）
   anyshare whoami               token 状态（有效性/来源/保存时间）
   anyshare token [--refresh]    输出当前 token 供 curl 复用（--refresh 强制走刷新链）
   anyshare logout               清除本地 token
 
 查:
   anyshare libs                 文档库列表（name/type/gns id）
-  anyshare ls [路径]             列目录内容（路径 = 文档库名/子目录/... 或 gns:// id；
-                                缺省列出配置的默认目录）
+  anyshare ls [路径] [--json]    列目录内容（路径 = 文档库名/子目录/... 或 gns:// id；
+                                缺省列出配置的默认目录；--json 输出含 gns id 的单行 JSON，供脚本定位）
   anyshare dir [路径]            查看/设置默认进入目录（写入配置，附网页入口 URL）
 
 下:
@@ -44,7 +44,7 @@ try {
   switch (cmd) {
     case 'whoami': await cmdWhoami(); break;
     case 'libs': await cmdLibs(); break;
-    case 'ls': await cmdLs(positional(1)); break;
+    case 'ls': await cmdLs(positional(1), { json: hasFlag('--json') }); break;
     case 'dir': await cmdDir(positional(1)); break;
     case 'download':
     case 'dl': await cmdDownload(positional(1), positional(2)); break;

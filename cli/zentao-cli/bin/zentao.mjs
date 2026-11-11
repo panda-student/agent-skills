@@ -50,7 +50,7 @@ zentao CLI v${VERSION} — 禅道 JSON API 命令行工具
       也支持 setup '<json>' 或 setup <json文件路径>
 
   zentao setup --credentials
-      弹窗录入禅道账号密码（保存到 ~/.auth-center/apps/zentao-cli/sso-credentials.json，明文不进终端）
+      验证 vault 中的禅道凭据并登录（密码不再弹窗/落盘，操作见 vault-ops 技能）
 
   zentao login
       强制登录并获取所有产品(ID+名称)和执行(ID+名称)
