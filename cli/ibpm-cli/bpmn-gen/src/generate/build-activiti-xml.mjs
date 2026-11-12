@@ -104,6 +104,11 @@ export async function buildActivitiXml(laidOutXml, spec, nodeDispose) {
       lines.push('        <activiti:taskListener event="complete" delegateExpression="${taskCompleteListener}"/>');
       lines.push('      </extensionElements>');
       lines.push(`    </${tag}>`);
+    } else if (n.type === 'serviceTask') {
+      // Activiti 校验要求 serviceTask 必须有 class/delegateExpression/type/operation/expression；
+      // 对齐平台 modeler 的默认实现
+      const impl = n.delegateExpression || '${customServiceTask}';
+      lines.push(`    <${tag} id="${escapeAttr(n.id)}"${nameAttr} activiti:delegateExpression="${escapeAttr(impl)}"/>`);
     } else if (n.type === 'endEvent' || n.type.includes('Gateway')) {
       lines.push(`    <${tag} id="${escapeAttr(n.id)}"${nameAttr}/>`);
     } else {

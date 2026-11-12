@@ -79,7 +79,7 @@ function buildRule(assignee, nodeName) {
 
   // spec：指定用户
   if (source === 'spec') {
-    const desc = a.userName || nodeName;
+    const desc = a.description || a.userName || nodeName;
     return {
       rule: {
         extract: 'extract',
@@ -112,14 +112,31 @@ function buildRule(assignee, nodeName) {
           source: 'flowVar',
           dimension: '',
         },
-        description: `flowVar[${executorType}:${varName}]`,
+        description: a.description || `flowVar[${executorType}:${varName}]`,
         source: 'var',
         logicCal,
         userName: '',
         userId: '',
         account: '',
       },
-      displayDesc: a.desc || `[变量]${varName || nodeName}`,
+      displayDesc: a.description || a.desc || `[变量]${varName || nodeName}`,
+    };
+  }
+
+  // orgReport：指定组织部门主管（属性平铺，无子元素）
+  if (source === 'orgReport') {
+    const desc = a.description || '组织汇报关系查询插件';
+    return {
+      rule: {
+        extract: 'extract',
+        pluginType: 'orgReport',
+        description: desc,
+        orgCode: a.orgCode || '',
+        orgName: a.orgName || '',
+        reportLevel: a.reportLevel || 'L1',
+        logicCal,
+      },
+      displayDesc: `组织:${a.orgName || a.orgCode || ''}`,
     };
   }
 
@@ -138,7 +155,7 @@ function buildRule(assignee, nodeName) {
     const orgDim = a.orgDim || DEFAULT_ORG_DIM;
     const script = `jiuMooUserScript.${variant.method}(${userVar} ,"${role}" ,"${orgDim}" )`;
     // 平台描述形态：常量参数（角色码/纬度）带引号，变量参数用人读描述
-    const desc = `[人员脚本]【${variant.scriptName}】参数:(${variant.userParaDesc}:${userVarDesc} ,流程角色code:"${role}" ,${variant.dimParaDesc}:"${orgDim}" )`;
+    const desc = a.description || `[人员脚本]【${variant.scriptName}】参数:(${variant.userParaDesc}:${userVarDesc} ,流程角色code:"${role}" ,${variant.dimParaDesc}:"${orgDim}" )`;
     // 参数定义（对齐平台 params 结构：常量 value/description 均带引号，变量 description 用人读文案）
     const params = [
       { paraName: 'arg0', paraType: 'java.lang.String', paraDesc: variant.userParaDesc, paraCt: 'base:user-selector', paraCtBindKey: variant.userParaCtBindKey, valueType: '0', value: userVar, description: userVarDesc },
@@ -168,14 +185,14 @@ function buildRule(assignee, nodeName) {
     rule: {
       extract: 'extract',
       pluginType: 'cusers',
-      description: '发起人',
+      description: a.description || '发起人',
       source: 'start',
       logicCal: 'or',
       userName: '',
       userId: '',
       account: '',
     },
-    displayDesc: '发起人',
+    displayDesc: a.description || '发起人',
   };
 }
 

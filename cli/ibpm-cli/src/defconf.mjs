@@ -8,6 +8,9 @@ import { join } from 'node:path';
 import { execSync } from 'node:child_process';
 import { api } from './api.mjs';
 import { unesc } from './flowxml.mjs';
+import { decodeXmlAttr } from './xml-util.mjs';
+
+export { decodeXmlAttr };
 
 const DEF_CONF_STASH_DIR = join(homedir(), '.ibpm-cli');
 
@@ -67,6 +70,55 @@ export function nodeProps(nodeId, allowInterfaceApproval) {
   };
 }
 
+/** 从 bpmnXml 解析每个节点的现有属性（ext:userNode/ext:signNode → ext:propers → ext:item）
+ *  返回 { nodeId: { propKey: stringValue } }；无 propers 的节点不出现在结果中 */
+export function parseNodePropers(bpmnXml) {
+  const map = {};
+  for (const m of bpmnXml.matchAll(/<ext:(userNode|signNode)\b([^>]*)>([\s\S]*?)<\/ext:\1>/g)) {
+    const be = m[2].match(/bpmnElement="([^"]+)"/);
+    if (!be) continue;
+    const prop = m[3].match(/<ext:propers><ext:item\b([^>]*?)\s*\/?>/);
+    if (!prop) continue;
+    const obj = {};
+    for (const a of prop[1].matchAll(/([A-Za-z0-9_]+)="([^"]*)"/g)) obj[a[1]] = decodeXmlAttr(a[2]);
+    map[be[1]] = obj;
+  }
+  return map;
+}
+
+/** 列出 bpmnXml 中全部节点 id（用于校验目标节点存在） */
+export function listNodeIds(bpmnXml) {
+  return [...bpmnXml.matchAll(/<ext:(?:userNode|signNode)\b[^>]*bpmnElement="([^"]+)"/g)].map(m => m[1]);
+}
+
+/** 按 nodeProps 模板的类型把 XML 字符串属性还原为 JSON 类型（布尔/数字/字符串） */
+export function coerceNodeProps(raw, nodeId) {
+  const schema = nodeProps(nodeId, false);
+  const out = { ...raw };
+  for (const [k, v] of Object.entries(raw)) {
+    const def = schema[k];
+    if (typeof def === 'boolean') out[k] = v === 'true';
+    else if (typeof def === 'number') out[k] = Number.isFinite(Number(v)) ? Number(v) : 0;
+    else out[k] = v;
+  }
+  return out;
+}
+
+/** 由 bpmnXml 组装全量 defSettingJson（全局表单/事件原样保留，只替换 nodePropertieMap） */
+export function buildSettingFromXml(bpmnXml, nodePropertieMap) {
+  const pc = extractFormValue(bpmnXml, 'globalForm');
+  const mobile = extractFormValue(bpmnXml, 'globalMobileForm');
+  if (pc.variant || mobile.variant) {
+    throw new Error('线上全局表单结构变体，自动提取失败；请用 ibpm approval --setting-template 提供完整 defSettingJson');
+  }
+  return buildDefSetting({
+    globalForm: buildFormObj('pc', pc.value),
+    globalMobileForm: buildFormObj('mobile', mobile.value),
+    globalRestfuls: extractGlobalRestfuls(bpmnXml),
+    nodePropertieMap,
+  });
+}
+
 /** 组装全量 defSettingJson（saveDefConf 全量覆盖语义，所有段必须显式兜底，防其它段被清空） */
 export function buildDefSetting({ globalForm, globalMobileForm, globalRestfuls, nodePropertieMap }) {
   return {
@@ -84,10 +136,21 @@ export function buildDefSetting({ globalForm, globalMobileForm, globalRestfuls, 
 
 // ---- 保存（唯一写通道：approval 命令与 import 恢复共用）----
 
-export async function saveDefConf(env, defId, defSettingJson, restfulJson = '{}') {
+export async function saveDefConf(env, defId, defSettingJson, opts = {}) {
+  // 兼容旧调用：第四参数传字符串时视为 restfulJson
+  const o = typeof opts === 'string' ? { restfulJson: opts } : (opts || {});
   const resp = await api(env, '/flow/node/v1/saveDefConf', {
     method: 'POST',
-    body: { defSettingJson: JSON.stringify(defSettingJson), userJson: '{}', userReadJson: '{}', restfulJson, defId, rev: 0, nodeFormKeys: '', userMsgJson: '{}' },
+    body: {
+      defSettingJson: JSON.stringify(defSettingJson),
+      userJson: o.userJson ?? '{}',
+      userReadJson: o.userReadJson ?? '{}',
+      restfulJson: o.restfulJson ?? '{}',
+      defId,
+      rev: o.rev ?? 0,
+      nodeFormKeys: o.nodeFormKeys ?? '',
+      userMsgJson: o.userMsgJson ?? '{}',
+    },
   });
   if (resp.state === false) throw new Error('saveDefConf 保存失败: ' + JSON.stringify(resp).slice(0, 200));
   return resp;

@@ -5,18 +5,18 @@ import { buildRules } from './gen/generate-nodedispose.mjs';
 export function assigneeFromArgs(a) {
   if (a.spec) {
     const [userName, account] = a.spec.split('/');
-    return { source: 'spec', userName, account, userId: account };
+    return { source: 'spec', userName, account, userId: account, description: a.description };
   }
-  if (a.var) return { source: 'var', varName: a.var };
+  if (a.var) return { source: 'var', varName: a.var, description: a.description };
   if (a.hrScript) {
     const [role, userVar] = a.hrScript.split(',');
-    return { source: 'hrScript', role, userVar: userVar || 'startorAccount' };
+    return { source: 'hrScript', role, userVar: userVar || 'startorAccount', description: a.description };
   }
   if (a.orgReport) {
     const [orgName, orgCode, reportLevel] = a.orgReport.split(',');
-    return { source: 'orgReport', orgName, orgCode, reportLevel: reportLevel || 'L1' };
+    return { source: 'orgReport', orgName, orgCode, reportLevel: reportLevel || 'L1', description: a.description };
   }
-  return { source: 'start' };
+  return { source: 'start', description: a.description };
 }
 
 /** 规则对象 → userAssign extPlugins XML（形态对齐平台导出） */

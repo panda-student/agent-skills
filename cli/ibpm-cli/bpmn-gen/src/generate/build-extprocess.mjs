@@ -231,6 +231,11 @@ function buildExtNode(node, caclByNode) {
     return `<ext:userNode nodeType="common" name="${name}" bpmnElement="${elem}">\n        ${extPlugins}\n      ${buttons}${propers}</ext:userNode>`;
   }
 
+  // 自动任务节点（设计器 ScriptTask/MessageTask 均落为 serviceTask + extProcess baseNode）
+  if (node.type === 'serviceTask') {
+    return `<ext:baseNode nodeType="common" name="${name}" bpmnElement="${elem}">\n        <ext:extPlugins/>\n      </ext:baseNode>`;
+  }
+
   // StartEvent：baseNode + 按钮
   if (node.type === 'startEvent') {
     const buttons = buildButtons(START_EVENT_BUTTONS);

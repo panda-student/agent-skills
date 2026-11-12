@@ -1,7 +1,9 @@
 // 接口审批配置 + 流程契约/运行时查询（能力自 configuring-ibpm-interface-approval 技能整合，实测契约保持）
 // 三态语义：无 propers=引擎不校验(放行,勿动) / 显式 false=拒绝 openapi complete / true=放行
 import { readFileSync } from 'node:fs';
-import { extractFormValue, extractGlobalRestfuls, buildFormObj, nodeProps, saveDefConf } from './defconf.mjs';
+import { extractFormValue, extractGlobalRestfuls, buildFormObj, saveDefConf } from './defconf.mjs';
+import { api, defGet } from './api.mjs';
+import { buildNodePropertieMap } from './nodeprops.mjs';
 
 const headers = token => ({
   accept: '*/*',
@@ -10,15 +12,6 @@ const headers = token => ({
   'ibpm-client': 'pc',
   cookie: 'lang=zh',
 });
-
-async function api(env, path, { method = 'GET', body } = {}) {
-  const res = await fetch(env.baseUrl + path, { method, headers: headers(env.token), body: body ? JSON.stringify(body) : undefined });
-  if (res.status === 401) { console.error('✗ 401：token 失效，请 ibpm login'); process.exit(2); }
-  if (!res.ok) throw new Error(`HTTP ${res.status} ${path}: ${(await res.text()).slice(0, 200)}`);
-  return res.json();
-}
-
-export const defGet = (env, defId) => api(env, `/model/flow/def/v1/defGet?defId=${defId}`);
 
 /** 解析 bpmnXml 中每个 ext:userNode / ext:signNode 的 allowInterfaceApproval 三态 */
 export function readNodeStates(defJson) {
@@ -41,8 +34,8 @@ export function printStates(title, map, targets) {
 }
 
 /** 查询三态 */
-export async function approvalQuery(env, defId) {
-  const json = await defGet(env, defId);
+export async function approvalQuery(env, defId, defJson = null) {
+  const json = defJson || await defGet(env, defId);
   console.log(`流程: ${json.name} defKey=${json.defKey} 状态=${json.status} 版本=${json.version} 更新=${json.updateTime}`);
   printStates(`节点配置 (${json.updateTime})`, readNodeStates(json));
   console.log('\n提示: 无propers=引擎不校验(放行,勿动)；false=拒绝(需改true)；true=放行');
@@ -53,6 +46,9 @@ export async function approvalSave(env, defId, { nodes, value = true, formValue,
   const targets = (nodes || '').split(',').map(s => s.trim()).filter(Boolean);
   if (!targets.length) throw new Error('需要 --nodes "NodeA,NodeB"');
   const v = String(value) === 'true';
+  if (formValue !== undefined || mobileFormValue !== undefined) {
+    console.log('  ⚠ --form-value/--mobile-form-value 已废弃：会自动从现有 bpmnXml 提取；结构变体请用 --setting-template');
+  }
 
   const before = await defGet(env, defId);
   const beforeMap = readNodeStates(before);
@@ -88,7 +84,12 @@ export async function approvalSave(env, defId, { nodes, value = true, formValue,
       globalScripts: [], formMap: {}, bpmSubTableRightMap: {}, mobileFormMap: {},
     };
   }
-  setting.nodePropertieMap = Object.fromEntries(targets.map(n => [n, nodeProps(n, v)]));
+  // 只覆盖 allowInterfaceApproval；已有 propers 的节点保留 userSamecantSkip 等其它属性。
+  // 无 propers 的节点仍要求 --force，按平台默认模板显式化。
+  setting.nodePropertieMap = buildNodePropertieMap(bpmnXml, targets, { allowInterfaceApproval: v }, {
+    createPropers: !!force,
+    noPropersMessage: n => `节点 ${n} 无 propers（引擎本就放行），写入显式配置无收益，已拒绝。确认要写时加 --force`,
+  });
 
   await saveDefConf(env, defId, setting);
 
@@ -102,9 +103,13 @@ export async function approvalSave(env, defId, { nodes, value = true, formValue,
 }
 
 /** 在线注册变量契约（varKey 以后端 buildFlowVars 的 key 为准，禁止自编；协议：defId + nodeId= 空串查流程级变量） */
-export async function contract(env, defId) {
-  const res = await api(env, `/model/flow/var/v1/listJson?defId=${defId}&nodeId=`);
-  const list = Array.isArray(res) ? res : [];
+export async function contract(env, defId, preloaded = null) {
+  let list = preloaded;
+  if (!list) {
+    const res = await api(env, `/flow/var/v1/listJson?defId=${defId}&nodeId=`);
+    const data = await res.json();
+    list = Array.isArray(data) ? data : (data.value || data.data || []);
+  }
   console.log('varKey               类型     名称');
   for (const v of list) {
     console.log(`${(v.varKey || '').padEnd(20)} ${(v.dataType || '').padEnd(8)} ${v.name || ''}${v.isRequired ? ' [必填]' : ''}`);

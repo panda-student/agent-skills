@@ -3,10 +3,8 @@ import { execSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-
-function unesc(s) {
-  return s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&');
-}
+import { flattenCalcs, summarizeRules } from './assignee-summary.mjs';
+import { unesc } from './flowxml.mjs';
 
 export function unzipToTemp(zipPath) {
   const dir = mkdtempSync(join(tmpdir(), 'ibpm-show-'));
@@ -16,11 +14,9 @@ export function unzipToTemp(zipPath) {
   return { dir: join(dir, flowDir), temp: dir };
 }
 
-/** 解析 bpmdefs.flow.xml → { meta, nodes, edges, assigns } */
-export function parseFlowXml(xmlPath) {
-  const xml = readFileSync(xmlPath, 'utf8');
-  const def = JSON.parse(unesc(xml.match(/<defJson>([\s\S]*?)<\/defJson>/)[1]));
-  const shapes = def.childShapes;
+/** defJson.childShapes → { nodes, edges }（show 的内存解析，不依赖导出包） */
+function buildNodesEdges(def) {
+  const shapes = def.childShapes || [];
   const P = s => s.properties || {};
   const idOf = s => P(s).overrideid || s.resourceId;
 
@@ -49,7 +45,21 @@ export function parseFlowXml(xmlPath) {
       if (e) e.src = idOf(n);
     }
   }
+  return { nodes, edges };
+}
 
+/** 在线 defJson 字符串 → show 渲染输入（不落盘、不下载） */
+export function parseDefJsonModel(defJsonStr, meta) {
+  const def = typeof defJsonStr === 'string' ? JSON.parse(defJsonStr) : defJsonStr;
+  const { nodes, edges } = buildNodesEdges(def);
+  return { def, meta, nodes, edges };
+}
+
+/** 解析 bpmdefs.flow.xml → { meta, nodes, edges, bpmn }（导出包路径保留给 import/迁移） */
+export function parseFlowXml(xmlPath) {
+  const xml = readFileSync(xmlPath, 'utf8');
+  const def = JSON.parse(unesc(xml.match(/<defJson>([\s\S]*?)<\/defJson>/)[1]));
+  const { nodes, edges } = buildNodesEdges(def);
   const bpmn = unesc(xml.match(/<bpmnXml>([\s\S]*?)<\/bpmnXml>/)[1]);
   const meta = {
     defKey: (xml.match(/defKey="([^"]*)"/) || [])[1] || '',
@@ -57,6 +67,42 @@ export function parseFlowXml(xmlPath) {
     version: (xml.match(/version="([^"]*)"/) || [])[1] || '',
   };
   return { def, meta, nodes, edges, bpmn, xml };
+}
+
+/** getDefSetting.nodeUserMap → show 的审批人摘要 Map */
+export function assignsFromUserMap(userMap, nodes) {
+  const nameById = new Map((nodes || []).map(n => [n.nodeId || n.id, n.name]));
+  const map = new Map();
+  for (const [nodeId, rules] of Object.entries(userMap || {})) {
+    const calcs = flattenCalcs(rules);
+    if (!calcs.length) continue;
+    const desc = summarizeRules(rules, 60);
+    map.set(nodeId, {
+      nodeName: nameById.get(nodeId) || nodeId,
+      desc: desc || (rules[0] && rules[0].description) || '(空)',
+      sources: String(calcs.length),
+    });
+  }
+  return map;
+}
+
+/** getDefSetting.nodeUserMap → nodes 命令所需的 nodeDispose 结构（内存构造） */
+export function nodeDisposeFromUserMap(userMap, nodes, defKey) {
+  const nameById = new Map((nodes || []).map(n => [n.nodeId || n.id, n.name]));
+  const order = (nodes || []).map(n => n.nodeId || n.id);
+  const keys = order.length ? order : Object.keys(userMap || {});
+  const data = [];
+  for (const nodeId of keys) {
+    const calcs = flattenCalcs(userMap?.[nodeId]);
+    if (!calcs.length) continue;
+    data.push({
+      nodeKey: nodeId,
+      nodeName: nameById.get(nodeId) || nodeId,
+      cacl: calcs.map(c => JSON.stringify(c)).join(';'),
+      sources: String(calcs.length),
+    });
+  }
+  return [{ code: defKey, data }];
 }
 
 /** 解析 nodeDispose.json → Map<nodeKey, 摘要> */
@@ -75,14 +121,7 @@ export function parseNodeDispose(path) {
     } else {
       try { const c = JSON.parse(cacl); rules.push(...(Array.isArray(c) ? c : [c])); } catch { /* 忽略 */ }
     }
-    const desc = rules.map(c => {
-      if (c.source === 'spec') return `指定:${c.description || c.userName}`;
-      if (c.source === 'start') return '发起人';
-      if (c.source === 'var') return `变量:${c.var?.name || '?'}`;
-      if (c.pluginType === 'hrScript') return `脚本:${(c.script || '').slice(0, 60)}`;
-      if (c.pluginType === 'orgReport') return `组织:${c.orgName || c.orgCode || '?'}`;
-      return c.source || c.pluginType || '?';
-    }).join(' + ');
+    const desc = summarizeRules(rules, 60);
     map.set(r.nodeKey, { nodeName: r.nodeName, desc: desc || r.description || '(空)', sources: r.sources });
   }
   return map;

@@ -8,6 +8,7 @@ import {
   findVarDefs, parseVars, varDefXml,
 } from './flowxml.mjs';
 import { buildRulesFromArgs, userAssignXml, disposeFields } from './userassign.mjs';
+import { summarizeRules } from './assignee-summary.mjs';
 import { buildPropers } from '../bpmn-gen/src/generate/build-extprocess.mjs';
 
 const die = msg => { throw new Error(msg); };
@@ -358,12 +359,7 @@ export function renderNodes(flow, nd) {
     if (typeof c === 'string' && c.includes(';')) {
       for (const part of c.split(/;\s*(?=\{)/)) { try { rules.push(JSON.parse(part)); } catch { } }
     } else { try { rules.push(JSON.parse(c)); } catch { } }
-    const desc = rules.map(x =>
-      x.source === 'spec' ? `指定:${x.description || x.userName}`
-        : x.source === 'start' ? '发起人'
-          : x.source === 'var' ? `变量:${x.var?.name || '?'}`
-            : x.pluginType === 'hrScript' ? `脚本:${(x.script || '').slice(0, 40)}`
-              : x.pluginType === 'orgReport' ? `组织:${x.orgName || x.orgCode}` : '?').join(' + ') || r.description;
+    const desc = summarizeRules(rules, 40) || r.description;
     lines.push(`${String(i++).padEnd(5)} ${(r.nodeName || '').padEnd(18)} ${(r.nodeKey || '').padEnd(22)} ${desc}`);
   }
   return lines.join('\n');
