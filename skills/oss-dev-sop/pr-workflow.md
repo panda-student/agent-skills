@@ -85,6 +85,18 @@ pnpm install --frozen-lockfile        # 按项目实际包管理器
 - 分支名用 Conventional 前缀：`feat/`、`fix/`、`test/`、`chore/`。
 - 不要在旧分支上“就地 reset”来提 PR；旧分支留作对照。
 
+**所有 PR 资料都放在本 PR worktree 自己的 `.scratch/` 下**，不要放到仓库外（如 `D:\IdeaProjects\.scratch\<task>`）或共享目录：截图、正文草稿、patch、日志、上传/校验脚本、临时项目副本一律 `<worktree>/.scratch/`。本文其余章节里的 `<scratch>` 都指这个目录。
+
+```bash
+cd <worktree>
+mkdir -p .scratch
+ex=$(git rev-parse --git-path info/exclude)          # 本地忽略，不改动仓库的 .gitignore
+grep -qxF '.scratch/' "$ex" || printf '\n# PR artifacts of this worktree\n.scratch/\n' >> "$ex"
+```
+
+- 收尾时 `.scratch/` 随 worktree 一起消失，不需要另外找残留；仓库外不再留任何本次任务的目录。
+- 忽略走 `info/exclude`，不要为此修改 `.gitignore`（那是随 PR 提交的项目文件）。
+
 ## 【Slice】移植已有改动
 
 ```bash
@@ -218,7 +230,8 @@ gh run view <run-id> --repo <upstream> --job <job-id> --log-failed
 
 ## 【Trace】收尾清理
 
-- 删除本次产生的临时文件：代理脚本、patch、Cookie 副本、`curl -o` 误落在仓库根目录的 html/json、中转脚本。
+- 删除本次产生的临时文件：代理脚本、patch、Cookie 副本、`curl -o` 误落在仓库根目录的 html/json、中转脚本。资料都在 `<worktree>/.scratch/` 时，确认无需保留后删掉该目录即可。
+- 仓库外不该有本次任务的残留：若因历史习惯建过仓库外的 scratch 目录（如 `D:\IdeaProjects\.scratch\<task>`），一并删除，并检查 `D:\IdeaProjects` 同级目录没有留下本次任务的文件夹。
 - 删除仅为截图创建的临时 release/tag、assets 分支、GitHub Pages（确认 PR 正文已改为 user-attachments 后再删）。
 - PR 未合并前保留 PR worktree；合并后按 `worktree-ops` 回收（判定与删除命令以该技能为准）。
 - 如果重启/关闭过用户的浏览器或进程：明确告知影响与恢复方式（如 `Ctrl+Shift+T` 恢复标签页）；绝不批量杀用户进程。
