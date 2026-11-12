@@ -105,9 +105,14 @@ git apply -3 <scratch>/task.patch
 
 定量验证优于“看起来正常”：例如切换 tab 时记录容器高度/位置是否恒定，而不是只截一张图。
 
+真机断言内容：打开具体面板/diff 后，用 `webview_execute_js` / `webview_dom_snapshot` 断言关键文本或数值（如 diff 正文出现预期行、计数正确），不只截 UI 外壳。
+
+真机暴露的集成缺陷（如 agent worktree 未登记 external log 导致 rev 侧 diff 读不到）要回补代码 + 自动化回归测试，并入同一提交后重跑断言。
+
 ## 【Own】提交（含提交前自审）
 
 - 提交前先做一次代码审查/简化（例如 `/simplify`），把审查发现的问题在**同一提交**里修掉。
+- 真机验证发现的问题优先在同提交修复；确实无法自动化的路径，写进 PR 的 “How it was verified” 并说明原因。
 - Conventional Commits：
   ```
   feat(agents): page multiple questions with tabs and a stable height
