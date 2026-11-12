@@ -1,30 +1,23 @@
 ---
 name: oss-dev-sop
-description: "开源项目开发标准流程——编码改动原则 + 向上游提交 Pull Request：先读项目约定、开闭原则能加不改、保留既有命名、逻辑并入已有职责模块、贴合局部写法、显式配置优先于启发式、新增分支必须有回落与回归测试、机制与行为分开提交；以及分支拓扑、基于最新 upstream/main 的干净 worktree、分层验证、Conventional Commits、PR 模板与验证证据、CI 失败诊断、user-attachments 截图上传和收尾清理。当向开源仓库提 PR、修改上游代码、设计扩展点、review 自己的 diff、排查 PR CI、上传 PR 截图或收尾时自动使用，也可通过 /oss-dev-sop 手动触发。Use when contributing to an open-source repository, changing upstream code, designing extension points, reviewing your own diff, preparing or submitting a pull request, diagnosing failing PR checks, uploading screenshots, or cleaning up after a contribution."
+description: 开源项目开发标准流程——以 PR 为人的思考边界与 AI 的交付接口，按 Dev Flow Core 的 PR 循环交付到上游：Define 先读项目约定并立 PR 草稿 → Slice 基于最新 upstream/main 建干净 worktree、机制与行为分离提交 → Prove 分层验证并留证 → Own 自审完整 diff → Trace 按模板开 PR、CI 诊断、截图与收尾。当向开源仓库提 PR、修改上游代码、设计扩展点、review 自己的 diff、排查 PR CI、上传 PR 截图或收尾时自动使用，也可通过 /oss-dev-sop 手动触发。Use when contributing to an open-source repository, changing upstream code, designing extension points, reviewing your own diff, preparing or submitting a pull request, diagnosing failing PR checks, uploading screenshots, or cleaning up after a contribution.
 ---
 
 # OSS Dev SOP — 开源项目开发标准流程
 
-面向“在 fork 上开发、向上游仓库提 PR”的场景。先收敛代码改动,再走提交与 PR 流程。目标是:改动小、贴合项目、可 review;不把旧分支/已合并内容带进 PR;验证可复现;截图符合仓库惯例;失败能定位;收尾不留垃圾。
+面向「在 fork 上开发、向上游仓库提 PR」的场景，是 Dev Flow Core「面向 PR 编程」循环在开源渠道上的落地。PR 在这里是字面意义的变更单元：先立 PR 草稿定义意图，再切片实现，最后自证与留痕。目标是：改动小、贴合项目、可 review；不把旧分支/已合并内容带进 PR；验证可复现；截图符合仓库惯例；失败能定位；收尾不留垃圾。
 
-## 编码改动原则(先于 PR 流程)
+> 通用方法与纪律（PR 循环、编码改动原则、AI 以 diff 交付、提交前自审、验证证据、安全红线）由 `dev-flow-core` 技能提供；本文件只保留开源渠道的具体操作，不复写通用内容。
 
-- 先读项目约定,再设计机制
-- 开闭原则,能加不改
-- 保留既有命名
-- 放进已负责该职责的模块
-- 贴合局部写法
-- 显式配置优先于启发式
-- 每个新分支都要有回落
-- 机制与行为分开提交
+## PR 循环在本渠道的落地
 
-判断依据、反模式、自审清单和实战案例见 [coding-principles.md](./coding-principles.md)。
+- **Define 立单**：先读项目贡献规范，立 PR 草稿（标题 + What/Why/验收方式），查基线与旧分支
+- **Slice 切片**：基于最新 upstream/main 建干净 worktree，移植/提交，机制与行为分离
+- **Prove 自证**：分层验证，记录实际命令 + 结果与 before/after 截图
+- **Own 认领**：以 reviewer 视角自审完整 diff，逐处能解释
+- **Trace 留痕**：推送 fork、按模板开 PR、CI 诊断、收尾清理
 
-## PR 流程概述
-
-读项目规范 → 查基线与旧分支 → 基于最新 upstream/main 建干净 worktree → 移植/提交 → 分层验证 → 推送 fork 并开 PR → CI 诊断 → 收尾清理。
-
-完整步骤、命令、门禁、截图流程和 Tauri MCP 验证见 [pr-workflow.md](./pr-workflow.md)。
+编码设计与自审纪律见 `dev-flow-core`；完整命令、门禁、截图流程、Tauri MCP 验证见 [pr-workflow.md](./pr-workflow.md)。
 
 ## 提交门禁(硬性)
 
@@ -40,7 +33,8 @@ description: "开源项目开发标准流程——编码改动原则 + 向上游
 
 | 需求 | 资源 |
 |---|---|
-| 编码原则、反模式、自审清单 | [coding-principles.md](./coding-principles.md) |
+| 面向 PR 编程方法、PR 循环、AI 协作协议、反模式 | `dev-flow-core` 技能 |
+| 编码改动纪律、提交前自审 | `dev-flow-core` 技能 |
 | PR 完整流程、门禁、CI 诊断、收尾 | [pr-workflow.md](./pr-workflow.md) |
 | PR 截图上传(user-attachments)细节 | [reference.md](./reference.md) |
 | GUI 验证 / Tauri MCP | [tauri-mcp.md](./tauri-mcp.md) |
@@ -49,10 +43,5 @@ description: "开源项目开发标准流程——编码改动原则 + 向上游
 
 ## 安全与沟通
 
-- 不打印 token、密码、Cookie;凭据走 `vault-ops` / `auth-center`
-- force push、删分支/release/Pages、关闭 PR、发评论等对外可见操作先确认
-- 验证结论必须可复现;旧故障与本次改动无关时单独说明,不混入本次结论
-
-## 使用顺序
-
-先用 [coding-principles.md](./coding-principles.md) 完成设计与自审 → 再按 [pr-workflow.md](./pr-workflow.md) 走基线与提交 → PR 打开后按其 CI 诊断与收尾章节处理。
+- 通用红线（不打印 token/密码/Cookie、对外操作先确认、验证结论可复现）见 `dev-flow-core`；凭据走 `vault-ops` / `auth-center`
+- OSS 特有：截图、临时文件、IDE 状态不得进入功能分支；close PR / force push / 删 release 等先确认

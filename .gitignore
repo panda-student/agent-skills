@@ -21,6 +21,7 @@ skills/*
 !skills/codescan/
 !skills/daily-report/
 !skills/dbx-ops/
+!skills/dev-flow-core/
 !skills/e2e-ops/
 !skills/gitlab-operate/
 !skills/ibpm-ops/

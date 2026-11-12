@@ -1,6 +1,6 @@
 ---
 name: vault-ops
-description: 通过 vault CLI 操作本机凭据密码库——搜条目、读元数据、把密码/token 密文写入目标文件或浏览器/桌面输入框（密文永不回显、永不进对话），含凭据登记、更新、分组、标签、导出与恢复。统一走 CLI，不为单个软件注册 MCP 封装。任何技能或任务需要数据库、平台、Redis、Nacos、GitLab 等账号密码或 API token、需要注入脚本/配置/登录框、或需要登记整理凭据时使用；登录与 token 刷新链路仍走 auth-center。可通过 /vault-ops 手动触发。
+description: 通过 vault CLI 操作本机凭据密码库——搜条目、读元数据、把密码/token 密文写入目标文件或浏览器/桌面输入框（密文永不回显、永不进对话），含凭据登记、更新、分组、标签、导出与恢复。统一走 CLI，不为单个软件注册 MCP 封装。任何技能或任务需要数据库、平台、Redis、Nacos、GitLab 等账号密码或 API token、需要注入脚本/配置/登录框、或需要登记整理凭据时使用；登录与 token 刷新链路由认证技能负责。可通过 /vault-ops 手动触发。
 user-invocable: true
 allowed-tools:
   - Read
@@ -132,12 +132,12 @@ vault tools --json                 # 工具清单与参数模式（权威参考�
 
 **以 `vault search` 实时结果为准**。
 
-## 与 auth-center 的边界
+## 与登录 / 认证链路的边界
 
-- `auth-center`：系统登录、token 缓存与刷新链路
+- 登录 / 认证链路：系统登录、token 缓存与刷新（不在本技能范围）
 - `vault-ops`：底层账号密码 / API token 原料
-- auth-center 链路不可用时，从 vault 取原料手动构建，不要另建凭据存储
-- 工具链分工：数据库走 `dbx`、接口走 `yaak`、凭据走 `vault-ops`、登录走 `auth-center`
+- 登录 / 认证链路不可用时，从 vault 取原料手动构建，不要另建凭据存储
+- 工具链分工：数据库走 `dbx`、接口走 `yaak`、凭据走 `vault-ops`、登录走认证链路
 
 ## 被其它技能引用（复用契约）
 

@@ -1,6 +1,6 @@
 ---
 name: tencent-docs-ops
-description: 通过 tencent-docs CLI 操作腾讯文档——普通表格与智能表格（smartsheet）的读取、写入、清空、追加记录、字段格式、分页拉全量与写后校验；token 由 auth-center / vault-ops 管理，AI 不接触明文。当用户要读/写腾讯文档、在线表格、智能表格、问题清单、周报三表，或提到 tab/子表/单元格/记录/字段/人员列/备注列时使用；issue-sop、weekly-report 等技能的腾讯文档操作统一引用本技能。也可通过 /tencent-docs-ops 手动触发。
+description: 通过 tencent-docs CLI 操作腾讯文档——普通表格与智能表格（smartsheet）的读取、写入、清空、追加记录、字段格式、分页拉全量与写后校验；token 由 auth-center / vault-ops 管理，AI 不接触明文。当用户要读/写腾讯文档、在线表格、智能表格、问题清单、周报三表，或提到 tab/子表/单元格/记录/字段/人员列/备注列时使用；本技能是腾讯文档通用操作能力的单一来源，供上层业务 SOP 复用；也可通过 /tencent-docs-ops 手动触发。
 user-invocable: true
 allowed-tools:
   - Read

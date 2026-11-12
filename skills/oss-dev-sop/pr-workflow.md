@@ -1,6 +1,16 @@
 # PR 工作流
 
-## 先读项目规范（强制，提交 PR 前必做）
+> 本文件按 Dev Flow Core 的 PR 循环组织；通用方法与纪律见 `dev-flow-core` 技能，本文件只保留 OSS / 上游 / PR 的具体操作与项目命令。
+
+| PR 循环 | 本文件章节 |
+|---|---|
+| Define 立单 | 读项目规范 · 判断仓库拓扑与旧分支 |
+| Slice 切片 | 开干净 worktree · 移植已有改动 |
+| Prove 自证 | 分层验证 · CI 失败诊断 |
+| Own 认领 | 提交（含提交前自审） |
+| Trace 留痕 | 推送并创建 PR · 截图上传 · 收尾清理 |
+
+## 【Define】先读项目规范（强制，提交 PR 前必做）
 
 不要先套用通用流程。先找到并读完项目自己的贡献规范，按项目要求执行：
 
@@ -37,7 +47,7 @@ ls .github/workflows 2>/dev/null
 
 任何一项缺失：先补齐材料再提交，禁止“先提 PR 再补验证/截图”。
 
-## 先判断仓库拓扑和旧分支是否还有价值
+## 【Define】判断仓库拓扑和旧分支是否还有价值
 
 ```bash
 git remote -v                      # origin=fork，upstream=上游；上游通常 no_push
@@ -56,7 +66,7 @@ git diff --stat upstream/main...HEAD   # 三点：只算 merge-base 之后的净
   ```
 - 若旧 PR 已 CLOSED 且同类改动已被多个小 PR 合并，**不要**直接拿旧分支提 PR；从 `upstream/main` 新建分支，只移植本次改动。
 
-## 基于最新 upstream/main 开干净 worktree
+## 【Slice】基于最新 upstream/main 开干净 worktree
 
 按 `worktree-ops` 在该仓库创建并切换到任务树（分支 `<type>/<slug>`，起点 `upstream/main`）；建树、回收与合并判定以该技能为准，本节只保留仓库拓扑与分支命名策略。
 
@@ -69,7 +79,7 @@ pnpm install --frozen-lockfile        # 按项目实际包管理器
 - 分支名用 Conventional 前缀：`feat/`、`fix/`、`test/`、`chore/`。
 - 不要在旧分支上“就地 reset”来提 PR；旧分支留作对照。
 
-## 移植已有改动
+## 【Slice】移植已有改动
 
 ```bash
 git -C <old-worktree> diff > <scratch>/task.patch
@@ -81,9 +91,9 @@ git apply -3 <scratch>/task.patch
 - 移植后重新格式化、重新跑测试；不要把旧 base 的格式化噪声带进来。
 - 若改动跨多个文件且有测试，先改实现再同步测试，最后跑目标测试文件。
 
-## 分层验证
+## 【Prove】分层验证
 
-按“越靠内越快”的顺序：
+分层原则与「验证证据」口径见 `dev-flow-core`；以下为该项目的具体命令。
 
 - 目标单测：`pnpm vitest run <changed test>`
 - 受影响包/目录全量：`pnpm vitest run src/features/<area>`
@@ -95,7 +105,7 @@ git apply -3 <scratch>/task.patch
 
 定量验证优于“看起来正常”：例如切换 tab 时记录容器高度/位置是否恒定，而不是只截一张图。
 
-## 提交
+## 【Own】提交（含提交前自审）
 
 - 提交前先做一次代码审查/简化（例如 `/simplify`），把审查发现的问题在**同一提交**里修掉。
 - Conventional Commits：
@@ -108,7 +118,7 @@ git apply -3 <scratch>/task.patch
 - lint-staged/hook 可能自动格式化并重新 staging；用 `git show --stat HEAD` 核对最终内容。
 - 不要把截图、`.openidea/`、IDE 状态、临时脚本提交进功能分支。
 
-## 推送 fork 并创建 PR
+## 【Trace】推送 fork 并创建 PR
 
 **门禁**：先完成「PR 提交门禁」清单。材料不齐时只准备分支与正文草稿，不执行 `gh pr create`。
 
@@ -141,7 +151,7 @@ PR 正文模板（保持简短）：
 - 一个 PR 只解决一个问题；解决 issue 时写 `Closes #<n>`。
 - 网络异常：`github.com` 的 DNS/TLS 不通、但 `api.github.com` 正常时，可用本地 CONNECT 代理连接可达的 GitHub edge IP；**不要**改系统 hosts/代理。推送完成后立即停掉代理。
 
-## PR 截图：用 user-attachments 上传
+## 【Trace】PR 截图：用 user-attachments 上传
 
 先看几个已合并 PR 的正文图片域名，确认仓库惯例：
 
@@ -166,7 +176,7 @@ agent-browser --session pr-<n> eval "document.querySelector('meta[name=user-logi
 - 用完后 `agent-browser --session pr-<n> close`，删除临时上传脚本；临时 assets 分支在正文改用 user-attachments 后删除。
 - Edge 157+ 对**默认 profile** 禁止 `--remote-debugging-port`；统一 profile 是非默认 profile，可直接复用。需要账号密码时按 `vault-ops` 技能注入，2FA/安全密钥交还用户，**任何环节都不打印明文**。
 
-## CI 失败诊断
+## 【Prove】CI 失败诊断
 
 ```bash
 gh pr checks <n> --repo <upstream>
@@ -185,7 +195,7 @@ gh run view <run-id> --repo <upstream> --job <job-id> --log-failed
 - 本地全量测试失败先归因:`git diff upstream/main -- <失败文件>` 确认是否本 PR 改动;隔离复跑;Windows 的路径分隔符、符号链接实体化、并发超时会制造假失败。
 - 不要把外部 504 或既有测试失败写成“代码问题”;PR 正文/回复里如实标注,并说明需要维护者 rerun。
 
-## 收尾清理
+## 【Trace】收尾清理
 
 - 删除本次产生的临时文件：代理脚本、patch、Cookie 副本、`curl -o` 误落在仓库根目录的 html/json、中转脚本。
 - 删除仅为截图创建的临时 release/tag、assets 分支、GitHub Pages（确认 PR 正文已改为 user-attachments 后再删）。
@@ -193,14 +203,11 @@ gh run view <run-id> --repo <upstream> --job <job-id> --log-failed
 - 如果重启/关闭过用户的浏览器或进程：明确告知影响与恢复方式（如 `Ctrl+Shift+T` 恢复标签页）；绝不批量杀用户进程。
 - 最终检查：PR worktree `git status` clean、提交已推送、PR 正文链接可访问、CI 状态已说明。
 
-## 安全与沟通约定
+## 【全局】安全与沟通约定
 
-- 不在对话中打印 token、密码、Cookie；凭据走 `vault-ops`/auth-center。
-- 破坏性或对外可见操作（force push、删分支/release/Pages、关闭 PR、发评论）先确认。
-- 验证结论必须可复现：命令、结果、未做的验证（例如“未做 GUI 实机验证”）都要写清楚。
-- 遇到旧故障与本次改动无关时，单独说明是 HEAD/上游既有问题，不混入本次结论。
+通用红线（不打印 token/密码/Cookie、对外可见操作先确认、验证结论可复现、旧故障单独说明）见 `dev-flow-core` 技能；本文件 OSS 特有的临时文件 / 截图 / assets 分支清理见上文「收尾清理」。
 
-## 快速命令清单
+## 【附录】快速命令清单
 
 ```bash
 # 拓扑与旧分支

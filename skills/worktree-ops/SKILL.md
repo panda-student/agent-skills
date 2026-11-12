@@ -44,19 +44,21 @@ worktrunk 的合并判定覆盖同 commit、祖先关系、三点 diff、tree �
 
 ## 首次使用：设置默认分支
 
-worktrunk 按仓库默认分支判断 ahead/behind 与"是否已合并"。PMS 系仓库的合并目标是 `uat`，**每个仓库单独设置一次**：
+worktrunk 按仓库默认分支判断 ahead/behind 与"是否已合并"。默认分支应设为该仓库的**交付基线分支**，按项目生命周期分流：未上线项目 = `uat`，已上线项目 = `main`（发布主线）。**每个仓库单独设置一次**：
 
 ```bash
+# 未上线项目（仅 uat）
 cd D:/IdeaProjects/weekreport/pms && git-wt config state default-branch set uat
-cd D:/IdeaProjects/weekreport/pms_frontend && git-wt config state default-branch set uat
+# 已上线项目（发布主线 main）
+cd D:/IdeaProjects/<已上线仓库> && git-wt config state default-branch set main
 ```
 
-未设置时它会回退到 `main/master`，会把大量已合入 uat 的树误判为未合并。
+未设置时它会回退到 `main/master`，会把大量已合入基线的树误判为未合并。
 
 ## 盘点与清理流程
 
 - **盘点**：在仓库根执行 `git-wt list`，关注 Status 列与 ahead/behind；置灰且无脏文件的行即可安全删除
-- **核对**：删除前逐棵确认「无独有提交」——`git -C <worktree> rev-list --count HEAD --not origin/uat` 为 0，且 `git -C <worktree> status --porcelain` 为空
+- **核对**：删除前逐棵确认「无独有提交」——`git -C <worktree> rev-list --count HEAD --not origin/<基线分支>` 为 0，且 `git -C <worktree> status --porcelain` 为空
 - **删除**：`git-wt remove <branch>`；worktrunk 会在树干净且分支已合并时同时删分支
 - **复查**：`git-wt list` 确认目标树消失；`git branch --list "<branch>"` 确认分支已回收
 - **元数据兜底**：目录被手工删过时执行 `git worktree prune`
@@ -68,7 +70,7 @@ cd D:/IdeaProjects/weekreport/pms_frontend && git-wt config state default-branch
 git worktree list --porcelain | awk '/^worktree /{print $2}' | while read -r w; do
   b=$(git -C "$w" branch --show-current 2>/dev/null)
   [ -z "$b" ] && continue
-  ahead=$(git -C "$w" rev-list --count HEAD --not origin/uat 2>/dev/null)
+  ahead=$(git -C "$w" rev-list --count HEAD --not origin/<基线分支> 2>/dev/null)
   dirty=$(git -C "$w" status --porcelain 2>/dev/null | wc -l)
   printf '%-52s %-28s ahead=%s dirty=%s\n' "$w" "$b" "$ahead" "$dirty"
 done

@@ -1,10 +1,10 @@
 # 编码改动原则参考
 
-本文件解释每条编码原则的判断依据、落地方法和反模式,是 [`SKILL.md`](./SKILL.md) “编码改动原则”一节的展开。示例来自 OpenIDEA 的 “Files opened in associated applications” 改动。
+本文件解释每条编码原则的判断依据、落地方法和反模式，是 Dev Flow Core「面向 PR 编程」循环 Slice（切片）/ Own（认领）阶段的具体编码判断。案例来自一次真实改动（OpenIDEA 的 “Files opened in associated applications”），用来说明原则如何落地，不是必须照搬的方案。
 
 ## 判断顺序
 
-拿到一个改动需求时,按下面的顺序收敛,不要跳步:
+拿到一个改动需求时，按下面的顺序收敛，不要跳步:
 
 项目约定 → 最小改动面 → 模块归属 → 命名 → 局部写法 → 配置方式 → 回落与测试 → 提交拆分
 
@@ -159,13 +159,11 @@
 - diff 是否包含无关格式化、重排、顺手重构
 - 每个提交是否独立可编译、可测试
 
-## 与 PR 流程的边界
+## 与领域交付流程的边界
 
-本文件只回答“代码应该怎么改”。以下内容由 [`SKILL.md`](./SKILL.md) 的 PR 流程负责,不要在这里重复:
+本文件只回答“代码应该怎么改”。以下内容由对应领域 SOP 负责,不要在这里重复:
 
-- 上游基线检查、干净 worktree、cherry-pick/rebase
-- PR 模板、验证证据、截图上传
-- CI cancelled/failed 诊断、close/reopen 重跑
-- 合并后的 worktree 回收
+- 渠道相关操作（上游基线 / PR / CI、公司禅道 / UAT / 分支拓扑 / 发布同步等）由对应的领域 SOP 或项目规则负责；本技能不列举具体渠道技能名，避免反向依赖
+- 通用交付方法（PR 循环、TDD、分层验证、验证证据、AI 协作协议、反模式）→ [pr-oriented-programming.md](./pr-oriented-programming.md)
 
-推荐顺序:先按本文件完成设计与自审 → 再按 `SKILL.md` 完成基线与 PR 流程。
+推荐顺序:先按本文件完成编码设计与自审 → 再按 [pr-oriented-programming.md](./pr-oriented-programming.md) 的 PR 循环与对应领域 SOP 走交付。
