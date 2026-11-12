@@ -4,11 +4,11 @@
 
 | PR 循环 | 本文件章节 |
 |---|---|
-| Define 立单 | 读项目规范 · 判断仓库拓扑与旧分支 |
+| Define 立单 | 读项目规范 · 要不要先开 issue · 判断仓库拓扑与旧分支 |
 | Slice 切片 | 开干净 worktree · 移植已有改动 |
 | Prove 自证 | 分层验证 · CI 失败诊断 |
 | Own 认领 | 提交（含提交前自审） |
-| Trace 留痕 | 推送并创建 PR · 截图上传 · 收尾清理 |
+| Trace 留痕 | 推送并创建 PR · 截图上传 · 提交后跟进 · 收尾清理 |
 
 ## 【Define】先读项目规范（强制，提交 PR 前必做）
 
@@ -23,7 +23,7 @@ ls .github/workflows 2>/dev/null
 从中提取并落实到本次工作：
 
 - **PR 粒度与标题**：是否要求一个 PR 只解决一个问题；标题是否用 Conventional Commits。
-- **关联 issue**：是否必须 `Closes #<n>`，以及 issue 需要先被 maintainer 接受（如 `planned` 标签）。
+- **关联 issue**：是否要求 `Closes #<n>`、是否要求 issue 先被接受（如 `planned` 标签）。
 - **PR 模板**：严格按 `.github/pull_request_template.md` 的 section 写，不增删 section、不留空。
 - **验证要求**：项目要求实际跑哪些命令、是否必须 before/after 截图或录屏、后端是否需要日志/输出、是否要求先复现。
 - **提交流程**：分支命名、署名行、CLA/DCO、review/merge 方式。
@@ -36,8 +36,8 @@ ls .github/workflows 2>/dev/null
 
 **资料不齐不得提交 PR**（不得执行 `gh pr create`）。提交前逐项确认：
 
-- [ ] 标题格式符合项目规范；一个 PR 只解决一个问题，无无关改动。
-- [ ] 关联 issue 已按要求处理（`Closes #<n>`；项目不要求时也需确认无需关联）。
+- [ ] 一个 PR 只做一个可独立解释、可独立回滚的变更，没有顺手改的无关内容；标题符合项目规范。
+- [ ] issue 已按仓库规范处理：已有对应 issue 就在正文写 `Closes #<n>`；仓库要求 issue-first 就先走 issue；都不要求则确认无需关联。
 - [ ] PR 正文严格按模板填写完整，每个 section 都有实质内容。
 - [ ] 验证证据齐全：实际命令 + 结果；UI 变更的 before/after 截图或录屏；后端日志/输出（如要求）。
 - [ ] 影响面已说明（同因排查、相邻功能确认、未做的验证及原因）。
@@ -46,6 +46,12 @@ ls .github/workflows 2>/dev/null
 - [ ] 截图、临时文件、IDE 状态未进入功能分支。
 
 任何一项缺失：先补齐材料再提交，禁止“先提 PR 再补验证/截图”。
+
+## 【Define】要不要先开 issue
+
+看仓库规范：需要就开，不需要就直接提。
+
+先搜现有 issue：有正好对应你要解决的问题，就在 PR 正文关联 `Closes/Fixes/Resolves #<n>`（标题里的 `#123` 不生效）；没有需要关联的，按仓库规范决定是否新开 issue。
 
 ## 【Define】判断仓库拓扑和旧分支是否还有价值
 
@@ -100,14 +106,8 @@ git apply -3 <scratch>/task.patch
 - 类型检查：`pnpm typecheck`
 - 格式/静态检查：`oxfmt --check <changed files>`、`pnpm lint`
 - i18n/文案目录测试（新增用户可见文本必须同时补 `en` 和 `zh`）：`pnpm vitest run src/platform/locales`
-- GUI 验证（有 UI 变更时）：统一走 Tauri MCP —— 方案、安装配置、依赖与已知坑见 [tauri-mcp.md](./tauri-mcp.md)，工具未配置时按其「安装与配置」一节指导补齐；agent-browser / Computer Use 仅在 MCP 不可用时兜底。先 focus 窗口，再截图；多步骤交互要有前后对比图或录屏
-- 记录**实际执行的命令 + 结果**，写进 PR 的 “How it was verified”
-
-定量验证优于“看起来正常”：例如切换 tab 时记录容器高度/位置是否恒定，而不是只截一张图。
-
-真机断言内容：打开具体面板/diff 后，用 `webview_execute_js` / `webview_dom_snapshot` 断言关键文本或数值（如 diff 正文出现预期行、计数正确），不只截 UI 外壳。
-
-真机暴露的集成缺陷（如 agent worktree 未登记 external log 导致 rev 侧 diff 读不到）要回补代码 + 自动化回归测试，并入同一提交后重跑断言。
+- GUI 验证（有 UI 变更时）：统一走 Tauri MCP。方案、安装配置、操作流程、真机断言要求与已知坑见 [tauri-mcp.md](./tauri-mcp.md)；工具未配置时按其「安装与配置」一节补齐，agent-browser / Computer Use 仅在 MCP 不可用时兜底。
+- 记录**实际执行的命令 + 结果**，写进 PR 的 “How it was verified”。
 
 ## 【Own】提交（含提交前自审）
 
@@ -153,33 +153,49 @@ PR 正文模板（保持简短）：
 需要 reviewer 重点看的地方。
 ```
 
-- 一个 PR 只解决一个问题；解决 issue 时写 `Closes #<n>`。
 - 网络异常：`github.com` 的 DNS/TLS 不通、但 `api.github.com` 正常时，可用本地 CONNECT 代理连接可达的 GitHub edge IP；**不要**改系统 hosts/代理。推送完成后立即停掉代理。
 
 ## 【Trace】PR 截图：用 user-attachments 上传
 
-先看几个已合并 PR 的正文图片域名，确认仓库惯例：
+先看几个已合并 PR 的正文图片域名，确认仓库惯例：新版 `https://github.com/user-attachments/assets/<uuid>`，旧版 `https://user-images.githubusercontent.com/<user-id>/...`。`gh` / REST API 无法上传到 user-attachments，`gh release upload` 产生的是 `releases/download/...`，不符合 PR 正文惯例。
 
-- 新版：`https://github.com/user-attachments/assets/<uuid>`
-- 旧版：`https://user-images.githubusercontent.com/<user-id>/...`
+登录态复用 auth-center 统一 Edge profile（路径以 auth-center 配置为准，不要复制 cookie）。在新编辑器 "Paste, drop, or click to add files" 上传，提取 `user-attachments/assets` URL 后取消草稿，再用 `gh pr edit --body-file` 写回正文。完整脚本、校验方法与常见坑见 [reference.md](./reference.md)。
 
-`gh` / REST API **不能**上传到 user-attachments；`gh release upload` 产生的是 `releases/download/...`，不是 PR 正文惯例，且下载 CDN 可能 504。
+- Edge 157+ 对**默认 profile** 禁止 `--remote-debugging-port`；统一 profile 是非默认 profile，可直接复用。需要账号密码时按 `vault-ops` 技能注入，2FA/安全密钥交还用户，**任何环节都不打印明文**。
 
-本机有可直接复用的登录态：agent-browser + auth-center 统一 Edge profile（`C:\Users\Administrator\.auth-center\edge-profile`）长期保持 GitHub 网页登录。先用它，不要直接判定“没有可控的已登录浏览器”：
+## 【Trace】提交后跟进：轮询到合并
+
+PR 创建后立即用 `/loop` 在当前会话轮询，默认每 10 分钟检查一次，直到 PR 合并到 main（或确认关闭）。
+
+每轮检查：
 
 ```bash
-agent-browser --profile "C:\Users\Administrator\.auth-center\edge-profile" --session pr-<n> open "<pr-url>"
-agent-browser --session pr-<n> eval "document.querySelector('meta[name=user-login]')?.content"
+gh pr view <n> --repo <upstream> --json state,mergedAt,mergeable,reviewDecision,statusCheckRollup,comments,reviews
+gh api repos/<upstream>/pulls/<n>/comments --paginate   # 行内 review 评论
+gh pr checks <n> --repo <upstream>
 ```
 
-新 GitHub 编辑器没有 `#fc-new_comment_field`：用 `agent-browser ... get cdp-url` 取 CDP 地址，Playwright `connectOverCDP` 后监听 `filechooser`，上传到 "Edit description" 的 "Paste, drop, or click to add files" 按钮；提取 `user-attachments/assets` URL，取消编辑，再用 `gh pr edit --body-file` 写回正文。完整脚本、校验与常见坑见 [reference.md](./reference.md)。
+- **合并即停**：`state=MERGED`（或 `mergedAt` 非空）→ 停止 loop，进入「收尾清理」。
+- **关闭未合并**：`state=CLOSED` → 停止 loop，确认关闭原因并如实告知，不要重开 PR 硬推。
+- **有修改意见**：直接改并 push 到同一分支；不要新开 PR、不要空提交。改完在该条评论下回复（行内评论用 replies 接口），说明改了什么；不打算改的说明理由。同一意见只回复一次。
+- **有提问/讨论**：先回答；涉及产品决策或方向分歧时转给用户，不要自行拍板。
+- **CI 失败**：按「CI 失败诊断」一节处理；分支落后或冲突先 rebase，再判断是否本 PR 引入。
+- **无变化**：不评论、不催合并、不重复 push。合并时机由 maintainer 决定。
+- **卡住**：同一问题连续两轮仍未解决，或意见互相冲突，停止自动修改并交回用户决定。
 
-- 提取后必须 Cancel/丢弃草稿，不要误发评论。
-- 校验渲染：重新打开 PR 页面读 `img.naturalWidth`；GitHub 会把附件改写为 `private-user-images.githubusercontent.com` 的签名 URL。
-- 批量上传可能在最后一个文件完成前返回 URL；404 的单个文件重传并替换正文中的链接。
-- 不要用 Playwright `context.request` 校验附件：请求超时会打印带 Cookie 的请求头。
-- 用完后 `agent-browser --session pr-<n> close`，删除临时上传脚本；临时 assets 分支在正文改用 user-attachments 后删除。
-- Edge 157+ 对**默认 profile** 禁止 `--remote-debugging-port`；统一 profile 是非默认 profile，可直接复用。需要账号密码时按 `vault-ops` 技能注入，2FA/安全密钥交还用户，**任何环节都不打印明文**。
+提交后直接用 `/loop` 在当前会话里轮询：
+
+```text
+/loop 10m 检查 <upstream> PR <n> 的 review 和 CI：有修改意见就改并 push，在该评论下回复；
+CI 失败按「CI 失败诊断」处理；merged 或 closed 后停止 loop 并汇报。
+分支 <branch>，worktree <path>。
+```
+
+- `/loop` 在创建它的会话内执行，回复自然回到原会话；不要在别的会话或外部调度里重建这个任务。
+- prompt 里带 PR 坐标（仓库、PR 号、分支、worktree），上下文被压缩后仍能接着做。
+- 每轮先核对 `gh pr view` 的 repo / number / headRefName / headRefOid 与记录一致；不一致或没有上下文时立即停手核对。
+- review 回复走 `gh pr comment` / replies 接口写回 PR，不靠聊天会话传递。
+- 合并或关闭后停止 loop，进入「收尾清理」。
 
 ## 【Prove】CI 失败诊断
 
@@ -206,13 +222,12 @@ gh run view <run-id> --repo <upstream> --job <job-id> --log-failed
 - 删除仅为截图创建的临时 release/tag、assets 分支、GitHub Pages（确认 PR 正文已改为 user-attachments 后再删）。
 - PR 未合并前保留 PR worktree；合并后按 `worktree-ops` 回收（判定与删除命令以该技能为准）。
 - 如果重启/关闭过用户的浏览器或进程：明确告知影响与恢复方式（如 `Ctrl+Shift+T` 恢复标签页）；绝不批量杀用户进程。
+- 停止 PR 跟进的 `/loop`（在循环中 stop），确认不再轮询。
 - 最终检查：PR worktree `git status` clean、提交已推送、PR 正文链接可访问、CI 状态已说明。
 
-## 【全局】安全与沟通约定
-
-通用红线（不打印 token/密码/Cookie、对外可见操作先确认、验证结论可复现、旧故障单独说明）见 `dev-flow-core` 技能；本文件 OSS 特有的临时文件 / 截图 / assets 分支清理见上文「收尾清理」。
-
 ## 【附录】快速命令清单
+
+> 速查用；上下文与说明见上文对应章节。
 
 ```bash
 # 拓扑与旧分支

@@ -6,12 +6,12 @@
 
 本机的 agent-browser 已配置为通过 `agent-browser-edge\launch-edge.cmd` 启动 Edge，GitHub 网页登录态在 auth-center 的共享 profile：
 
-`C:\Users\Administrator\.auth-center\edge-profile`
+`<auth-center profile>`（本机通常为 `%USERPROFILE%\.auth-center\edge-profile`）
 
-该 profile 长期保持 GitHub 登录（`panda-student`），不需要每次重新登录，也不要把 cookie 复制到其他目录。
+该 profile 长期保持 GitHub 登录，不需要每次重新登录，也不要把 cookie 复制到其他目录。
 
 ```bash
-agent-browser --profile "C:\Users\Administrator\.auth-center\edge-profile" --session pr-<n> open "<pr-url>"
+agent-browser --profile "<auth-center profile>" --session pr-<n> open "<pr-url>"
 agent-browser --session pr-<n> eval "document.querySelector('meta[name=user-login]')?.content"
 ```
 

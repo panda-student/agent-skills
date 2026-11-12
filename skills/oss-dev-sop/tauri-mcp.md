@@ -8,9 +8,9 @@ MCP server 用社区的 `@hypothesi/tauri-mcp-server`，配合应用内嵌的 `t
 
 | 依赖 | 说明 |
 |---|---|
-| 应用侧插件 | `tauri-plugin-mcp-bridge`，随应用编译自带；版本见 `src-tauri/Cargo.toml`（当前 0.13 系） |
-| MCP server | `@hypothesi/tauri-mcp-server`（npm），**版本与插件同 minor**（当前 0.13.x），不匹配会告警 |
-| 运行时 | Node（建议固定安装 server 到本地目录；也可 `npx` 按需拉起） |
+| 应用侧插件 | `tauri-plugin-mcp-bridge`，随应用编译自带；版本见 `src-tauri/Cargo.toml` |
+| MCP server | `@hypothesi/tauri-mcp-server`（npm），**版本与插件同 minor**，不匹配会告警 |
+| 运行时 | Node（固定安装 server 到共享目录，或按需 `npx` 拉起） |
 | 起应用 | `pnpm dev:app`（不是 `pnpm tauri dev`）：GUI 验证要在 `execute_js` 里用 `window.__TAURI__` 全局 API，只有 `dev:app` 开启它 |
 
 ## 安装与配置（工具没有时照此指导）
@@ -23,35 +23,41 @@ MCP server 用社区的 `@hypothesi/tauri-mcp-server`，配合应用内嵌的 `t
 ```json
 "tauri": {
   "type": "stdio",
-  "command": "D:/nodejs/node.exe",
-  "args": ["D:/mcp/tauri/node_modules/@hypothesi/tauri-mcp-server/dist/index.js"]
+  "command": "node",
+  "args": ["<MCP_SERVER_DIR>/node_modules/@hypothesi/tauri-mcp-server/dist/index.js"]
 }
 ```
 
-- 版本号按「与插件同 minor」原则对齐后固定（当前 `@hypothesi/tauri-mcp-server@0.13.2`）；应用升级插件后同步改。
-- 也可用 `cmd /c npx -y @hypothesi/tauri-mcp-server@0.13.2`，但 Windows 上 `npx` 冷启动/路径更易出问题；固定安装到本地目录再指向 `dist/index.js` 更稳（`npm i --prefix D:/mcp/tauri @hypothesi/tauri-mcp-server@0.13.2 @modelcontextprotocol/sdk`）。
+- `command` 用 PATH 里的 `node`，不写死 Node 安装路径；`<MCP_SERVER_DIR>` 是 server 的安装目录（任意可写位置，所有 worktree 共享）。
+- **没装就先装**：`npm i --prefix <MCP_SERVER_DIR> @hypothesi/tauri-mcp-server@<minor> @modelcontextprotocol/sdk`。`<minor>` 取 `src-tauri/Cargo.toml` 中 `tauri-plugin-mcp-bridge` 的 minor（如插件 `0.13` 就装 `@0.13`），不匹配会告警；应用升级插件后同步改。
+- 不想固定安装时可用 `npx -y @hypothesi/tauri-mcp-server@<minor>` 按需拉起，但 Windows 上冷启动和路径更易出问题。
 - MCP 工具在**会话启动时**绑定：配置后本会话看不到工具，新开会话自动连接（也可在 设置 → MCP 确认状态）。
 
 配置后冒烟验证（不依赖任何客户端，直接 stdio 握手）：
 
 ```bash
-printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"smoke","version":"0.0.1"}}}' | npx -y @hypothesi/tauri-mcp-server@0.13.2 | head -c 300
+printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"smoke","version":"0.0.1"}}}' | npx -y @hypothesi/tauri-mcp-server@<minor> | head -c 300
 ```
 
 返回 `serverInfo.name: mcp-server-tauri` 即通。连 ZCode 工具都没有（新会话之前）也可以用裸 stdio JSON-RPC 驱动它：`tools/list` 拿工具清单，`tools/call` 逐个调用，每个调用加超时，`initialize` 后先发 `notifications/initialized`。
 
 ## 客户端没有 MCP 工具时：脚本驱动（已验证）
 
-当前会话看不到 MCP 工具时，不必等新会话：用 MCP SDK 起一个客户端脚本直接驱动 server。把脚本放在仓库外（如 `D:/mcp/tauri/tool.mjs`），每次调用一个工具：
+当前会话看不到 MCP 工具时，不必等新会话：用 MCP SDK 起一个客户端脚本直接驱动 server。脚本放在仓库外任意目录，server 目录由环境变量 `TAURI_MCP_DIR` 指定（未安装时先按上一节安装）：
 
 ```js
+import path from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+
+const dir = process.env.TAURI_MCP_DIR;
+if (!dir) throw new Error("set TAURI_MCP_DIR to the tauri-mcp-server install dir");
+
 const [name, json] = process.argv.slice(2);
 const transport = new StdioClientTransport({
-  command: "D:/nodejs/node.exe",
-  args: ["D:/mcp/tauri/node_modules/@hypothesi/tauri-mcp-server/dist/index.js"],
-  cwd: "D:/mcp/tauri", stderr: "pipe",
+  command: process.execPath,
+  args: [path.join(dir, "node_modules/@hypothesi/tauri-mcp-server/dist/index.js")],
+  cwd: dir, stderr: "pipe",
 });
 const client = new Client({ name: "verify", version: "1.0.0" });
 await client.connect(transport);
@@ -61,7 +67,7 @@ console.log(r.content.map((c) => c.type === "text" ? c.text : `[${c.type}]`).joi
 await client.close();
 ```
 
-用法：`node tool.mjs webview_screenshot '{"format":"png","filePath":"D:/mcp/tauri/shot.png"}'`、`node tool.mjs webview_interact '{"action":"click","selector":"ref=e24"}'`、`node tool.mjs webview_execute_js '{"script":"(() => document.title)()"}'`。
+用法：`TAURI_MCP_DIR=<安装目录> node tool.mjs webview_screenshot '{"format":"png","filePath":"<tmp>/shot.png"}'`、`node tool.mjs webview_interact '{"action":"click","selector":"ref=e24"}'`、`node tool.mjs webview_execute_js '{"script":"(() => document.title)()"}'`。
 
 - **session 存在 server 进程内**：每个脚本进程都是新的 server，必须自己先 `driver_session start`；不能复用上一个脚本的连接。
 - 会话中途新增的 MCP 配置对当前会话不生效，脚本驱动是绕过这个限制的标准手段。
