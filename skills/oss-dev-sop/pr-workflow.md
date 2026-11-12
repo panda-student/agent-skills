@@ -1,11 +1,4 @@
----
-name: oss-sop
-description: "维护开源仓库代码并提交上游 Pull Request 的标准作业流程（SOP）：先读 CONTRIBUTING/AGENTS/PR 模板并按其要求执行、收集齐全 PR 材料（模板各 section、验证证据、截图）后才提交、分支拓扑与旧分支排查、基于最新 upstream/main 建干净 worktree、git apply -3 移植改动、分层验证、Conventional Commits 提交、推送 fork 并在上游开 PR、CI 失败诊断、按仓库惯例用 user-attachments 上传截图、收尾清理。Use when contributing to an open-source repository, reading a project's contribution guidelines or PR template, porting or rebasing a feature branch onto upstream main, preparing or submitting a pull request, diagnosing failing PR checks, uploading screenshots to a PR, or cleaning up after a contribution."
----
-
-# OSS SOP — 开源仓库维护标准流程
-
-面向“在 fork 上开发、向上游仓库提 PR”的场景。目标是：不把旧分支/已合并内容带进 PR，验证可复现，截图符合仓库惯例，失败能定位，收尾不留垃圾。
+# PR 工作流
 
 ## 先读项目规范（强制，提交 PR 前必做）
 
@@ -177,16 +170,20 @@ agent-browser --session pr-<n> eval "document.querySelector('meta[name=user-logi
 
 ```bash
 gh pr checks <n> --repo <upstream>
+gh pr checks <n> --repo <upstream> --watch          # 后台等待全部完成
 gh pr view <n> --repo <upstream> --json statusCheckRollup
+gh run view <run-id> --repo <upstream> --json conclusion
 gh run view <run-id> --repo <upstream> --job <job-id> --log-failed
 ```
 
-- 先分类：代码失败 / 外部基础设施（下载 504、LSP 超时、镜像不可达）/ 路径过滤跳过。
-- `skipping` 常见于 path filter：纯前端改动跳过 Rust、插件、远端等任务，属正常。
-- 没有上游写权限时 `gh run rerun` 会被拒绝；可：
-  - close → reopen PR（若 workflow 触发包含 `reopened`，会重跑）；
-  - 或在分支追加提交触发 `synchronize`。
-- 不要把外部 504 写成“代码问题”；PR 正文/回复里如实标注，并说明需要维护者 rerun。
+- 先看 run 的 `conclusion`,不要把 `cancelled` 当代码失败:`gh pr checks` 会把 cancelled 显示成 fail;cancelled 的 job 没有步骤日志(`log not found`),`gh api` 的 job 记录也是空 steps。
+- 再分类:代码失败 / 外部基础设施(下载 504、LSP 超时、镜像不可达)/ 路径过滤跳过 / run 被取消。
+- `skipping` 常见于 path filter:纯前端改动跳过 Rust、插件、远端等任务,属正常。
+- 没有上游写权限时 `gh run rerun` 会被拒绝;优先 close → reopen PR(workflow 触发包含 `reopened` 时会重跑),不要先 force-push 或加空提交。
+- 连续 cancelled 常与维护者发布/仓库活动重叠;如实说明是外部取消,并请维护者 rerun,不要写成代码问题。
+- 分支基线落后 `upstream/main` 时先 rebase 再判断失败:上游可能已经合入修复你本地或 CI 失败的提交(例如 clippy 新 lint、Windows 测试修复)。
+- 本地全量测试失败先归因:`git diff upstream/main -- <失败文件>` 确认是否本 PR 改动;隔离复跑;Windows 的路径分隔符、符号链接实体化、并发超时会制造假失败。
+- 不要把外部 504 或既有测试失败写成“代码问题”;PR 正文/回复里如实标注,并说明需要维护者 rerun。
 
 ## 收尾清理
 

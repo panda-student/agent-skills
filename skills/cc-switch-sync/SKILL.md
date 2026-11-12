@@ -1,6 +1,6 @@
 ---
 name: cc-switch-sync
-description: cc-switch 数据库同步工具。在修改技能名称、描述后同步更新 SQLite 数据库，确保 cc-switch 与 SKILL.md 一致。通过斜杠命令 `/cc-switch-sync` 触发，或由 skill-builder 在完成技能修改后自动调用。触发场景：技能重命名、描述更新、新技能注册、数据库修复。
+description: cc-switch 数据库同步工具。在修改技能名称、描述后同步更新 SQLite 数据库，确保 cc-switch 与 SKILL.md 一致。通过斜杠命令 `/cc-switch-sync` 触发，或由技能构建流程在完成技能修改后自动调用。触发场景：技能重命名、描述更新、新技能注册、数据库修复。
 user-invocable: true
 allowed-tools:
   - Read
@@ -11,7 +11,7 @@ allowed-tools:
 
 ## 双模式触发说明
 
-- **AI 自动调用**：skill-builder 完成技能修改后自动调用此技能同步数据库
+- **AI 自动调用**：技能构建流程完成技能修改后自动调用此技能同步数据库
 - **用户手动调用**：用户使用 `/cc-switch-sync <skill-name>` 命令主动触发同步
 
 ## 核心原则
@@ -77,7 +77,7 @@ SKILL.md 是唯一真实数据源，cc-switch DB 是镜像，必须从 SKILL.md 
 
 ### 流程 C：修复不一致
 
-当 skill-builder 调用时，自动检测并修复：
+当技能构建流程调用时，自动检测并修复：
 
 1. 获取被修改技能的新名称/描述
 2. 执行数据库 UPDATE
@@ -202,16 +202,16 @@ def sync_skill(skill_name, skill_dir=None):
 
 ---
 
-## 与 skill-builder 协作
+## 与技能构建流程协作
 
-当 skill-builder 完成以下操作后，应调用此技能：
+当技能构建流程完成以下操作后，应调用此技能：
 
-| skill-builder 操作 | cc-switch-sync 动作 |
+| 技能构建流程操作 | cc-switch-sync 动作 |
 |-------------------|-------------------|
 | 创建新技能 | INSERT 新记录 |
 | 重命名技能 | UPDATE name, id |
 | 更新描述 | UPDATE description |
 | 删除技能 | DELETE 记录（需确认） |
 
-**调用方式**：skill-builder 在完成修改后提示：
+**调用方式**：技能构建流程在完成修改后提示：
 > "技能已修改，建议调用 cc-switch-sync 同步数据库"

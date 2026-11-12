@@ -1,6 +1,6 @@
 # Tauri MCP：驱动 OpenIDEA 应用做 GUI 验证
 
-oss-sop 的 GUI 验证统一走本方案。项目侧规范（AGENTS.md）也要求 Tauri MCP 优先，agent-browser / Computer Use 只在 MCP 不可用时兜底。
+oss-dev-sop 的 GUI 验证统一走本方案。项目侧规范（AGENTS.md）也要求 Tauri MCP 优先，agent-browser / Computer Use 只在 MCP 不可用时兜底。
 
 ## 方案与依赖
 
