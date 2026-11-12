@@ -19,6 +19,7 @@ description: 通过 anyshare CLI 操作爱数 AnyShare 文档云（wendang.jomoo
 
 - AnyShare 7.0 API 网关：`https://wendang.jomoo.com/api/<服务>/v1/...`，认证 `Authorization: Bearer ory_at_...`（Hydra opaque token，**非 JWT**，无法本地解析 exp，只能靠 API 试活判断有效性）。
 - CLI 源码位于 `~/.agents/cli/anyshare-cli/`（同目录 `auth-center`）。**`~/.agents` 本身就是技能仓库根目录**，`skills/` 与 `cli/` 都是仓库内实体目录，`git pull` 即完成同步。换机还原：在该目录 `npm install` 后再 `npm link`，`anyshare` 即可用。token 落盘 `~/.auth-center/apps/anyshare-cli/config.json`；SSO 密码按 `vault-ops` 技能维护，auth-center 运行时取用，不落盘。浏览器自身保存的登录态不纳入 `vault-ops` 管理。
+- **通用能力边界**：刷新阶梯（缓存试活 → 无头 → leveldb → CDP 捕获 → 落盘 → 并发锁）由 auth-center 的 `createTokenManager` 提供；本技能只维护 AnyShare 差异（UCenter SSO 回跳、opaque token 试活、首页静默回路）。统一入口优先用 `auth login anyshare` / `auth token anyshare`。
 - **token 刷新链**（CLI 401 时全自动，无需人工干预）：
   1. 配置 token 试活；
   2. `vault-ops` 中已有凭据 → 无头 UCenter 链（`loginByCode` → `/sso` 回跳，链路未实测打通，失败静默回落）；

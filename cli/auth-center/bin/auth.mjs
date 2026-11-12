@@ -12,7 +12,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { loadAppConfig, saveAppConfig, APP_HOME, createTokenManager, validateJwtToken } from '../src/index.mjs';
+import { loadAppConfig, saveAppConfig, APP_HOME, createTokenManager, validateJwtToken, webHeadlessLogin } from '../src/index.mjs';
 import { openInSharedProfile } from '../src/cdp-edge.mjs';
 
 const VERSION = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
@@ -64,14 +64,18 @@ const APPS = {
     },
 };
 
-const API_CENTER_BASE_URL = 'https://api-portal-jmbos-uat.jomoo.com';
-
 const apiCenterTokenManager = createTokenManager({
     appName: 'api-center',
     label: 'API中心',
-    baseUrl: API_CENTER_BASE_URL,
-    launchUrl: `${API_CENTER_BASE_URL}/`,
+    baseUrl: 'https://api-portal-jmbos-uat.jomoo.com',
+    launchUrl: 'https://api-portal-jmbos-uat.jomoo.com/',
     validateToken: validateJwtToken,
+    headlessLogin: credential => webHeadlessLogin({
+        loginUrl: 'https://api-portal-jmbos-uat.jomoo.com/login',
+        companyText: '项目管理系统-pms',
+        cookieName: 'nisbos_auth_token',
+        credential,
+    }),
     cookieTokenRe: /(?:^|;\s*)nisbos_auth_token=([^;]+)/,
     cookieSource: 'cdp',
     loginPageRe: /\/login|\/signin|[?&]redirect=|oauth2\/(login|auth)|^https?:\/\/api-portal-jmbos-uat\.jomoo\.com\/$/i,

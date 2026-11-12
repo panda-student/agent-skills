@@ -1,6 +1,5 @@
-// PMS 认证适配层：只提供系统特定项，生命周期交给 auth-center。
-// 统一 SSO Profile 由认证库默认提供（所有登录 CLI 共用一个 Edge profile）。
-import { createTokenManager, SHARED_PROFILE_DIR } from 'auth-center';
+// PMS 认证适配层：通用登录生命周期与无头网页登录来自 auth-center；这里只声明 PMS 差异。
+import { createTokenManager, webHeadlessLogin, validateJwtToken } from 'auth-center';
 
 function decodeJwt(token) {
   try {
@@ -12,10 +11,8 @@ function decodeJwt(token) {
   }
 }
 
-/** nisbos_auth_token 是 JWT，按 exp 判定有效性，不额外依赖需要鉴权的接口 */
 export async function validateToken(token) {
-  const jwt = decodeJwt(token);
-  return Boolean(jwt && jwt.exp && jwt.exp * 1000 > Date.now());
+  return validateJwtToken(token);
 }
 
 export function describeToken(token) {
@@ -41,9 +38,14 @@ export const tokenManager = createTokenManager({
   label: 'PMS',
   baseUrl: 'https://uat-pms.jomoo.com',
   launchUrl: 'https://uat-pms.jomoo.com/engineeringProject/list',
+  validateToken,
+  headlessLogin: credential => webHeadlessLogin({
+    loginUrl: 'https://uat-pms.jomoo.com/login',
+    companyText: null,
+    cookieName: 'nisbos_auth_token',
+    credential,
+  }),
   cookieTokenRe: /(?:^|;\s*)nisbos_auth_token=([^;\s]+)/,
   cdpPort: 9333,
-  // 统一 SSO Profile：所有登录 CLI 共用一个 Edge profile，账号在里面维护一次
-  profileDir: SHARED_PROFILE_DIR,
-  validateToken,
+  leveldbScan: false,
 });

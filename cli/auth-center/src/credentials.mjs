@@ -8,9 +8,9 @@
 //   多环境：{ "vault": { "uat": { "query": "ibpm", "title": "IBPM 平台 Web 登录" } } }
 // 未配置映射时，默认按 app 名去掉 -cli 作为检索词。
 import { spawnSync } from 'node:child_process';
-import { readFileSync, unlinkSync } from 'node:fs';
+import { readFileSync, unlinkSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 import { ensureAppFile, credentialsFilePath } from './paths.mjs';
 import { loadAppConfig } from './config-store.mjs';
 
@@ -30,6 +30,14 @@ function quoteWinArg(arg) {
 }
 
 function runVault(args) {
+  // Windows 下优先直接用 node 执行 vault-cli 脚本，避免 cmd.exe / PowerShell 子进程弹出控制台窗口
+  const nodeExe = process.execPath;
+  const vaultScript = join(dirname(nodeExe), 'node_modules', 'vault-cli', 'bin', 'vault.js');
+  if (existsSync(vaultScript)) {
+    return spawnSync(nodeExe, [vaultScript, ...args], {
+      encoding: 'utf8', timeout: VAULT_TIMEOUT_MS, windowsHide: true,
+    });
+  }
   const cli = vaultCli();
   if (process.platform === 'win32') {
     const line = [cli, ...args].map(quoteWinArg).join(' ');

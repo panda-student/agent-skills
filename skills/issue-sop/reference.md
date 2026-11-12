@@ -166,7 +166,7 @@ UI 登录态（agent-browser / 浏览器复验）：
 
 - 调 `POST https://api-uat-pms.jomoo.com/niscommon/noAuth/loginNew`（请求头 `systemid: 100837377`，body 带 `loginType/userCode/usePwd/systemType/tenantCode/uuid`）取 `data.ssoToken`。
 - 写 Cookie `nisbos_auth_token` 到 `uat-pms.jomoo.com` 时**不要加 HttpOnly**；前端用 js-cookie 读取，HttpOnly 会导致已登录仍跳 `/login`。同时注入 `lang=zh`。
-- `auth status pms` / `auth token pms` 返回的 token 可能已过期：网关业务接口仍可能放行，但前端路由守卫按 JWT `exp` 判定并跳登录；UI 验证不要复用旧 token，用 `loginNew` 新 token。`auth login pms` 依赖浏览器 SSO，可能长时间挂起，不要干等。
+- `auth status pms` / `auth token pms` 返回的 token 可能已过期：网关业务接口仍可能放行，但前端路由守卫按 JWT `exp` 判定并跳登录；UI 验证不要复用旧 token，用 `loginNew` 新 token。`auth login pms` 现在默认走无头登录（vault 凭据 + `webHeadlessLogin`），失败才回落浏览器；不再依赖长时间挂起的浏览器 SSO。
 - UI 取证用 `agent-browser`：打开审批节点单据断言按钮/字段不可见，再打开草稿/编制单据做对照，截图存 `weekreport/shots/`。方法论见 `e2e-ops` 技能。
 
 字段权限接口：

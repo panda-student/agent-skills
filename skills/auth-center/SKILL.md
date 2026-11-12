@@ -26,6 +26,7 @@ description: 统一登录与 token 管理入口，所有公司系统（禅道/PM
 - 轮询判据：登录页关键元素消失、URL 跳转离开登录页、页面出现用户信息/退出登录入口。
 - 工具建议：`agent-browser wait <selector>`，或定时 `snapshot` 检查登录页元素；超过合理时长（如 2 分钟）才提示用户。
 - 共享 Profile 登录一次后，后续系统优先复用已有会话，不要重复弹登录。
+- `api-center` 优先走无头登录（账号密码 + 选择组织）；无头失败才回落可视浏览器人工登录，避免每次 token 过期都弹窗。
 
 ## 快速命令
 
@@ -62,20 +63,25 @@ auth logout <app>          # 清除本地 token（保留凭据）
 | `anyshare` | 共享 Edge SSO 静默捕获；可选无头登录（密码按 `vault-ops` 技能运行时取用） | `apps/anyshare-cli/` |
 | `ibpm` | UCenter 无头 SSO（密码按 `vault-ops` 技能运行时取用）；失败回落浏览器 | `apps/ibpm-cli/` |
 | `tencent-docs` | MCP OAuth 授权码 + PKCE（自动 refresh）；OAuth 不可用时从现有 MCP 配置导入 32 位 token | `apps/tencent-docs/` |
-| `api-center` | 共享 Edge 捕获 `nisbos_auth_token` cookie；登录页在共享 Profile 中人工登录一次；`status` 为本地 JWT 过期校验，`token` 过期会自动刷新 | `apps/api-center/` |
-| `github` | 共享 Edge 捕获 HttpOnly `user_session`（网页登录态，供 PR 图片上传等网页操作复用；API 仍用 PAT） | `apps/github/` |
+| `api-center` | 默认无头登录（账号密码 + 选择组织，自动获取 `nisbos_auth_token`）；失败才回落到共享 Profile 可视浏览器人工登录；`status` 为本地 JWT 过期校验，`token` 过期会自动刷新 | `apps/api-center/` |
+
+## 通用能力与系统差异（强制）
+
+- auth-center 只提供通用接口和能力：`createTokenManager`、`webHeadlessLogin`、`validateJwtToken`、`loadCredentials`、`ucenterLoginByCode`、`createCookieJar`、`extractToken` 等。
+- 各业务 CLI 在自己的 `auth.mjs` 里声明系统差异（`baseUrl`、`launchUrl`、`cookieTokenRe`、`headlessLogin` 的登录地址/组织名），复用上述通用能力。
+- 禁止在 CLI 里复制通用登录逻辑（刷新阶梯、cookie 采集、无头浏览器驱动、JWT 校验）；通用逻辑变更只改 auth-center，系统差异变更只改对应 CLI。
+- 新增系统：CLI 侧组合 `createTokenManager` + `webHeadlessLogin` 等通用能力；只有确实通用的能力才加到 auth-center。
 
 ## 给新 CLI 接入
 
-1. **优先复用库**：`import { createTokenManager, loadAppConfig, saveAppConfig, configFilePath } from 'auth-center';`
-   - 共享 Profile 唯一定义在 `src/cdp-edge.mjs` 的 `SHARED_PROFILE_DIR`（并 re-export）；`createTokenManager` 与 `captureTokenByCdp` 默认使用它，业务 CLI 不要另建 profile
-2. 实现系统特定项：
-   - `validateToken(token)`：轻量接口试活。
-   - `headlessLogin(cred)`：可选，无头登录返回 token。
-   - `cookieTokenRe` / `cookieSource`：cookie 型 token 用；`cookieSource: 'cdp'` 可读 HttpOnly cookie。
-3. `createTokenManager({ appName, label, baseUrl, launchUrl, validateToken, headlessLogin, ... })` 自动完成「缓存试活 → 无头 → Edge leveldb → CDP 弹窗 → 落盘」。
-4. 凭据不落盘：按 `vault-ops` 技能维护条目，并在 `config.json` 的 `vault` 字段声明映射（见下节）；不要调用 `promptAndSaveCredentials`。
-5. 在 `auth-center/bin/auth.mjs` 的 `APPS` 里注册 app 的 login/status（或自定义登录函数），让 `auth login <app>` 可用。
+1. 从 auth-center 引入通用能力：`createTokenManager`、`webHeadlessLogin`、`validateJwtToken`、`loadCredentials` 等。
+2. 在 CLI 的 `auth.mjs` 组合系统差异：
+   - `baseUrl` / `launchUrl` / `cookieTokenRe` / `cdpPort`
+   - `validateToken(token)`：JWT exp 判定或轻量接口试活
+   - `headlessLogin(credential)`：网页账号密码系统直接 `webHeadlessLogin({ loginUrl, companyText, cookieName, credential })`
+3. 共享 Profile 唯一定义在 auth-center 的 `SHARED_PROFILE_DIR`；CLI 不要另建 profile。
+4. 凭据不落盘：按 `vault-ops` 技能维护条目，并在 `apps/<app>/config.json` 的 `vault` 字段声明映射。
+5. 在 `auth-center/bin/auth.mjs` 的 `APPS` 里注册 app 的 login/status（如果该 app 也作为 auth-center 的顶层入口）。
 
 ## 凭据映射（vault-ops）
 
@@ -113,3 +119,4 @@ auth logout <app>          # 清除本地 token（保留凭据）
 - 密码只在 `vault-ops` 中维护；auth-center 运行时取用，不写入 `sso-credentials.json`。该文件仅历史遗留，可删除。
 - 浏览器自身保存的登录态（Edge Profile）不纳入 `vault-ops` 管理。
 - 共享 Profile 只保留登录会话，不手工复制/迁移到其他目录。
+- Windows 下调用 vault 时直接执行 `vault-cli/bin/vault.js`（Node），不经过 `cmd.exe`/PowerShell；子进程统一 `windowsHide: true`，避免弹出 cmd 控制台窗口。

@@ -10,3 +10,4 @@ export { scanEdgeTokens } from './browser-token.mjs';
 export { captureTokenByCdp } from './cdp-edge.mjs';
 export { notifyTopmost } from './notify.mjs';
 export { parseJwtPayload, isJwtExpired, validateJwtToken } from './jwt.mjs';
+export { webHeadlessLogin } from './web-headless.mjs';

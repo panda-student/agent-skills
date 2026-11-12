@@ -43,6 +43,7 @@ description: 周报/日报/下周计划填写全流程。拉取 PMS 仓库本周
 周报自己的凭据只有禅道密码；腾讯文档 token 由 auth-center 统一管理，周报不再单独维护。
 
 禅道密码只在 `vault-ops` 中维护，auth-center 运行时取用，不落盘：
+- 统一入口：`auth login zentao` / `auth token zentao`。通用登录生命周期（缓存试活 / 无头 / 浏览器回落 / 落盘）由 auth-center 的 `createTokenManager` 提供；本技能只维护禅道差异（`zentaosid` cookie / `/tokens` 交换）。
 - 首选交互登录：`zentao login` 拉起共享 Edge（`~/.auth-center/edge-profile`），登录一次后捕获 `zentaosid` 存 `~/.auth-center/apps/zentao-cli/config.json`，后续复用。
 - 可选无头登录：`zentao login` 运行时从 `vault-ops` 取用密码并直接调 `/tokens`，不弹窗、不落盘。
 - `vault-ops` 的 CLI 不可用或条目缺失时，无头登录失败并提示；可继续使用交互登录。

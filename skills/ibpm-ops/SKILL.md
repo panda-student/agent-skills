@@ -24,7 +24,8 @@ token 过期时任何命令都会提示 exit code 2，重新登录即可（有�
 
 ## 登录 / token 获取
 
-按优先级依次尝试，落库目标都是 `~/.auth-center/apps/ibpm-cli/config.json`：
+- 统一入口：`auth login ibpm` / `auth token ibpm`。通用登录生命周期（缓存试活 / 无头 / 浏览器回落 / 落盘 / 刷新锁）由 auth-center 的 `createTokenManager` 提供；本技能只维护 IBPM 差异（UCenter 授权码换 JWT、sessionStorage 回传）。
+- 落库目标 `~/.auth-center/apps/ibpm-cli/config.json`。
 
 1. **全自动（vault-ops 中已有凭据时）**：`ibpm login -e uat`。auth-center 运行时从 `vault-ops` 取用凭据，走纯 HTTP SSO 链路（loginByCode → tokenByCode → 换 JWT），零浏览器零人工。
    凭据维护：按 `vault-ops` 技能登记 IBPM 账号（条目「IBPM 平台 Web 登录」；UCenter 条目「UCenter 账号」）；`ibpm sso-setup -e uat` 用于验证凭据并登录，不再弹窗或落盘。
