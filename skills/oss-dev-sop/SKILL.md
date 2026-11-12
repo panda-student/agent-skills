@@ -41,5 +41,5 @@ Define 读项目规范、立 PR 草稿 → Slice 基于最新 upstream/main 开�
 
 ## 安全与沟通
 
-- 通用红线（不打印 token/密码/Cookie、对外操作先确认、验证结论可复现）见 `dev-flow-core`；凭据走 `vault-ops` / `auth-center`
+- 通用红线（不打印 token/密码/Cookie、验证结论可复现）见 `dev-flow-core`；凭据走 `vault-ops` / `auth-center`
 - OSS 特有：截图、临时文件、IDE 状态不得进入功能分支；close PR / force push / 删 release 等先确认
