@@ -1,8 +1,10 @@
 {
   "_说明": "PMS 项目问题清单维护的两份腾讯文档。梳理问题时默认扫描两份文档的全部 tab（含隐藏 tab），不能只看 URL 里的 ?tab=。",
   "default_scope": "all_tabs_all_documents",
-  "default_status_filter": "待处理",
-  "status_filter_note": "默认只梳理状态为「待处理」的行；待验证/待解决/待确认/关闭/空值均不纳入，除非用户显式指定其他状态。",
+  "default_status_filter": "未闭环（开放态）",
+  "open_status_values": ["待处理", "待解决", "待测试", "待确认", "待验证"],
+  "closed_status_values": ["关闭", "取消", "暂不处理"],
+  "status_filter_note": "默认按「未闭环」口径梳理：状态属于 open_status_values 的行纳入；关闭/取消/暂不处理/空值均不纳入。该口径由成员于 2026-11-13 确认（责任人=孙志强 + 未闭环=待解决、待测试、待确认、待验证；内部文档仍保留少量「待处理」同属未闭环）。若某表状态词表与 open_status_values 完全不重合，先向用户说明口径并确认，禁止静默返回空或自行放宽。",
   "note_author": "孙志强",
   "note_prefix_format": "{author}{date}：",
   "note_prefix_rule": "署名跟实际操作人走（谁回复/谁操作就署谁）；当前只有孙志强使用本技能，实际写入统一为「孙志强YYYY-MM-DD：」。与责任人、提报人无关。",
@@ -14,7 +16,7 @@
       "header_row": 0,
       "responsibility_column": "责任人",
       "status_column": "状态",
-      "status_filter": "待处理",
+      "status_filter": "未闭环（待处理/待验证）",
       "tabs": [
         { "name": "项目规划", "sheet_id": "BB08J2", "hidden": false },
         { "name": "项目立项", "sheet_id": "8po4fa", "hidden": false },
@@ -32,12 +34,13 @@
       "header_row": 1,
       "responsibility_column": "问题处理人",
       "status_column": "问题处理状态",
-      "status_filter": "待处理",
+      "status_filter": "未闭环（待解决/待测试/待确认/待验证；含少量「待处理」）",
+      "tab_dedup_note": "UAT1问题清单(BB08J2, 隐藏) 为旧原始副本、大量状态空白，有效主表是 UAT1问题清单(副本1)(862xnp)；UAT2问题清单(副本)(bimxi6, 隐藏) 为快照，有效主表是 UAT2问题清单(bs0681)。两份隐藏副本默认仅作核对、不计入汇总以免重复。原配置中的 UAT3问题清单(spccod) 在文档中已不存在。",
       "tabs": [
-        { "name": "UAT1问题清单(副本1)", "sheet_id": "862xnp", "hidden": false },
-        { "name": "UAT1问题清单", "sheet_id": "BB08J2", "hidden": true },
-        { "name": "UAT2问题清单", "sheet_id": "bs0681", "hidden": false },
-        { "name": "UAT3问题清单", "sheet_id": "spccod", "hidden": false }
+        { "name": "UAT1问题清单(副本1)", "sheet_id": "862xnp", "hidden": false, "primary": true },
+        { "name": "UAT1问题清单", "sheet_id": "BB08J2", "hidden": true, "primary": false },
+        { "name": "UAT2问题清单", "sheet_id": "bs0681", "hidden": false, "primary": true },
+        { "name": "UAT2问题清单(副本)", "sheet_id": "bimxi6", "hidden": true, "primary": false }
       ]
     }
   }
