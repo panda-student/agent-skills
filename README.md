@@ -60,7 +60,6 @@
 |------|------|------|
 | [skill-builder](skills/skill-builder/) | 技能的创建、优化、审查与诊断 | [查看](skills/skill-builder/SKILL.md) |
 | [learn](skills/learn/) | 会话复盘，把经验教训固化到项目规则或记忆 | [查看](skills/learn/SKILL.md) |
-| [cc-switch-sync](skills/cc-switch-sync/) | 修改技能名称/描述后同步 cc-switch 数据库 | [查看](skills/cc-switch-sync/SKILL.md) |
 | [task-closeout](skills/task-closeout/) | 开发任务收尾：遗留事项登记、临时文件清理与仓库收口 | [查看](skills/task-closeout/SKILL.md) |
 | [oss-sop](skills/oss-sop/) | 维护开源仓库并提交上游 PR 的标准作业流程 | [查看](skills/oss-sop/SKILL.md) |
 
@@ -126,6 +125,6 @@ cp -r ~/.agents/skills/<技能名> ~/.claude/skills/
 
 本仓库只同步**自研私有技能**;公共技能(安装器来源)由 `.gitignore` 白名单机制自动排除:
 
-- `scripts/update-gitignore.py` 依据 `.skill-lock.json`(sourceType=github)与 cc-switch 数据库(repo 来源)重建白名单——公共技能默认忽略,新增自研技能后重跑即可
+- `scripts/update-gitignore.py` 依据 `.skill-lock.json`(sourceType=github)重建白名单——公共技能默认忽略,新增自研技能后重跑即可
 - `scripts/hooks/pre-commit` 提交前自动重建白名单,忘跑脚本也会被拦下
 - **新机器克隆后执行一次**:`git config core.hooksPath scripts/hooks`

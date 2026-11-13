@@ -2,13 +2,12 @@
 """重建 .gitignore 的私有技能白名单段。
 
 原则:本仓库只同步自研私有技能;公共技能(安装器写入 .skill-lock.json 且
-sourceType=github 的,或 cc-switch 数据库中带 repo 来源的)默认全部忽略。
+sourceType=github 的)默认全部忽略。
 新增自研技能后重跑本脚本即可入白名单;pre-commit 钩子(scripts/hooks/)会自动执行。
 """
 import json
 import os
 import re
-import sqlite3
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BEGIN = '# >>> skills-private-whitelist(由 scripts/update-gitignore.py 生成,勿手改)'
@@ -16,20 +15,13 @@ END = '# <<< skills-private-whitelist'
 
 
 def public_names():
-    """公共技能名集合 = 锁文件 github 来源 ∪ cc-switch DB repo 来源"""
+    """公共技能名集合 = 锁文件 github 来源"""
     pub = set()
     try:
         data = json.load(open(os.path.join(ROOT, '.skill-lock.json'), encoding='utf-8'))
         for name, info in (data.get('skills') or {}).items():
             if info.get('sourceType') == 'github':
                 pub.add(name)
-    except Exception:
-        pass
-    try:
-        conn = sqlite3.connect(os.path.expanduser('~/.cc-switch/cc-switch.db'))
-        for (name,) in conn.execute('SELECT directory FROM skills WHERE repo_owner IS NOT NULL'):
-            pub.add(name)
-        conn.close()
     except Exception:
         pass
     return pub

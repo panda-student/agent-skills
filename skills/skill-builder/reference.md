@@ -450,7 +450,7 @@ context-injection:
 - `skills/*` 默认被 `.gitignore` 忽略；新增技能需在白名单加 `!skills/<name>/` 才会纳入版本管理
 - 从远端同步技能目录用 `robocopy <repo>\skills ~/.agents\skills /E`，不要 `/MIR`（会删掉本地独有技能）
 - push 遇 `OpenSSL SSL_read: unexpected eof` 时加代理：`git -c http.proxy=http://127.0.0.1:7892 push origin main`
-- 修改技能 name/description 后同步 cc-switch 数据库（见 `cc-switch-sync` 技能）
+- 技能仓库的 name/description 以源文件和技能库注册清单为准
 
 ---
 
